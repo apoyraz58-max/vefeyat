@@ -1,0 +1,19 @@
+{
+  "name": "vefeyat-development",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Vefeyât yerel geliştirme PostgreSQL servisi",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "db": "node scripts/dev-db.mjs",
+    "dev": "bash scripts/dev.sh",
+    "stop": "bash scripts/stop.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "embedded-postgres": "17.10.0-beta.17"
+  }
+}

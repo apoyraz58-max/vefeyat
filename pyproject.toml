@@ -1,0 +1,14 @@
+[project]
+name = "vefeyat"
+version = "0.1.0"
+description = "Kaynaklı biyografik bilgi arama ve Microsoft Word eklentisi"
+requires-python = ">=3.12"
+dependencies = [
+  "Django>=5.2.0,<5.3",
+  "psycopg[binary]>=3.2.0,<4",
+  "openpyxl>=3.1.5,<4",
+  "gunicorn>=23,<24",
+]
+
+[tool.uv]
+package = false

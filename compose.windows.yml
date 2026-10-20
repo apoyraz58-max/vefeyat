@@ -1,0 +1,86 @@
+name: vefeyat-local
+
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vefeyat
+      POSTGRES_USER: vefeyat
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Önce scripts/windows-start.ps1 çalıştırılmalıdır.}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vefeyat -d vefeyat"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - private
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Önce scripts/windows-start.ps1 çalıştırılmalıdır.}
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      TRUST_HTTPS_PROXY: "1"
+      CSRF_TRUSTED_ORIGINS: https://localhost:8443
+      WORD_BASE_URL: https://localhost:8443
+      DATABASE_URL: postgresql://vefeyat:${POSTGRES_PASSWORD:?Veritabanı parolası eksik.}@db:5432/vefeyat
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - static_data:/app/.local/static
+      - type: bind
+        source: ${VEFEYAT_DATA_FILE:-./.local/source/people.xlsx}
+        target: /data/people.xlsx
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          request = urllib.request.Request('http://127.0.0.1:8000/api/health/', headers={'X-Forwarded-Proto': 'https'});
+          response = urllib.request.urlopen(request, timeout=3);
+          assert response.status == 200
+      interval: 5s
+      timeout: 5s
+      start_period: 90s
+      retries: 30
+    networks:
+      - private
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8443:443"
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - static_data:/srv/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - private
+
+volumes:
+  postgres_data:
+  static_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  private:

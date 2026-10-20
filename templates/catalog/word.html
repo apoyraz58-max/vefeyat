@@ -1,0 +1,101 @@
+{% load static %}
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Vefeyât · Word</title>
+  <link rel="icon" type="image/png" href="{% static 'vefeyat/icon-32.png' %}">
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", Arial, sans-serif; color: #183c3b; background: #f7f6f1; }
+    * { box-sizing: border-box; }
+    body { margin: 0; line-height: 1.5; font-size: 14px; }
+    main { max-width: 640px; margin: auto; padding: 22px 16px 28px; }
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .mark { width: 40px; height: 40px; border-radius: 10px; background: #245b56; color: white; font: 30px Georgia, serif; text-align: center; line-height: 40px; }
+    h1 { font: 27px Georgia, serif; margin: 0; color: #183c3b; }
+    .eyebrow { margin: 1px 0 0; color: #65736d; font-size: 12px; }
+    h2 { margin: 0 0 8px; font-size: 15px; }
+    p { margin: 0 0 12px; }
+    .muted { color: #586963; font-size: 13px; }
+    .notice { border: 1px solid #d9e3dc; border-radius: 8px; background: #edf3ee; padding: 12px; margin-bottom: 18px; }
+    label { display: block; font-weight: 600; margin: 0 0 6px; }
+    input[type="search"] { width: 100%; min-width: 0; border: 1px solid #9baea4; border-radius: 6px; padding: 10px 11px; font: inherit; background: white; color: #183c3b; }
+    button { border: 1px solid #245b56; border-radius: 6px; padding: 10px 12px; font: inherit; font-weight: 600; cursor: pointer; color: #fff; background: #245b56; }
+    button:hover:not(:disabled) { background: #17443f; }
+    button.secondary { color: #245b56; background: #fff; }
+    button.secondary:hover:not(:disabled) { background: #edf3ee; }
+    button:disabled { cursor: default; opacity: .5; }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #b88431; outline-offset: 3px; }
+    .full { width: 100%; }
+    .search-row { display: flex; gap: 8px; }
+    #selection-hint { margin: 9px 0 0; overflow-wrap: anywhere; }
+    form { margin-top: 18px; }
+    #status { min-height: 24px; margin: 14px 0; color: #586963; overflow-wrap: anywhere; }
+    #status[data-level="error"] { color: #9e3029; }
+    #status[data-level="success"] { color: #245b56; }
+    .results { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .person { padding: 13px; background: #fff; border: 1px solid #d8dfd8; border-radius: 8px; overflow-wrap: anywhere; }
+    .person:has(input:checked) { border-color: #245b56; box-shadow: 0 0 0 1px #245b56; }
+    .person label { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; font-size: 15px; }
+    .person input { margin: 5px 0 0; accent-color: #245b56; flex-shrink: 0; }
+    .person p { margin: 6px 0 0; font-size: 13px; }
+    .date { color: #245b56; font-weight: 600; }
+    .description { color: #586963; }
+    .person a { display: inline-block; margin-top: 9px; color: #245b56; font-size: 12px; text-underline-offset: 3px; }
+    #more { margin: 14px 0 0; }
+    #insert-panel { position: sticky; bottom: 0; margin-top: 16px; padding: 14px; border: 1px solid #cdd9cf; border-radius: 8px; background: #f3f6ef; box-shadow: 0 -4px 14px #183c3b0a; }
+    #chosen-date { overflow-wrap: anywhere; }
+    footer { margin-top: 22px; border-top: 1px solid #d8dfd8; padding-top: 12px; color: #586963; font-size: 12px; }
+    footer a { color: #245b56; }
+    [hidden] { display: none !important; }
+    @media (max-width: 280px) { main { padding: 16px 10px; } .search-row { flex-direction: column; } }
+  </style>
+  <script defer src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script defer src="{% static 'vefeyat/word.js' %}"></script>
+</head>
+<body>
+<main>
+  <header>
+    <span class="mark" aria-hidden="true">V</span>
+    <div><h1>Vefeyât</h1><p class="eyebrow">Şahıstan kaynağa, kaynaktan metne.</p></div>
+  </header>
+
+  <div class="notice" id="host-notice">
+    Bu sayfada şahıs arayabilirsiniz. Belgeye tarih eklemek için Vefeyât’ı Word eklentisi olarak açın.
+  </div>
+
+  <section aria-labelledby="selection-title">
+    <h2 id="selection-title">Belgedeki şahıs</h2>
+    <p class="muted">Word’de yalnızca şahıs adını seçin. Ardından doğru kaydı bulup tarih ifadesini adın sonuna ekleyin.</p>
+    <button type="button" id="get-selection" class="secondary full" disabled>Word’deki seçili adı al</button>
+    <p class="muted" id="selection-hint">Henüz Word’den bir ad alınmadı.</p>
+  </section>
+
+  <form id="search-form" role="search">
+    <label for="query">Şahıs ara</label>
+    <div class="search-row">
+      <input id="query" name="q" type="search" placeholder="Örn. İbn Sînâ" autocomplete="off" maxlength="200" required aria-describedby="query-help">
+      <button type="submit" id="search-button">Ara</button>
+    </div>
+    <p id="query-help" class="muted" style="margin-top: 7px">En az iki harf yazın. Aynı adı taşıyan kişileri tarih ve tanıtımlarıyla ayırt edin.</p>
+  </form>
+
+  <p id="status" role="status" aria-live="polite" aria-atomic="true">Aramaya hazır.</p>
+  <ul id="results" class="results" aria-label="Şahıs arama sonuçları" aria-busy="false"></ul>
+  <button type="button" id="more" class="secondary full" hidden>Daha fazla sonuç göster</button>
+
+  <section id="insert-panel" aria-labelledby="insert-title" hidden>
+    <h2 id="insert-title">Seçilen kayıt</h2>
+    <p id="chosen-name"></p>
+    <p id="chosen-date" class="date"></p>
+    <button type="button" id="insert-date" class="full" disabled>Tarih ifadesini ekle</button>
+    <p class="muted" id="insert-help" style="margin-top: 9px; margin-bottom: 0">Belgeye eklemek için şahıs adını Word’den alın.</p>
+  </section>
+
+  <footer>Tarih ifadeleri kaynak verideki biçimleriyle korunur. Eklenen metni Word’ün Geri Al komutuyla kaldırabilirsiniz. <a href="/" target="_blank" rel="noopener noreferrer">Web portalını aç</a></footer>
+  <noscript><p>Arama ve Word bağlantısı için JavaScript açık olmalıdır.</p></noscript>
+</main>
+</body>
+</html>

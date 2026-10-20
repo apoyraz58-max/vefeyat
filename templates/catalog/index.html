@@ -1,0 +1,105 @@
+{% load static %}
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173f38">
+  <meta name="description" content="Vefeyât ile biyografik şahıs kayıtlarında arama yapın; tarih, kısa tanıtım ve kaynak bilgilerine birlikte ulaşın.">
+  <title>Vefeyât — İsimden kaynağa</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'vefeyat/icon-32.png' %}">
+  <link rel="stylesheet" href="{% static 'vefeyat/styles.css' %}">
+  <script src="{% static 'vefeyat/app.js' %}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#search-input">Aramaya geç</a>
+  <header class="site-header">
+    <div class="header-inner page-width">
+      <a class="brand" href="/" aria-label="Vefeyât ana sayfa">
+        <span class="brand-symbol" aria-hidden="true">v<span>·</span></span>
+        <span>Vefeyât<small>BİYOGRAFİK BAŞVURU KAYNAĞI</small></span>
+      </a>
+      <nav aria-label="Ana menü">
+        <a href="/word/">Word eklentisi <span class="icon-arrow" aria-hidden="true"></span></a>
+        <a href="/admin/" class="editor-link">Editör girişi</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero page-width" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span aria-hidden="true"></span> İSİMDEN KAYNAĞA</p>
+        <h1 id="hero-title">Her ismin ardında<br>bir <em>hayat</em> var.</h1>
+        <p class="hero-description">Şahısları bulun, benzer isimleri ayırt edin.<br class="desktop-break"> Biyografik bilgilere kaynaklarıyla birlikte ulaşın.</p>
+      </div>
+      <div class="collection-note">
+        <svg class="book-illustration" viewBox="0 0 180 110" fill="none" aria-hidden="true"><path d="M90 95C67 78 40 77 14 85V21C40 12 68 17 90 33C112 17 140 12 166 21V85C140 77 113 78 90 95Z" stroke="currentColor" stroke-width="1.4"/><path d="M90 33V95M21 29C43 23 64 28 80 38M21 40C43 34 64 39 80 49M21 51C43 45 64 50 80 60M21 62C43 56 64 61 80 71M100 38C116 28 137 23 159 29M100 49C116 39 137 34 159 40M100 60C116 50 137 45 159 51M100 71C116 61 137 56 159 62" stroke="currentColor" stroke-width="1.2"/><path d="M8 28V92C35 83 65 87 90 103C115 87 145 83 172 92V28" stroke="currentColor" stroke-width="1.2"/></svg>
+        <p><strong id="people-count">—</strong><span>şahıs kaydı, ortak bir hafıza.</span></p>
+        <span class="collection-source">TDV İslâm Ansiklopedisi verileriyle</span>
+      </div>
+    </section>
+
+    <section class="search-section page-width" aria-label="Şahıs arama">
+      <form id="search-form" class="search-form" role="search">
+        <label class="sr-only" for="search-input">Şahıs adı veya isim varyantı</label>
+        <svg class="search-icon" width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.1" stroke="currentColor" stroke-width="1.7"/><path d="m16.2 16.2 4.7 4.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <input id="search-input" type="search" name="q" autocomplete="off" spellcheck="false" maxlength="200" placeholder="Bir şahıs adı arayın…" aria-describedby="search-help">
+        <button type="submit" class="button button-primary search-submit">Ara <span aria-hidden="true">→</span></button>
+      </form>
+      <div class="search-hints" id="search-help"><span>Farklı isim yazılışlarıyla da arayabilirsiniz.</span><div class="examples"><span>Örneğin</span><button type="button" data-search="İbn Sînâ">İbn Sînâ</button><button type="button" data-search="İbn Rüşd">İbn Rüşd</button><button type="button" data-search="Fâtıma">Fâtıma</button></div></div>
+    </section>
+
+    <section class="catalog-section page-width" aria-label="Şahıs kayıtları">
+      <div class="results-column">
+        <div class="section-heading"><div><p class="eyebrow">KOLEKSİYONU KEŞFEDİN</p><h2 id="results-heading">Şahıslar</h2></div><span id="result-count" class="result-count" aria-live="polite" aria-atomic="true">Kayıtlar yükleniyor</span></div>
+        <p id="result-error" class="notice notice-error" role="alert" hidden></p>
+        <div id="results-list" class="results-list" aria-labelledby="results-heading" aria-busy="true"></div>
+        <div id="empty-state" class="empty-state" hidden><span class="empty-mark" aria-hidden="true">?</span><h3>Bu isimle bir kayıt bulunamadı.</h3><p>İsmin daha kısa bir bölümünü veya farklı bir yazılışını deneyin.</p><button type="button" class="button button-outline" data-contribute="new_person">Yeni şahıs önerin <span class="icon-arrow" aria-hidden="true"></span></button></div>
+        <button type="button" id="load-more" class="button button-outline load-more" hidden>Daha fazla kayıt göster <span aria-hidden="true">↓</span></button>
+      </div>
+
+      <aside class="detail-column" aria-label="Seçilen şahıs">
+        <div class="detail-panel" id="detail-panel" aria-busy="false">
+          <div class="detail-topline"><span class="eyebrow">ŞAHIS KAYDI</span><span class="record-mark" aria-hidden="true">V.</span></div>
+          <div id="detail-placeholder" class="detail-placeholder"><svg width="42" height="42" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M15 10H9v28h30V10h-6M18 7h12v8H18zM17 24h14M17 30h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><h3>Bir ismi yakından tanıyın.</h3><p>Tarih, kısa tanıtım ve kaynak bilgilerini görmek için listeden bir şahıs seçin.</p></div>
+          <p id="detail-status" class="detail-status" role="status" hidden></p>
+          <div id="detail-content" hidden>
+            <h2 id="detail-name" tabindex="-1"></h2>
+            <p id="detail-original" class="original-name" dir="auto" hidden></p>
+            <p id="detail-date" class="detail-date"></p>
+            <div id="full-name-section" class="detail-section" hidden><h3>TAM ADI</h3><p id="detail-full-name"></p></div>
+            <div class="detail-section"><h3>KISA TANITIM</h3><p id="detail-description"></p></div>
+            <div id="aliases-section" class="detail-section" hidden><h3>DİĞER YAZILIŞLAR</h3><div id="detail-aliases" class="aliases"></div></div>
+            <div class="detail-section citation-section"><label for="citation-text">METNE EKLEMEK İÇİN</label><div class="citation-box"><input type="text" id="citation-text" readonly aria-label="Kopyalanacak şahıs ve tarih bilgisi"><button type="button" id="copy-citation" title="Adı ve tarih bilgisini kopyala" aria-label="Adı ve tarih bilgisini kopyala"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M15 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3" stroke="currentColor" stroke-width="1.5"/></svg></button></div><p id="copy-status" class="small-status" role="status"></p></div>
+            <a id="detail-source" class="source-link" target="_blank" rel="noopener noreferrer">Kaynak maddesini aç <span class="icon-arrow" aria-hidden="true"></span></a>
+            <p class="source-caution">Tarih ifadeleri kayıttaki biçimiyle gösterilir. Akademik kullanımda kaynak maddesini kontrol edin.</p>
+            <button type="button" id="correct-person" class="text-button">Bu kayıtta bir hata mı var? <span>Düzeltme önerin <span class="icon-arrow" aria-hidden="true"></span></span></button>
+          </div>
+        </div>
+        <div class="contribution-callout"><span class="callout-icon" aria-hidden="true">+</span><div><h3>Bilgiyi birlikte geliştirelim.</h3><p>Eksik bir şahıs mı var? Kaynağıyla birlikte yeni kayıt önerebilirsiniz.</p><button type="button" class="text-button" data-contribute="new_person">Şahıs önerin <span aria-hidden="true">→</span></button></div></div>
+      </aside>
+    </section>
+
+    <section class="word-banner page-width" aria-labelledby="word-heading"><div class="word-icon" aria-hidden="true">W</div><div><p class="eyebrow">ARAŞTIRMANIZA EŞLİK EDER</p><h2 id="word-heading">Vefeyât, yazarken de yanınızda.</h2><p>Word belgenizde bir isim seçin; şahsı bulun, tarih bilgisini metninize ekleyin.</p></div><a class="button button-outline" href="/word/">Word eklentisini keşfedin <span class="icon-arrow" aria-hidden="true"></span></a></section>
+  </main>
+
+  <footer class="site-footer page-width"><div><a class="footer-brand" href="/">Vefeyât</a><p>İsimler, hayatlar ve kaynaklar.</p></div><p>Başlangıç veri kaynağı: TDV İslâm Ansiklopedisi.<br>Kullanıcı katkıları editör incelemesinden sonra yayımlanır.</p></footer>
+
+  <dialog id="contribution-dialog" class="contribution-dialog" aria-labelledby="contribution-heading">
+    <div class="dialog-heading"><div><p class="eyebrow">KOLEKSİYONA KATKI</p><h2 id="contribution-heading">Yeni şahıs önerin</h2></div><button type="button" id="close-dialog" class="icon-button" aria-label="Katkı penceresini kapat">×</button></div>
+    <p id="contribution-intro" class="dialog-intro">Öneriniz kaynak bilgisiyle birlikte editör incelemesine iletilir. Onaylanmadan yayımlanmaz.</p>
+    <form id="contribution-form">
+      <p class="required-note">* işaretli alanlar zorunludur.</p>
+      <label for="contribution-name">Şahıs adı <span aria-hidden="true">*</span></label><input id="contribution-name" name="short_name" required maxlength="500" autocomplete="off">
+      <label for="contribution-date">Tarih ifadesi</label><input id="contribution-date" name="date_text" maxlength="500" placeholder="Kaynakta geçtiği biçimiyle; ör. (ö. 428/1037)">
+      <label for="contribution-description">Kısa tanıtım</label><textarea id="contribution-description" name="description" rows="2" maxlength="5000"></textarea>
+      <label for="contribution-source">Kaynak bağlantısı <span aria-hidden="true">*</span></label><input id="contribution-source" name="source_url" type="url" required maxlength="1000" placeholder="https://…" autocomplete="url" aria-describedby="source-help"><p class="field-help" id="source-help">Öneriyi doğrulayabileceğimiz kaynak maddesinin bağlantısını ekleyin.</p>
+      <label for="contribution-note">Açıklamanız <span aria-hidden="true">*</span></label><textarea id="contribution-note" name="note" required rows="3" maxlength="5000" placeholder="Eklenmesini veya düzeltilmesini istediğiniz bilgiyi açıklayın."></textarea>
+      <p id="contribution-error" class="notice notice-error" role="alert" hidden></p>
+      <button type="submit" id="contribution-submit" class="button button-primary">İncelemeye gönder <span aria-hidden="true">→</span></button>
+    </form>
+    <div id="contribution-success" class="contribution-success" role="status" hidden><span aria-hidden="true">✓</span><h3>Katkınız alındı.</h3><p id="contribution-success-message">Öneriniz editör incelemesini bekliyor.</p><button type="button" id="finish-contribution" class="button button-primary">Tamam</button></div>
+  </dialog>
+</body>
+</html>
