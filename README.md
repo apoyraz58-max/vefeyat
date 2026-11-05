@@ -1,120 +1,45 @@
 # Vefeyât
 
-Akademik yazım için kaynaklı şahıs arama, biyografik tarih gösterimi ve Microsoft Word görev bölmesi eklentisi. İlk sürüm Windows masaüstü Word kullanımına göre hazırlanmıştır.
+Windows masaüstü Microsoft Word için tamamen çevrimdışı şahıs arama ve vefat tarihi ekleme eklentisi. Bu revizyon `vefeyat-ilk-surum` dalını temel alır. Word şeridinde **Vefeyât** sekmesi bulunur.
 
-Windows'ta ilk deneme için [BASLA.md](BASLA.md) dosyasını izleyin. GitHub sürümü kaynak kodu ve kurulum dosyalarını içerir; Excel dosyanızı ilk başlatmada `-DataFile` parametresiyle kendiniz verirsiniz.
+- Belgedeki şahıs adını seçin, **Vefeyât > Seçili adı ara** komutunu kullanın, doğru şahsı ve tarih ifadesini kontrol ederek ekleyin. Ad ve biçimi korunur; Word’ün Geri Al komutu kullanılabilir.
+- Türkçe ve Arapça adlarda yerel arama; tarih, tanıtım ve kaynak adresi gösterimi.
+- Kişisel kayıt ekleme, düzenleme, silme; CSV içe/dışa aktarma; XML yedekleme ve geri yükleme.
+- Veriler `%LOCALAPPDATA%\Vefeyat\Data\catalog.xml` dosyasındadır. Yazımlar atomiktir; bir önceki sürüm `catalog.previous.xml` dosyasında tutulur. Başka Word sürecinin değişiklikleri sessizce ezilmez.
+- Kurulum ve kullanım için internet, sunucu, alan adı, Docker, HTTPS sertifikası, Office.js veya VSTO gerekmez. Kaynak bağlantıları metindir; uygulama onları indirmez.
 
-## İlk sürümün kapsamı
+## Windows’ta kurulum
 
-- Türkçe, Latin harfli ve orijinal ad alanlarında arama; isim varyantları ve yaklaşık eşleşme önerileri.
-- Aynı isimli farklı şahıslar için ayrı sonuçlar, tarih, kısa tanıtım ve kaynak maddesi.
-- Excel'den işlem bütünlüğü korunarak aktarım; ham hücreler, satır numarası ve dosya özeti saklanır.
-- Kaynağın tarih ifadesini değiştirmeden kopyalama ve Word'deki seçili adın sonuna ekleme.
-- Yeni şahıs/düzeltme önerileri ve yetkili editörün açık onayından sonra yayımlama.
+Paket ZIP dosyasını bilgisayarınızdaki bir klasöre çıkarın, Word’ü kapatın ve **Kur.cmd** dosyasını çalıştırın. Ardından Word’ü açın. Windows 10/11, .NET Framework 4.8 ve Windows masaüstü Word gerekir; 32 ve 64 bit Word için kayıt oluşturulur. Kurulum kullanıcı hesabına yapılır ve Windows’un yerleşik derleyicisini kullanır; yönetici yetkisi veya ek indirme gerektirmez.
 
-Python 3.12+, Django 5.2 LTS ve PostgreSQL kullanılır. Web arayüzü sade JavaScript/CSS'tir; ön yüz derlemesi gerekmez. Node.js 20+ yalnız yerel PostgreSQL geliştirme servisi ve JavaScript kontrolleri için kullanılır.
+Tam kullanım ve kaldırma yönergeleri: [desktop/KULLANIM.md](desktop/KULLANIM.md). Kaldırma kişisel verileri korur. Kurumun imzasız COM eklentisi politikasının engellediği bilgisayarlarda BT biriminizin onaylı kurulum yöntemini kullanın.
 
-## Bulut ortamında geliştirme
+## Paket oluşturma
 
-Gerekli araçlar: Python 3.12+, `uv`, Node.js 20+, `npm`. Mevcut checkout'u kullanın; her görev zaten yalıtılmıştır, ayrıca Git worktree oluşturmayın.
-
-```sh
-cd /workspace/vefeyat
-bash scripts/dev.sh
-```
-
-Bu komut kilitli Python/Node bağımlılıklarını kurar, yalnız yerel makineye açık PostgreSQL'i başlatır, migration'ları uygular ve geliştirme web servisini 8000 portunda başlatır. PostgreSQL 55432 portunu kullanır. Yeniden çalıştırıldığında mevcut geliştirme süreçlerini korur; başka süreçlerin portlarını ele geçirmez.
+Python 3.10+ ve standart kütüphane yeterlidir:
 
 ```sh
-# Yalnız web servisini yeni kodla yeniden başlatmak için:
-node scripts/service-control.mjs restart-web
-
-# Bu proje tarafından başlatılan servisleri durdurmak için:
-bash scripts/stop.sh
+python3 scripts/build-offline-package.py --csv /tam/yol/sahislar.csv --output work/Vefeyat-Windows.zip
 ```
 
-Veri, günlükler ve yerel yapılandırma `.local/` altındadır. Servis süreçleri görevler arasında korunmuş varsayılmamalı; başlangıç betiği tekrar çalıştırılmalıdır. Yerel veritabanı parolası ve Django anahtarı otomatik üretilir, yalnız yerel dosyalarda saklanır ve Git'e alınmaz. Yayında ayrı anahtar ve veritabanı yapılandırması kullanın.
+CSV UTF-8 (isteğe bağlı BOM), noktalı virgülle ayrılmış şu altı sütunu içermelidir: `Kısa Ad`, `Tam Ad`, `Orijinal Ad`, `Vefat Tarihi`, `Tanıtım`, `Kaynak Link`. Gerçek kullanıcı verisi Git’e kopyalanmadan doğrudan pakete alınır. `--csv` verilmezse üç açıkça hayalî örnek kayıt paketlenir. Tarih ifadelerinde takvim dönüşümü yapılmaz.
 
-## Excel aktarımı
+Paket yalnız `desktop/` içindeki yerel eklenti kaynaklarını, kurulum araçlarını, kullanım kılavuzunu ve başlangıç CSV’sini içerir. Başlangıç CSV’si yalnız ilk kullanımda yerel veritabanı oluşturulurken okunur; onarım/yeniden kurulum kişisel düzenlemeleri değiştirmez.
 
-Kullanıcının gerçek Excel dosyası Git'e veya GitHub ZIP'ine eklenmez. Bu bulut geliştirme makinesinde korunan kaynak `.local/source/people.xlsx` konumundadır. Yeni bir kurulumda kendi Excel dosyanızı sağlayın; Windows başlangıç betiğinin `-DataFile` parametresi yerel kopyayı bu konuma oluşturur.
+## Geliştirme ve doğrulama
+
+Eklenti .NET Framework 4 için C# 5 ile yazılmıştır. Office PIA ve NuGet bağımlılığı yoktur. `desktop/Connect.cs`, Office’in COM eklenti ve Ribbon arayüzlerini uygular; `CatalogForm.cs` yerel Windows Forms arayüzünü, `Core.cs` verileri, `SelectionRules.cs` belge seçimi kurallarını yönetir.
 
 ```sh
-.venv/bin/python manage.py import_people .local/source/people.xlsx
+python3 -m unittest discover -s scripts/tests -p test_offline_package.py
 ```
 
-Varsayılan sayfa `alimler_251025`; beklenen başlıklar sırasıyla `Kısa Ad`, `Tam Ad`, `Orijinal Ad`, `Vefat Tarihi`, `Tanıtım`, `Kaynak Link`.
+Windows üzerinde yerleşik araçlarla C# testlerini çalıştırmak için:
 
-- Aynı dosya özeti ikinci kez aktarıldığında işlem yapılmaz; editör değişiklikleri korunur.
-- Yeni dosya mevcut kaynak URL'leriyle çakışıyorsa sessizce güncellemek yerine işlem durur.
-- Hatalı satırda bütün aktarım geri alınır. Aynı isimli kişiler birleştirilmez.
-- `---` gibi eksik değer işaretleri işlenmiş alanlarda boş bırakılır; özgün hücreler ayrıca saklanır.
-- Tarihler ayrıştırılmaz ve otomatik takvim dönüşümü yapılmaz. `(1844-1921)`, `(m.ö. 384-322)`, `(gaybeti 260/874)` ve belirsizlik işaretleri aynen korunur.
-
-Mevcut dosyadan 7.934 kayıt aktarılmıştır. Kaynak bağlantısı bulunması, tarihsel doğruluğun bağımsız teyit edildiği veya içerik için yeniden yayın izni alındığı anlamına gelmez. Toplu veri dışa aktarma uç noktası bu sürüme dahil değildir.
-
-## Editör kullanımı
-
-Kişisel editör hesabını etkileşimli olarak oluşturun; parolayı kaynak koduna veya sohbete yazmayın:
-
-```sh
-.venv/bin/python manage.py createsuperuser
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File desktop/Test.ps1 -CsvFile 'C:\veriler\sahislar.csv'
 ```
 
-Editör ekranı `/admin/` yolundadır. Katkılar önce incelemede bekler. Editör gerekli alanları düzenler, ardından “Seçili katkıları onayla ve yayımla” işlemini uygular. Ret işlemi şahıs verisini değiştirmez. Onay için katkı düzenleme ve şahıs düzenleme yetkisi, yeni şahısta ayrıca ekleme yetkisi gerekir. İncelenmiş katkının öneri alanları değiştirilemez; editör notu eklenebilir.
+Bu revizyonda C# 5 kaynakları .NET Framework 4.8 referanslarına karşı derlenmiş; veri ve seçim testleri Linux’ta .NET 8 üzerinde çalıştırılmıştır. Gerçek Windows Word yükleme, Ribbon, belge biçimlendirmesi ve geri alma kabul testleri bu ortamda çalıştırılamaz. Kontrol listesi ve doğrulama ayrıntıları: [docs/offline-validation.md](docs/offline-validation.md).
 
-Bu sürümde kaynakların iki kişi tarafından akademik kontrol edildiği otomatik olarak varsayılmaz. İki bağımsız kaynak ve dört göz kontrolüyle ilgili araştırma protokolü ayrıca kararlaştırılmalıdır.
-
-## Word eklentisi
-
-Word görev bölmesi `/word/` yolundadır. Tarayıcıda manuel arama gösterilebilir; belgeye yazma yalnız Office içinde etkinleşir. Ayrıntılar: [Windows Word kurulumu](docs/word-windows.md).
-
-Alan adı veya sunucu olmadan deneme için [Windows yerel kurulum](docs/windows-local.md) seçeneği hazırlanmıştır. Docker Desktop üzerinde yerel PostgreSQL ve HTTPS sunucusu çalıştırılır; geliştirme sertifikası kullanıcı tarafından güvenilir olarak tanıtılır. Bu, internet yayını gerektirmez.
-
-Word için görev bölmesi, API ve ikonların güvenilir HTTPS adresinde erişilebilir olması gerekir. Bulut geliştirme makinesinin yerel adresi Windows'taki Word'e doğrudan ulaşmaz. HTTPS yayın adresi kesinleşince manifest üretin:
-
-```sh
-.venv/bin/python manage.py export_word_manifest \
-  --base-url https://vefeyat.example.org \
-  --output .local/vefeyat-manifest.xml
-```
-
-Bu örnek adresi kendi yayın adresinizle değiştirin. `WORD_BASE_URL` ayarı aynı adrese getirildiğinde `/word/manifest.xml` yolu da uygun manifesti sunar. Komut mevcut çıktı dosyasının üzerine yazmaz.
-
-Gerçek Windows Word/WebView2 içinde seçim, ekleme, geri alma ve kurumsal eklenti izinleri kullanıcı ortamında ayrıca doğrulanmalıdır. Office API taklitleriyle geçen testler, gerçek Word uyumluluk testinin yerine geçmez.
-
-## Kontroller
-
-```sh
-.venv/bin/python manage.py check
-.venv/bin/python manage.py test catalog.tests --noinput
-node --test scripts/tests/word.test.mjs
-PLAYWRIGHT_BROWSERS_PATH=/workspace/.cache/ms-playwright npx playwright test
-```
-
-Tarayıcı testleri çalışan geliştirme servisine karşı yalnız okuma yapar ve 7.934 kayıtlı yerel veri setini bekler. Sistem Chromium'u varsa `/usr/bin/chromium` kullanılır; `CHROMIUM_PATH` ile başka bir kurulu yol seçilebilir. Sonuçlar `.local/test-results/` altına yazılır.
-
-## API
-
-| Yol | Davranış |
-|---|---|
-| `GET /api/health/` | Gerçek PostgreSQL sorgusu ile sağlık kontrolü |
-| `GET /api/stats/` | Kayıt ve kaynak bağlantısı sayısı |
-| `GET /api/people/?q=...&page=1&page_size=20` | Arama, yakın eşleşme işareti ve sayfalama (en fazla 50) |
-| `GET /api/people/<uuid>/` | Şahıs ayrıntısı ve isim varyantları |
-| `POST /api/contributions/` | CSRF korumalı, editör incelemesine giden öneri |
-
-Öneri JSON alanları: `kind` (`new_person` / `correction`), düzeltmelerde `person_id`, `short_name`, `date_text`, `description`, `source_url`, `note`. `short_name`, HTTPS `source_url` ve `note` zorunludur. Düzeltmede boş tarih/tanıtım mevcut değeri silmez.
-
-## Yayına hazırlık
-
-Bu çalışma geliştirme sürümüdür; internet yayını yapılmadı. Yayında HTTPS ters vekili, kalıcı PostgreSQL ve yedekleme, statik dosya sunumu, kişisel editör hesapları ve katkı uç noktası için sunucu düzeyinde hız sınırı gerekir.
-
-Çalışma ayarları: `DJANGO_DEBUG=0`, güçlü `DJANGO_SECRET_KEY`, `DATABASE_URL` (PostgreSQL; gerekirse `?sslmode=verify-full`), `DJANGO_ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `WORD_BASE_URL`. Güvenilir ters vekil HTTPS başlığını kendisi ayarlıyorsa `TRUST_HTTPS_PROXY=1` kullanılabilir. Dış isteklerde gelen vekil başlıklarına doğrudan güvenmeyin.
-
-```sh
-.venv/bin/python manage.py collectstatic --noinput
-.venv/bin/gunicorn vefeyat.wsgi:application --bind 127.0.0.1:8000
-```
-
-Ters vekil `/static/` yolunu `.local/static/` klasöründen sunmalıdır. Geliştirme sunucusu ve gömülü geliştirme PostgreSQL'i üretim dağıtımı olarak kullanmayın. Veri kullanım koşulları, alan adı ve gerçek Word pilot testi tamamlanmadan genel kullanıma hazır olduğu iddia edilmemelidir.
+Önceki Django/PostgreSQL ve Office.js uygulamasının kaynakları tarihsel geliştirme için depoda tutulmuştur. Yeni Windows paketi bunları içermez veya çalıştırmaz. Eski web uygulamasına ait `manage.py`, `scripts/dev.sh`, `scripts/build-windows-package.py` ve Docker dosyaları yeni masaüstü kurulumunun parçası değildir.

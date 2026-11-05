@@ -20,3 +20,11 @@ staticfiles/
 .ruff_cache/
 htmlcov/
 .coverage
+
+# Offline desktop development and private data
+work/
+output/
+*.dll
+*.exe
+*.zip
+!desktop/data/people.csv

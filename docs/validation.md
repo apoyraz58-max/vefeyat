@@ -1,3 +1,5 @@
+> Bu belge önceki web sürümünün test kayıtlarıdır. Güncel çevrimdışı Word sürümü için [offline-validation.md](offline-validation.md) dosyasına bakın.
+
 # İlk sürüm doğrulama kaydı
 
 Bu kayıt, mevcut Linux bulut geliştirme makinesinde yapılan kontrolleri anlatır. İnternet yayını, başka bir görevde snapshot geri yükleme veya gerçek Windows Word kabul testi yapıldığı anlamına gelmez.
