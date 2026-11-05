@@ -1,5 +1,11 @@
 # Çevrimdışı Windows Word doğrulaması
 
+## Gerçek kullanıcı denemesinde görülen engel
+
+Kullanıcı, `Kur.cmd` dosyasına çift tıkladığında Windows **Akıllı Uygulama Denetimi** uyarısını bildirdi. Bu denemede kurulum başlamadı; Word yüklemesi, Vefeyât sekmesi ve belgeye ekleme henüz test edilmedi. Bu bulgu önceki otomatik kontrollerin Windows dağıtımını doğrulamadığını gösterir.
+
+Dağıtım düzeltmesi: son kullanıcıda betik veya derleyici çalıştırmayan kurucu; önceden derlenen DLL ve kurucu EXE için güvenilir Authenticode imzaları. İmzalı paket üretimi, gerçek imzalama sertifikası/hizmeti sağlanana kadar bloke durumdadır. İmzasız derleme veya kendi kendine üretilen sertifika bu kabul adımının yerine geçmez.
+
 Bu belge yerel C#/.NET Framework COM eklentisinin kabul kontrolüdür. Kaynak ve otomatik veri/seçim testleri, Word'ün COM eklentisini yüklediğini veya belgedeki biçimlendirmeyi koruduğunu tek başına kanıtlamaz. Gerçek Windows masaüstü Word testleri aşağıdaki tablolar dolduruluncaya kadar **beklemede** kabul edilmelidir. Önceki web/Office.js sürümünün testleri bu paketin Windows kabulü yerine geçmez.
 
 ## Otomatik testlerin kapsamı
@@ -20,6 +26,15 @@ Bu belge yerel C#/.NET Framework COM eklentisinin kabul kontrolüdür. Kaynak ve
 
 Bu kontroller Windows COM etkinleştirmesini veya Word belge işlemini çalıştırmaz.
 
+## Kurulum engelinden sonra yapılan hazırlık
+
+- `Installer.cs`: `.cmd`, PowerShell ve son kullanıcıda derleme gerektirmeyen Windows kurucusu C# 5/.NET Framework 4.8 referanslarına karşı derlendi.
+- `InstallerPlanTests`: gerçek kayıt defteri veya Word açmadan 101 kayıt planı kontrolü geçti.
+- `Build-SignedRelease.ps1` ve güncellenen `Test.ps1`: PowerShell ayrıştırıcı kontrolü geçti.
+- İmzalı yayın aracının dört eksik kaynak/yanlış platform ön kontrolü, tamamlanmış ZIP üretmeden durdu. Sekiz CSV/yol sınırı kontrolü geçti; üç örnek kayıt ve özgün 7.934 kayıt ayrı ayrı okundu.
+- Önceki geliştirici paketleme aracının altı testi geçti; ürettiği metaveri artık dağıtımı açıkça imzasız ve Akıllı Uygulama Denetimi için desteklenmeyen geliştirme paketi olarak tanımlar.
+- Geçerli imzalama sertifikası/özel anahtar erişimi bulunmadığından gerçek Authenticode imzalama, imzalı ZIP üretimi ve Windows kabul testi **yapılmadı**. Yerel derleme çıktıları imzalı dağıtım değildir ve yeni kullanıcı paketi olarak yayımlanmadı.
+
 ## Windows test kaydı
 
 Her deneme için Windows sürümü, Word ürün adı/sürümü ve **Word bitliği** (Dosya → Hesap → Word Hakkında), standart kullanıcı hesabı, .NET Framework sürümü, paket sürümü ve test tarihini kaydedin. Windows'un bitliği ile Word'ün bitliği ayrı bilgilerdir.
@@ -32,11 +47,11 @@ Her deneme için Windows sürümü, Word ürün adı/sürümü ve **Word bitliğ
 
 ## Kurulum ve çevrimdışı çalışma
 
-- [ ] Paketi yerel, OneDrive ile eşitlenmeyen bir klasöre tamamen çıkarın. Standart kullanıcıyla, yönetici yetkisi vermeden `Kur.cmd` çalıştırın.
+- [ ] Paketi yerel, OneDrive ile eşitlenmeyen bir klasöre tamamen çıkarın. Standart kullanıcıyla, yönetici yetkisi vermeden imzalı `Vefeyat.Kurulum.exe` dosyasını açıp **Kur** komutunu kullanın.
 - [ ] Word açıkken kurulumun açıklayıcı hata vererek durduğunu doğrulayın; Word kapandıktan sonra kurulum tamamlanmalıdır.
 - [ ] Ağ bağlantısını kesip uçak modunu etkinleştirin. Gerekli Windows/Word bileşenleri önceden kurulu olmalıdır. Kurulumu ve ilk katalog açılışını bağlantı olmadan tekrarlayın; indirme veya oturum açma istenmemelidir.
 - [ ] Word'ü açın. Şeritte Vefeyât ve `Seçili adı ara`, `Şahısları ara`, `Veri klasörü`, `Kullanım` komutlarını doğrulayın.
-- [ ] İlk açılışta 7.934 kaydın tamamının yerel veri dosyasına alındığını doğrulayın. Aramada en çok 200 satır görünmesi toplam kayıt sayısıyla karıştırılmamalıdır.
+- [ ] Özel veri içeren pakette ilk açılışta 7.934 kaydın tamamının yerel veri dosyasına alındığını doğrulayın. Varsayılan örnek pakette üç hayalî kayıt bulunur; gerçek CSV bilgisayardan içe aktarıldığında 7.934 gerçek kaydın ayrıca eklendiğini doğrulayın. Aramada en çok 200 satır görünmesi toplam kayıt sayısıyla karıştırılmamalıdır.
 - [ ] Docker Desktop, web sunucusu veya veritabanı hizmeti çalışmadan arama ve belgeye ekleme yapın. Eklentinin bir dinleme portu, yerel sunucu veya arka plan sunucu süreci başlatmadığını süreç/port görünümüyle doğrulayın.
 - [ ] Kaynak URL'lerinin yalnız metin olarak gösterildiğini, arama ve ekleme sırasında tarayıcı açılmadığını veya kaynak sitelerden veri alınmadığını doğrulayın.
 - [ ] Word'ü ve bilgisayarı yeniden başlatın. Çevrimdışı arama, değiştirilmiş kayıtlar ve Vefeyât sekmesi korunmalıdır.
@@ -71,8 +86,8 @@ Her deneme için Windows sürümü, Word ürün adı/sürümü ve **Word bitliğ
 
 ## Onarım ve kaldırma
 
-- [ ] Kişisel veri dosyasının özetini kaydedin. Word kapalıyken `Kur.cmd` dosyasını tekrar çalıştırın; kurulum yinelenen COM kayıtları üretmemeli ve kişisel veri özeti aynı kalmalıdır.
-- [ ] Word açıkken `Kaldir.cmd` dosyası durmalıdır. Word kapalıyken kaldırma sonrası sekme/kayıt kalkmalı, kişisel veri dosyası ve ayrı yedekler korunmalıdır.
+- [ ] Kişisel veri dosyasının özetini kaydedin. Word kapalıyken imzalı kurucudaki **Kur** komutunu tekrar çalıştırın; kurulum yinelenen COM kayıtları üretmemeli ve kişisel veri özeti aynı kalmalıdır.
+- [ ] Word açıkken Yüklü uygulamalar üzerinden başlatılan kaldırma işlemi durmalıdır. Word kapalıyken kaldırma sonrası sekme/kayıt kalkmalı, kişisel veri dosyası ve ayrı yedekler korunmalıdır.
 - [ ] Yeniden kurulumda önceden düzenlenmiş katalog açılmalı; başlangıç CSV'si kişisel değişiklikleri ezmemelidir.
 - [ ] Eski Office.js eklentisi hâlâ kuruluysa olası ikinci sekmenin eski eklentiye ait olduğunu doğrulayın. Yalnız eski eklentiyi Word'ün Eklentilerim bölümünden kaldırınca yerel sekme kalmalıdır.
 - [ ] Kurumsal politika yüklemeyi engelliyorsa sonucu “politika nedeniyle engellendi” olarak kaydedin ve onaylı dağıtım isteyin; korumaları devre dışı bırakmayı kabul adımı olarak kullanmayın.

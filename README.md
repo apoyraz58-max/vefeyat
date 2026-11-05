@@ -1,5 +1,7 @@
 # Vefeyât
 
+**Windows deneme durumu:** Akıllı Uygulama Denetimi açık bir kullanıcı bilgisayarında `Kur.cmd`, kurulum başlamadan engellendi. Mevcut indirilebilir ZIP imzasız bir geliştirme paketidir; bu ortamda kullanıma hazır kabul edilmez. `.cmd` gerektirmeyen Windows kurucusu ve imzalı yayın üretim aracı hazırlandı; kurucu .NET Framework 4.8 referanslarıyla derlendi, 101 kayıt planı kontrolü geçti. Güvenilir bir kod imzalama sertifikası/hizmeti henüz sağlanmadığı için imzalı paket yayımlanmadı. Ayrıntılar: [imzalı dağıtım](desktop/KULLANIM-IMZALI.md).
+
 Windows masaüstü Microsoft Word için tamamen çevrimdışı şahıs arama ve vefat tarihi ekleme eklentisi. Bu revizyon `vefeyat-ilk-surum` dalını temel alır. Word şeridinde **Vefeyât** sekmesi bulunur.
 
 - Belgedeki şahıs adını seçin, **Vefeyât > Seçili adı ara** komutunu kullanın, doğru şahsı ve tarih ifadesini kontrol ederek ekleyin. Ad ve biçimi korunur; Word’ün Geri Al komutu kullanılabilir.

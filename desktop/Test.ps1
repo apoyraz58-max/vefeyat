@@ -63,7 +63,14 @@ try {
         & $testPath @testArguments
         if ($LASTEXITCODE -ne 0) { throw ($test + ' başarısız; çıkış kodu: ' + $LASTEXITCODE) }
     }
-    Write-Host 'Üç test grubu başarılı. Word uygulaması başlatılmadı; kurulu katalog değiştirilmedi.'
+    $installerTests = Join-Path $temporary 'InstallerPlanTests.exe'
+    $installerArguments = $commonArguments + @('/target:exe', '/main:InstallerPlanTests', ('/out:' + $installerTests),
+        (Join-Path $PSScriptRoot 'Installer.cs'), (Join-Path $PSScriptRoot 'tests\InstallerPlanTests.cs'))
+    $compilerOutput = & $compiler @installerArguments 2>&1
+    if ($LASTEXITCODE -ne 0) { throw ('Kurucu kayıt planı testleri derlenemedi.' + [Environment]::NewLine + ($compilerOutput -join [Environment]::NewLine)) }
+    & $installerTests
+    if ($LASTEXITCODE -ne 0) { throw 'Kurucu kayıt planı testleri başarısız.' }
+    Write-Host 'Dört test grubu başarılı. Word uygulaması başlatılmadı; kurulu katalog değiştirilmedi.'
     if ($null -ne $resolvedCsv) { Write-Host 'Ek CSV denetimi, bu projedeki 7.934 kayıtlı özgün veri dosyasını bekler.' }
 } catch {
     Write-Host ('Testler tamamlanamadı: ' + $_.Exception.Message) -ForegroundColor Red

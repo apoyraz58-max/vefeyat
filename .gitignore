@@ -28,3 +28,8 @@ output/
 *.exe
 *.zip
 !desktop/data/people.csv
+
+# Signing private keys never belong in source control.
+*.pfx
+*.p12
+*.key

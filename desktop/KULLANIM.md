@@ -1,5 +1,7 @@
 # Vefeyât — Windows Word'de çevrimdışı kullanım
 
+Bu dosya `.cmd` ve PowerShell betikleri içeren **imzasız geliştirme paketi** içindir. Kullanıcı denemesinde Akıllı Uygulama Denetimi, `Kur.cmd` açılırken kurulumu engellemiştir. Bu koruma açık bilgisayarlarda mevcut paketi yeniden çalıştırmak yerine imzalı dağıtım beklenmelidir. İmzalı kurucu hazırlığı [KULLANIM-IMZALI.md](KULLANIM-IMZALI.md) dosyasında açıklanır; henüz imzalı dağıtım yayımlanmamıştır.
+
 Vefeyât, Windows masaüstü Word'e **Vefeyât** sekmesi ekler. Şahısları bilgisayarınızdaki kayıtlarda arar; seçtiğiniz kaydın vefat tarihini Word'de seçili adın sonuna ekler. Arama, düzenleme, yedekleme ve belgeye ekleme için internet, sunucu, alan adı veya Docker gerekmez.
 
 ## Kurulum

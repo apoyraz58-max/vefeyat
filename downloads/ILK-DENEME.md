@@ -1,11 +1,9 @@
-# Vefeyât ilk deneme
+# Vefeyât ilk deneme — kurulum engeli
 
-Bu ZIP yalnız üç hayalî örnek kayıt içerir; kullanıcı CSV'si içermez.
+**Bilinen durum:** Kullanıcıdaki Akıllı Uygulama Denetimi, `Kur.cmd` dosyası açılırken kurulumu engelledi. Bu dalda daha önce yayımlanan `Vefeyat-Windows-Kurulum.zip`, imzasız geliştirme paketidir. Bu koruma açık bilgisayarlarda kurulum için önerilmez; aynı ZIP'i yeniden indirmek bu dağıtım eksikliğini düzeltmez.
 
-1. Vefeyat-Windows-Kurulum.zip dosyasını indirin ve bütün dosyaları çıkarın.
-2. Word'ün bütün pencerelerini kapatıp Vefeyat-Windows klasöründeki Kur.cmd dosyasını çalıştırın.
-3. Word'de Vefeyât > Şahısları ara > CSV içe aktar üzerinden bilgisayarınızdaki Şahıslar Veri Tabanı_251025.csv dosyasını seçin. 7.934 gerçek kayıt örneklerden ayrı olarak eklenir. Üç [Örnek] kaydı isterseniz Sil komutuyla kaldırabilirsiniz.
-4. Yeni Word belgesine Abaka yazıp seçin. Vefeyât > Seçili adı ara > doğru kayıt > Vefat tarihini belgeye ekle yolunu izleyin.
-5. Beklenen metin: Abaka (ö. 680/1282). Ctrl+Z ile geri almayı deneyin.
+`.cmd` gerektirmeyen kurucu kaynakları `desktop/Installer.cs` dosyasında, imzalı yayın üretimi `desktop/Build-SignedRelease.ps1` dosyasında hazırlandı. Son kullanıcıya verilecek yeni paket önceden derlenmiş ve güvenilir yayıncı tarafından imzalanmış kurucu EXE ve eklenti DLL içermelidir. Gerekli imzalama sertifikası/hizmeti sağlanmadığından henüz imzalı paket yayımlanmadı. Gerçek Windows Word/SAC kabul testi bekliyor.
 
-Kurulum ve günlük kullanım çevrimdışıdır. Windows 10/11, masaüstü Word ve .NET Framework 4.8 gerekir. Gerçek Windows Word kabul testi henüz yapılmamıştır.
+Ayrıntılar: [İmzalı kurulum ve üretim gereksinimleri](../desktop/KULLANIM-IMZALI.md).
+
+Mevcut örnek ZIP yalnız üç hayalî kayıt içerir; kişisel CSV GitHub'a yüklenmedi. Veriler uygulama kullanılırken bilgisayarda tutulur.
