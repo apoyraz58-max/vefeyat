@@ -1,0 +1,36 @@
+VefeyatKisiSec.frx - empty Microsoft Forms 2.0 UserForm designer shell
+
+The 2,584-byte designer binary is reused unchanged from:
+https://github.com/samyhaliem/excel-wms/blob/8c0b04d1f88e4dbb2b2b85a56bdd85134071a7c5/UserForm1.frx
+
+Upstream revision: 8c0b04d1f88e4dbb2b2b85a56bdd85134071a7c5
+Upstream file: UserForm1.frx
+SHA-256: 4cac80c15a3fe9efd8946c34633f96775d0609cd47e6134a8304ef5387784c5d
+
+Only the empty designer shell is reused. No upstream form code is included.
+The form contains no preset list items, pictures, or personal records.
+VefeyatKisiSec.frm contains Vefeyat's own runtime controls and behavior.
+
+Upstream license follows:
+
+MIT License
+
+Copyright (c) 2026 Samy Haliem
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

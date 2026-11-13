@@ -1,0 +1,9 @@
+* text=auto
+# VBA import files must keep CRLF line endings for the VBA editor.
+# Later lines override earlier ones, so these come after the default.
+legacy/vba-*/*.bas  -text
+legacy/vba-*/*.cls  -text
+legacy/vba-*/*.frm  -text
+legacy/vba-*/*.frx  binary
+legacy/vba-*/*.ps1  -text
+legacy/vba-*/*.txt  -text

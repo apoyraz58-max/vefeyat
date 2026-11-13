@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="VefeyatEklenti0341.Vefeyat0341UiOnLoad">
+  <ribbon>
+    <tabs>
+      <tab id="VefeyatTab" label="Vefeyât" keytip="VF">
+        <group id="VefeyatInsertGroup" label="Ekle ve denetle">
+          <button id="VefeyatInsert" label="Ölüm tarihi ekle" size="large" imageMso="DateAndTimeInsert" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" screentip="Seçili adın ölüm tarihini ekle" supertip="Tek ve güçlü ad eşleşmesinde doğrudan tarih ekler; yakın yazımlarda tek aday olsa da doğrulama ister; birden fazla adayda tanıtımı göstererek şahsı seçmenizi ister." keytip="E" />
+          <button id="VefeyatAudit" label="Tüm belgeyi denetle" imageMso="FindDialog" onAction="VefeyatEklenti0341.Vefeyat0341UiAudit" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanAudit" supertip="İnceleme kapalıyken yeni denetim başlatır; duraklatılmış sırayı sıfırlar. Toplu denetim kapsamına göre metindeki geçişleri sırayla gösterir. Onayla ve sonraki veya Atla / Sonraki ile ilerleyin. İlk geçiş ayarında doğrulanmış şahısların güvenilir tekrarları atlanır; belirsiz adlar ayrıca doğrulanır." size="large" keytip="D" />
+          <button id="VefeyatSpelling" label="İsim yazımı" imageMso="SpellingAndGrammar" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" supertip="Seçili adı kısa, tam ve orijinal adlarla karşılaştırır. Şahsı seçip önce/sonra önerisini onaylarsanız yalnız seçili adı değiştirir." size="large" keytip="Y" />
+        </group>
+        <group id="VefeyatAuditSettingsGroup" label="Denetim">
+          <dropDown id="VefeyatScope" label="Tarih ekleme" onAction="VefeyatEklenti0341.Vefeyat0341UiSetScope" getSelectedItemID="VefeyatEklenti0341.Vefeyat0341UiGetScope" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" supertip="İlk kullanım (varsayılan), bütün kullanımlar veya yalnız denetim seçin. Ayar değişikliği metni değiştirmez. Toplu değişiklikler önizlemede onaylanır." sizeString="Her geçtiği yere" keytip="K">
+            <item id="first" label="Yalnız ilk kullanım" />
+            <item id="all" label="Bütün kullanımlar" />
+            <item id="none" label="Yalnız denetle" />
+          </dropDown>
+          <dropDown id="VefeyatAuditMode" label="Denetlenecek" sizeString="Tarihi olmayanlar" onAction="VefeyatEklenti0341.Vefeyat0341UiSetAuditMode" getSelectedItemID="VefeyatEklenti0341.Vefeyat0341UiGetAuditMode" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" supertip="Tüm belgeyi denetle komutunun kapsamını seçin. Tarihleri değiştirmez. İlk geçtiği yere açıkken doğrulanmış şahısların güvenilir tekrarları ayrıca atlanır. Seçim bu belgede saklanır." keytip="T">
+            <item id="audit_all" label="Tüm geçişler" />
+            <item id="audit_undated" label="Tarihi olmayanlar" />
+          </dropDown>
+          <button id="VefeyatBulkPreview" label="Toplu düzeltme önizlemesi" imageMso="PrintPreview" onAction="VefeyatEklenti0341.Vefeyat0341UiBulkPreview" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" supertip="Her yazım ve tarih önerisini ayrı satırda inceleyin; tümünü veya seçtiklerinizi uygulayın. Mevcut tarihler korunur." />
+          <button id="VefeyatResume" label="Denetime devam et" imageMso="Redo" onAction="VefeyatEklenti0341.Vefeyat0341UiResume" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanResume" supertip="Duraklatılan incelemeye bu Word oturumunda devam eder. Yeni adları kapsamak veya ayar/veri değişikliğinden sonra Tüm belgeyi denetle ile yeniden başlayın." keytip="C" />
+        </group>
+        <group id="VefeyatSourceGroup" label="Şahıs ve kaynak">
+          <button id="VefeyatSearch" label="Şahıs ara" imageMso="FindDialog" onAction="VefeyatEklenti0341.Vefeyat0341UiSearch" keytip="A" screentip="Yerel şahıs kataloğunda ara" />
+          <button id="VefeyatDia" label="DİA maddesini aç" imageMso="HyperlinkInsert" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" supertip="Seçili şahsın DİA maddesini tarayıcıda açar. Birden fazla aday varsa şahsı seçersiniz. İnternet bağlantısı gerekir; belge metni değiştirilmez." keytip="M" />
+          <button id="VefeyatSourceInfo" label="Tarihin kaynağı" imageMso="HyperlinkInsert" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" supertip="Seçili Vefeyât tarihinin belgeye kayıtlı şahıs, ham tarih ve madde bağını gösterir; yeni şahıs tahmini veya çevrimiçi doğrulama yapmaz." keytip="N" />
+        </group>
+        <group id="VefeyatQualityGroup" label="Belge">
+          <button id="VefeyatInventory" label="Şahıs dökümü" imageMso="TableInsert" onAction="VefeyatEklenti0341.Vefeyat0341UiInventory" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" keytip="Z" screentip="Metindeki şahıs adları ve tarihler" supertip="Ana metin ve dipnotlarda algılanan ad geçişlerini yerel DİA kataloğuyla karşılaştırır. Listede yazımı değiştirin, eksik tarihi ekleyin veya metindeki yerine gidin. Kimliği belirsiz adları siz seçersiniz; işlemler yalnız seçili geçişe uygulanır." />
+          <button id="VefeyatHealth" label="Belge sağlığı" imageMso="SpellingAndGrammar" tag="health" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" supertip="Tarih alanlarını açık komutla denetler; onay olmadan onarım yapmaz. Metinde göster ile bulguya gidin." keytip="S" />
+          <button id="VefeyatHistory" label="İşlem geçmişi" imageMso="Undo" tag="history" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" keytip="G" screentip="Bu oturumdaki işlemleri incele" supertip="Son 100 geçişi gösterir; metindeki yerine gidebilirsiniz. Bu düğme otomatik geri alma yapmaz." />
+          <menu id="VefeyatDocumentMenu" label="Diğer araçlar" imageMso="RefreshAll" keytip="B">
+            <menuSeparator id="VefeyatDateToolsSeparator" title="Tarihler ve katalog" />
+            <button id="VefeyatRefresh" label="Tarihleri güncelle" imageMso="RefreshAll" onAction="VefeyatEklenti0341.Vefeyat0341UiRefresh" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" supertip="Toplu önerileri önizlemede gösterir; yalnız seçtiklerinizi uygular. Mevcut tarihleri yeniden yazmaz." />
+            <button id="VefeyatCatalogCheck" label="Katalogla karşılaştır" imageMso="FindDialog" tag="catalog" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" />
+            <menu id="VefeyatRegistry" label="Dinamik şahıs kayıtları" imageMso="FindDialog">
+              <toggleButton id="VefeyatRegistryEnabled" label="Kayıt yönetimini etkinleştir" getPressed="VefeyatEklenti0341.Vefeyat0341UiRegistryGet" onAction="VefeyatEklenti0341.Vefeyat0341UiRegistryToggle" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" supertip="İsteğe bağlıdır. Yeni eklenen tarih ve onaylı ad yazımları belgeye kayıtlı kaynak kimliğiyle izlenir. Kapatmak metni veya eski kayıtları silmez." />
+              <button id="VefeyatRegistryRegister" label="Seçili şahsı kayda bağla" onAction="VefeyatEklenti0341.Vefeyat0341UiRegistryRegister" />
+              <button id="VefeyatRegistryManage" label="Kayıtları ve güncellemeleri göster" onAction="VefeyatEklenti0341.Vefeyat0341UiRegistryManage" />
+              <button id="VefeyatRegistryFind" label="Bu şahsın kayıtlı kullanımlarını bul" onAction="VefeyatEklenti0341.Vefeyat0341UiRegistryFind" />
+              <button id="VefeyatRegistryForget" label="Seçili geçişin kaydını ayır" onAction="VefeyatEklenti0341.Vefeyat0341UiRegistryForget" />
+            </menu>
+            <button id="VefeyatCoverage" label="Denetim kapsamını göster" imageMso="Help" onAction="VefeyatEklenti0341.Vefeyat0341UiCoverage" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" />
+            <button id="VefeyatIdentityManage" label="Kimlik eşleşmelerini düzelt" imageMso="FindDialog" onAction="VefeyatEklenti0341.Vefeyat0341UiIdentityManage" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" />
+            <button id="VefeyatIdentityForget" label="Seçili geçişin kimlik onayını kaldır" imageMso="Clear" onAction="VefeyatEklenti0341.Vefeyat0341UiIdentityForget" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" />
+            <menuSeparator id="VefeyatFeedbackSeparator" title="Denetimi iyileştir" />
+            <menu id="VefeyatFeedback" label="Yanlış öneriyi bildir" imageMso="SpellingAndGrammar">
+              <button id="VefeyatNotPerson" label="Şahıs değil" tag="not_person" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" />
+              <button id="VefeyatWorkTitle" label="Eser adı / atıf" tag="work_title" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" />
+              <button id="VefeyatOtherPerson" label="Başka şahıs" tag="other_person" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" />
+            </menu>
+            <menu id="VefeyatExclusionsMenu" label="Belge istisnaları" imageMso="FindDialog">
+              <button id="VefeyatExclusions" label="Listeyi göster" imageMso="FindDialog" onAction="VefeyatEklenti0341.Vefeyat0341UiExclusions" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" />
+              <button id="VefeyatEditExclusions" label="İstisnayı kaldır" imageMso="FindDialog" onAction="VefeyatEklenti0341.Vefeyat0341UiEditExclusions" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" />
+              <button id="VefeyatClearExclusions" label="Tümünü temizle" imageMso="RefreshAll" onAction="VefeyatEklenti0341.Vefeyat0341UiClearExclusions" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" />
+            </menu>
+          </menu>
+        </group>
+        <group id="VefeyatSubmitGroup" label="Teslim ve dizin">
+          <button id="VefeyatConsistency" label="Tutarlılık raporu" imageMso="FindDialog" size="large" onAction="VefeyatEklenti0341.Vefeyat0341UiConsistency" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" keytip="R" screentip="Tarih kısaltma ve biçim tutarlılığı" supertip="Ana metin ve dipnotlardaki (ö. …), (öl. …) ve (v. …) tarihlerini sayar; karışık kısaltma veya biçimleri örnekleriyle gösterir. Belgeyi değiştirmez." />
+          <button id="VefeyatPeopleReport" label="Şahıs raporu" imageMso="PrintPreview" size="large" onAction="VefeyatEklenti0341.Vefeyat0341UiPeopleReport" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" keytip="W" screentip="İlk geçiş ve tarih raporu" supertip="Kimliği kesin şahısları ilk geçiş sırasıyla yeni bir belgede tablo olarak listeler: ilk geçişteki yazım, sayfa, geçiş sayısı, DİA tarihi ve bağlantısı. İlk geçişte kısa ad veya eksik tarih kullanılan yerleri not eder. Tezi değiştirmez; tablo Excel'e kopyalanabilir." />
+          <menu id="VefeyatIndexMenu" label="Şahıslar dizini" imageMso="TableInsert" size="large" keytip="I" screentip="Tez sonuna şahıslar dizini">
+            <button id="VefeyatIndexBuild" label="Dizini oluştur / güncelle" imageMso="TableInsert" onAction="VefeyatEklenti0341.Vefeyat0341UiIndex" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" supertip="Kimliği kesin her geçişin önüne gizli Word dizin işareti (XE \f &quot;v&quot;) koyar ve imlecin bulunduğu yere Word dizini ekler; dizin varsa günceller. Belirsiz adlar eklenmez. Kendi dizin işaretlerinize dokunulmaz." />
+            <button id="VefeyatIndexRemove" label="Dizin işaretlerini kaldır" imageMso="Clear" onAction="VefeyatEklenti0341.Vefeyat0341UiIndexRemove" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" supertip="Yalnız Vefeyât dizin işaretlerini ve Vefeyât dizin alanını siler." />
+          </menu>
+          <button id="VefeyatFinalize" label="Teslim öncesi temizle" imageMso="Clear" size="large" onAction="VefeyatEklenti0341.Vefeyat0341UiFinalize" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" keytip="U" screentip="Teslim kopyası için Vefeyât izlerini kaldır" supertip="Yalnız Vefeyât tarih alanlarını düz metne çevirir; Vefeyât gizli yer imlerini ve belge değişkenlerini siler. Zotero ve diğer alanlara dokunmaz. Kaydedilmiş belge ve onay ister; ardından Farklı Kaydet ile ayrı teslim kopyası kaydedin." />
+        </group>
+        <group id="VefeyatSettingsGroup" label="Tercihler">
+          <dropDown id="VefeyatNameForm" label="Ad biçimi" sizeString="Her seferinde sor" getSelectedItemID="VefeyatEklenti0341.Vefeyat0341UiGetNameMode" onAction="VefeyatEklenti0341.Vefeyat0341UiSetNameMode" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" keytip="F">
+            <item id="name_ask" label="Her seferinde sor" />
+            <item id="name_near" label="Seçili ada yakın" />
+            <item id="name_short" label="Kısa ad" />
+            <item id="name_full" label="Tam / uzun ad" />
+            <item id="name_original" label="Orijinal ad" />
+          </dropDown>
+          <dropDown id="VefeyatPrefix" label="Kısaltma" onAction="VefeyatEklenti0341.Vefeyat0341UiSetPrefix" getSelectedItemID="VefeyatEklenti0341.Vefeyat0341UiGetPrefix" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" supertip="Kaydın başındaki ölüm kısaltmasını değiştirir; tarih ve takvim ifadesi korunur." sizeString="Kaynakta olduğu gibi" keytip="O">
+            <item id="original" label="Kaynakta olduğu gibi" />
+            <item id="o" label="ö." />
+            <item id="ol" label="öl." />
+            <item id="v" label="v." />
+          </dropDown>
+          <menu id="VefeyatPreferencesMenu" label="Ayarlar" imageMso="FileOpen" keytip="P">
+            <menuSeparator id="VefeyatProjectSeparator" title="Proje yazımı" />
+            <button id="VefeyatRememberName" label="Seçili yazımı tercih et" tag="remember_name" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" imageMso="SpellingAndGrammar" />
+            <button id="VefeyatClearNames" label="Yazım tercihlerini temizle" tag="clear_names" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" imageMso="RefreshAll" />
+            <button id="VefeyatProjectExport" label="Tercihleri dışa aktar" tag="export" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" imageMso="FileSave" />
+            <button id="VefeyatProjectImport" label="Tercihleri al" tag="import" onAction="VefeyatEklenti0341.Vefeyat0341UiTools" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" imageMso="FileOpen" />
+            <menu id="VefeyatAdvancedMenu" label="Gelişmiş" imageMso="Help">
+              <toggleButton id="VefeyatFlatDates" label="Alan gölgelerini gizle" onAction="VefeyatEklenti0341.Vefeyat0341UiFlatDates" getPressed="VefeyatEklenti0341.Vefeyat0341UiGetFlatDates" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInspectDocument" supertip="Bu Word penceresindeki bütün alanların gri gölgesini gizler; Zotero gibi diğer alanları da etkiler. Tarih ve kaynak bağlantıları korunur. Kapatınca bu penceredeki önceki gölgelendirme geri gelir; bilinmiyorsa yalnız seçiliyken gölgelenir. Normal eklemede imleç tarihin dışına alınır." />
+              <button id="VefeyatRefreshMemory" label="Belleği yenile" imageMso="RefreshAll" onAction="VefeyatEklenti0341.Vefeyat0341UiRefreshMemory" getEnabled="VefeyatEklenti0341.Vefeyat0341UiDocumentEnabled" supertip="Bu belgeyi bir kez yeniden indeksler. Toplu Bul/Değiştir veya başka eklenti değişikliği sonrasında kullanın. Normal eklemede tüm belge taranmaz." />
+              <button id="VefeyatDiagnostics" label="Tanı ve süreler" imageMso="Help" onAction="VefeyatEklenti0341.Vefeyat0341UiDiagnostics" />
+            </menu>
+          </menu>
+        </group>
+        <group id="VefeyatDataGroup" label="Veri ve yardım">
+          <button id="VefeyatInfo" label="Veri bilgisi" onAction="VefeyatEklenti0341.Vefeyat0341UiInfo" imageMso="Help" keytip="V" />
+          <button id="VefeyatChooseCsv" label="CSV seç" imageMso="FileOpen" onAction="VefeyatEklenti0341.Vefeyat0341UiChooseCsv" keytip="L" />
+          <button id="VefeyatHelp" label="Kullanım kılavuzu" imageMso="Help" onAction="VefeyatEklenti0341.Vefeyat0341UiHelp" keytip="H" />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+  <contextMenus>
+    <contextMenu idMso="ContextMenuText">
+      <button id="VefeyatContextText" label="Ölüm tarihi ekle" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="DateAndTimeInsert" />
+      <button id="VefeyatSpellingContext0" label="İsmin yazılışını denetle" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="SpellingAndGrammar" />
+      <button id="VefeyatDiaContext0" label="DİA sayfasını aç" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+      <button id="VefeyatSourceContext0" label="Tarihin kayıtlı kaynağı" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+    </contextMenu>
+    <contextMenu idMso="ContextMenuTextTable">
+      <button id="VefeyatContextTableText" label="Ölüm tarihi ekle" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="DateAndTimeInsert" />
+      <button id="VefeyatSpellingContext1" label="İsmin yazılışını denetle" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="SpellingAndGrammar" />
+      <button id="VefeyatDiaContext1" label="DİA sayfasını aç" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+      <button id="VefeyatSourceContext1" label="Tarihin kayıtlı kaynağı" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+    </contextMenu>
+    <contextMenu idMso="ContextMenuTableCell">
+      <button id="VefeyatContextTableCell" label="Ölüm tarihi ekle" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="DateAndTimeInsert" />
+      <button id="VefeyatSpellingContext2" label="İsmin yazılışını denetle" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="SpellingAndGrammar" />
+      <button id="VefeyatDiaContext2" label="DİA sayfasını aç" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+      <button id="VefeyatSourceContext2" label="Tarihin kayıtlı kaynağı" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+    </contextMenu>
+    <contextMenu idMso="ContextMenuFootnote">
+      <button id="VefeyatContextFootnote" label="Ölüm tarihi ekle" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="DateAndTimeInsert" />
+      <button id="VefeyatSpellingContext3" label="İsmin yazılışını denetle" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="SpellingAndGrammar" />
+      <button id="VefeyatDiaContext3" label="DİA sayfasını aç" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+      <button id="VefeyatSourceContext3" label="Tarihin kayıtlı kaynağı" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+    </contextMenu>
+    <contextMenu idMso="ContextMenuSpell">
+      <button id="VefeyatContextSpell" label="Ölüm tarihi ekle" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="DateAndTimeInsert" />
+      <button id="VefeyatSpellingContext4" label="İsmin yazılışını denetle" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="SpellingAndGrammar" />
+      <button id="VefeyatDiaContext4" label="DİA sayfasını aç" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+      <button id="VefeyatSourceContext4" label="Tarihin kayıtlı kaynağı" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+    </contextMenu>
+    <contextMenu idMso="ContextMenuGrammar">
+      <button id="VefeyatContextGrammar" label="Ölüm tarihi ekle" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="DateAndTimeInsert" />
+      <button id="VefeyatSpellingContext5" label="İsmin yazılışını denetle" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="SpellingAndGrammar" />
+      <button id="VefeyatDiaContext5" label="DİA sayfasını aç" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+      <button id="VefeyatSourceContext5" label="Tarihin kayıtlı kaynağı" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+    </contextMenu>
+    <contextMenu idMso="ContextMenuHeading">
+      <button id="VefeyatContextHeading" label="Ölüm tarihi ekle" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="DateAndTimeInsert" />
+      <button id="VefeyatSpellingContext6" label="İsmin yazılışını denetle" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="SpellingAndGrammar" />
+      <button id="VefeyatDiaContext6" label="DİA sayfasını aç" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+      <button id="VefeyatSourceContext6" label="Tarihin kayıtlı kaynağı" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+    </contextMenu>
+    <contextMenu idMso="ContextMenuList">
+      <button id="VefeyatContextList" label="Ölüm tarihi ekle" onAction="VefeyatEklenti0341.Vefeyat0341UiInsert" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="DateAndTimeInsert" />
+      <button id="VefeyatSpellingContext7" label="İsmin yazılışını denetle" onAction="VefeyatEklenti0341.Vefeyat0341UiSpelling" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanInsert" insertBeforeMso="Cut" imageMso="SpellingAndGrammar" />
+      <button id="VefeyatDiaContext7" label="DİA sayfasını aç" onAction="VefeyatEklenti0341.Vefeyat0341UiDia" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanOpenDia" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+      <button id="VefeyatSourceContext7" label="Tarihin kayıtlı kaynağı" onAction="VefeyatEklenti0341.Vefeyat0341UiSourceInfo" getEnabled="VefeyatEklenti0341.Vefeyat0341UiCanReadSource" insertBeforeMso="Cut" imageMso="HyperlinkInsert" />
+    </contextMenu>
+  </contextMenus>
+</customUI>

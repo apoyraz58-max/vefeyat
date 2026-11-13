@@ -1,0 +1,47 @@
+﻿Vefeyât — kısa kullanım kılavuzu (0.3.41)
+
+Vefeyât, tezinizdeki şahıs adlarını bilgisayarınızdaki DİA kataloğuyla (CSV)
+karşılaştırır; adın doğru yazımını önerir ve ölüm tarihini "(ö. 505/1111)"
+biçiminde ekler. Hiçbir şeyi sormadan değiştirmez, internete bağlanmaz.
+
+ÖNEMLİ: İlk denemeleri tezinizin bir KOPYASINDA yapın.
+
+1) Tek bir ad için
+   - Adı seçin → Vefeyât sekmesi → "Ölüm tarihi ekle".
+   - Birden fazla aday varsa listeden doğru şahsı seçin.
+   - Yazımı düzeltmek için: adı seçin → "İsim yazımı".
+
+2) Bütün tez için
+   - "Tüm belgeyi denetle": adları sırayla gösterir; her birini onaylar veya atlarsınız.
+   - "Şahıs dökümü": belgedeki bütün adları tablo hâlinde görürsünüz.
+   - "Toplu düzeltme önizlemesi": önerileri listeler; yalnız işaretlediklerinizi uygular.
+   - "Tarih ekleme" ayarı: Yalnız ilk kullanım (varsayılan) / Bütün kullanımlar /
+     Yalnız denetle.
+   - "Kısaltma" ayarı (ö. / öl. / v.): değiştirince belgedeki Vefeyât tarihlerinin de
+     çevrilmesini önerir; Evet derseniz hepsi yeni kısaltmaya geçer.
+
+3) Teslimden önce
+   - "Tutarlılık raporu": ö./öl./v. ve 505/1111 gibi biçimlerin karışık kullanıldığı
+     yerleri gösterir. Belgeyi değiştirmez.
+   - "Şahıs raporu": şahısları ilk geçiş sırasıyla yeni bir belgede tablo hâlinde
+     verir; ilk geçişte kısa ad veya eksik tarih olan yerleri not eder. Tezi değiştirmez.
+   - "Şahıslar dizini → Dizini oluştur / güncelle": dizin sayfanıza bir başlık yazın,
+     imleci altına koyun ve komutu çalıştırın. Tezde değişiklik yaptıkça komutu yeniden
+     çalıştırın; dizin güncellenir. Yalnız kimliği kesin adlar dizine girer.
+   - "Teslim öncesi temizle":
+       a. Belgeyi kaydedin, açık Vefeyât pencerelerini kapatın, Değişiklik İzleme'yi kapatın.
+       b. Komutu çalıştırın ve onaylayın. Görünen metin aynen kalır; Zotero atıflarınıza
+          dokunulmaz.
+       c. Hemen Dosya → Farklı Kaydet ile "Tez_teslim.docx" gibi AYRI bir adla kaydedin.
+       d. Çalışmaya asıl dosyanızdan devam edin.
+
+Bilmeniz gerekenler
+   - Araç her adı bulamayabilir (küçük bir test kümesinde yaklaşık dörtte birini
+     kaçırdı). Sonuçları kendi okumanızla kontrol edin.
+   - Katalogda olmayan kişiye tarih uydurmaz. Belirsiz adlarda seçimi size bırakır.
+   - Ctrl+Z ile son Vefeyât işlemini geri alabilirsiniz; yine de önemli işlemlerden
+     önce kaydedin.
+   - Üst/altbilgi, sonnot, yorum ve metin kutuları taranmaz.
+   - Bu sürüm henüz gerçek Word'de kapsamlı kabul testinden geçmemiştir.
+
+Kurulum adımları ILK-KURULUM.txt dosyasındadır.
