@@ -2,9 +2,7 @@
  * Thin Word layer (Office.js, WordApi 1.3). Every decision is made in
  * logic.ts; these functions only read or write the document.
  */
-import type { PrefixKey } from "../core/index.js";
-
-const PREFIX_SETTING = "vefeyat.prefix";
+import { type SettingName, type Settings, settingValue } from "./logic.js";
 
 export interface SelectionText {
   /** Selected text as Word returns it. */
@@ -89,14 +87,33 @@ export async function findEarlier(spellings: readonly string[], select = false):
   });
 }
 
-export function readPrefix(): PrefixKey | null {
-  const value: unknown = Office.context.document.settings.get(PREFIX_SETTING);
-  return value === "original" || value === "o" || value === "ol" || value === "v" ? value : null;
+const SETTING_KEYS: Record<SettingName, string> = {
+  prefix: "vefeyat.prefix",
+  scope: "vefeyat.scope",
+  nameForm: "vefeyat.nameForm",
+  auditMode: "vefeyat.auditMode",
+};
+
+/** Re-reads settings saved by the ribbon commands (another runtime). */
+export function refreshSettings(): Promise<void> {
+  return new Promise((resolve) => {
+    Office.context.document.settings.refreshAsync(() => resolve());
+  });
 }
 
-/** Stores the marker setting in the document (saved with the document). */
-export function writePrefix(prefix: PrefixKey): Promise<void> {
-  Office.context.document.settings.set(PREFIX_SETTING, prefix);
+export function readSettings(): Settings {
+  const get = (name: SettingName): unknown => Office.context.document.settings.get(SETTING_KEYS[name]);
+  return {
+    prefix: settingValue("prefix", get("prefix")),
+    scope: settingValue("scope", get("scope")),
+    nameForm: settingValue("nameForm", get("nameForm")),
+    auditMode: settingValue("auditMode", get("auditMode")),
+  };
+}
+
+/** Stores one setting in the document (saved with the document). */
+export function writeSetting(name: SettingName, value: string): Promise<void> {
+  Office.context.document.settings.set(SETTING_KEYS[name], value);
   return new Promise((resolve, reject) => {
     Office.context.document.settings.saveAsync((result) => {
       if (result.status === Office.AsyncResultStatus.Succeeded) resolve();

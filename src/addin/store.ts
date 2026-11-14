@@ -1,7 +1,8 @@
 /**
- * Keeps the user's CSV catalog in the add-in's own browser storage
- * (IndexedDB) so it is chosen once. Nothing is sent anywhere. When storage is
- * unavailable (private mode, policy), the catalog lives only for this session.
+ * Catalog storage in the add-in's own browser storage (IndexedDB).
+ * The catalog published with the add-in (catalog.csv) loads automatically;
+ * a CSV chosen by the user replaces it on this computer until reset.
+ * Nothing is sent anywhere.
  */
 
 const DB_NAME = "vefeyat";
@@ -12,6 +13,8 @@ export interface StoredCatalog {
   readonly csv: string;
   readonly fileName: string;
   readonly savedAt: string;
+  /** "user": chosen by the user; "embedded": copy of the published catalog. */
+  readonly source?: "user" | "embedded";
 }
 
 function open(): Promise<IDBDatabase> {
@@ -52,5 +55,24 @@ export async function saveCatalog(value: StoredCatalog): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+export async function clearCatalog(): Promise<void> {
+  try {
+    await withStore("readwrite", (s) => s.delete(KEY));
+  } catch {
+    // Nothing stored or storage unavailable.
+  }
+}
+
+/** The catalog published next to the task pane, or null when there is none. */
+export async function fetchEmbeddedCatalog(): Promise<string | null> {
+  try {
+    const response = await fetch("catalog.csv", { cache: "no-cache" });
+    if (!response.ok) return null;
+    return await response.text();
+  } catch {
+    return null;
   }
 }

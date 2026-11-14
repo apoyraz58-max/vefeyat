@@ -9,22 +9,18 @@
   </head>
   <body>
     <header>
-      <h1>Vefeyât</h1>
-      <button id="refresh" type="button" class="link" title="Seçimi yeniden oku">Yenile</button>
+      <div>
+        <h1 id="view-title">Vefeyât</h1>
+        <p id="settings-summary" class="summary"></p>
+      </div>
+      <button id="back" type="button" class="link" hidden>← Seçili ad</button>
     </header>
-
-    <nav class="tabs" role="tablist" aria-label="Vefeyât bölümleri">
-      <button type="button" role="tab" id="tab-secili" aria-controls="view-secili" data-view="secili">Seçili ad</button>
-      <button type="button" role="tab" id="tab-dokum" aria-controls="view-dokum" data-view="dokum">Döküm</button>
-      <button type="button" role="tab" id="tab-teslim" aria-controls="view-teslim" data-view="teslim">Teslim</button>
-      <button type="button" role="tab" id="tab-ayarlar" aria-controls="view-ayarlar" data-view="ayarlar">Ayarlar</button>
-    </nav>
 
     <p id="message" class="message" hidden role="status"></p>
 
-    <div id="view-secili" class="view" role="tabpanel" aria-labelledby="tab-secili">
+    <div id="view-secili" class="view" data-title="Ölüm tarihi ve isim yazımı">
       <section id="no-catalog" class="notice" hidden>
-        <p>Önce DİA kataloğunuzu (CSV) seçin. Dosya bilgisayarınızda kalır.</p>
+        <p>Katalog yüklenemedi. Bilgisayarınızdaki DİA CSV dosyasını seçin.</p>
         <button id="choose-catalog-inline" type="button" class="primary">CSV seç</button>
       </section>
 
@@ -66,21 +62,18 @@
       </section>
     </div>
 
-    <div id="view-dokum" class="view" role="tabpanel" aria-labelledby="tab-dokum" hidden>
+    <div id="view-dokum" class="view" data-title="Şahıs dökümü" hidden>
       <section>
-        <h2 id="dokum-heading">Şahıs dökümü</h2>
         <p>Belgedeki bütün şahıs adlarını DİA karşılığı, mevcut tarih ve uyarılarla listeler; satır
-          seçip yazım değiştirme veya tarih ekleme yapılır.</p>
-        <h2 id="denetim-heading">Belgeyi denetle</h2>
-        <p>Adları ilk geçişten başlayarak sırayla gösterir; her biri için onaylar veya atlarsınız.</p>
+          seçip yazım değiştirme veya tarih ekleme yapılır. <strong>Belgeyi denetle</strong> adları
+          ilk geçişten başlayarak sırayla gösterip onay ister.</p>
         <p class="soon">Bu bölüm Office.js sürümüne taşınıyor. Şimdilik VBA sürümündeki
           <strong>Şahıs dökümü</strong> ve <strong>Tüm belgeyi denetle</strong> komutlarını kullanın.</p>
       </section>
     </div>
 
-    <div id="view-teslim" class="view" role="tabpanel" aria-labelledby="tab-teslim" hidden>
+    <div id="view-teslim" class="view" data-title="Teslim araçları" hidden>
       <section>
-        <h2>Teslim araçları</h2>
         <ul class="tools">
           <li id="tool-tutarlilik"><strong>Tutarlılık raporu</strong>: ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerler.</li>
           <li id="tool-rapor"><strong>Şahıs raporu ve kronoloji</strong>: ilk geçiş sırası, eksik tarih ve kısa ad notları; milâdî yıla göre sıralı liste.</li>
@@ -92,23 +85,29 @@
       </section>
     </div>
 
-    <div id="view-ayarlar" class="view" role="tabpanel" aria-labelledby="tab-ayarlar" hidden>
-      <section aria-labelledby="catalog-heading">
-        <h2 id="catalog-heading">Katalog</h2>
+    <div id="view-katalog" class="view" data-title="Katalog" hidden>
+      <section>
         <p id="catalog-status" class="muted">Yükleniyor…</p>
-        <button id="choose-catalog" type="button">CSV seç</button>
+        <div class="actions">
+          <button id="choose-catalog" type="button">Başka bir CSV seç</button>
+          <button id="reset-catalog" type="button" hidden>Eklentinin kataloğuna dön</button>
+        </div>
         <input id="catalog-file" type="file" accept=".csv,text/csv" hidden />
       </section>
-      <section aria-labelledby="settings-heading">
-        <h2 id="settings-heading">Tarih</h2>
-        <label for="prefix">Kısaltma</label>
-        <select id="prefix">
-          <option value="original">Kaynakta olduğu gibi</option>
-          <option value="o">ö.</option>
-          <option value="ol">öl.</option>
-          <option value="v">v.</option>
-        </select>
-        <p class="muted">Belgeyle birlikte kaydedilir. Yeni eklenen tarihlere uygulanır.</p>
+    </div>
+
+    <div id="view-yardim" class="view" data-title="Kılavuz" hidden>
+      <section>
+        <ol class="guide">
+          <li>Metinde bir şahıs adını seçin.</li>
+          <li><strong>Ölüm tarihi ekle</strong>: tek ve kesin eşleşmede, ilk geçişte ve adın arkasında
+            tarih yoksa tarih hemen eklenir; aksi hâlde bu pencere seçim veya onay ister.</li>
+          <li><strong>İsim yazımı</strong>: katalogdaki yazımı Türkçe eki koruyarak uygular.</li>
+          <li><strong>Tercihler</strong> menüleri (Kısaltma, Tarih ekleme, Ad biçimi, Denetlenecek)
+            bu belgeye kaydedilir; geçerli değerler bu pencerenin üstünde yazar.</li>
+          <li>Sağ tık menüsünde de <strong>Vefeyât</strong> komutları vardır.</li>
+        </ol>
+        <p><a href="https://github.com/apoyraz58-max/vefeyat/blob/main/docs/WORD-DENEME.md" target="_blank" rel="noopener noreferrer">Ayrıntılı kılavuz</a></p>
       </section>
     </div>
 

@@ -2,6 +2,7 @@
 //   BASE_URL  where taskpane.html will be served (default: GitHub Pages).
 //             Example for a local server: BASE_URL=https://localhost:3000/ npm run build
 import { build } from "esbuild";
+import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 
 const root = new URL("../", import.meta.url);
@@ -20,22 +21,36 @@ const manifestVersion = numbers.join(".");
 await rm(out, { recursive: true, force: true });
 await mkdir(new URL("assets/", out), { recursive: true });
 
-await build({
-  entryPoints: [new URL("src/addin/taskpane.ts", root).pathname],
-  outfile: new URL("taskpane.js", out).pathname,
-  bundle: true,
-  format: "iife",
-  target: ["es2018"],
-  minify: true,
-  sourcemap: true,
-  define: { __VERSION__: JSON.stringify(pkg.version) },
-  logLevel: "warning",
-});
+for (const entry of ["taskpane", "commands"]) {
+  await build({
+    entryPoints: [new URL(`src/addin/${entry}.ts`, root).pathname],
+    outfile: new URL(`${entry}.js`, out).pathname,
+    bundle: true,
+    format: "iife",
+    target: ["es2018"],
+    minify: true,
+    sourcemap: true,
+    define: { __VERSION__: JSON.stringify(pkg.version) },
+    logLevel: "warning",
+  });
+}
 
 for (const file of ["taskpane.html", "taskpane.css", "commands.html"]) {
   await cp(new URL(`src/addin/${file}`, root), new URL(file, out));
 }
-await cp(new URL("assets/", root), new URL("assets/", out), { recursive: true });
+await cp(new URL("assets/icons/", root), new URL("assets/icons/", out), { recursive: true });
+for (const size of [16, 32, 64, 80, 128]) {
+  await cp(new URL(`assets/icon-${size}.png`, root), new URL(`assets/icon-${size}.png`, out));
+}
+
+// Catalog published with the add-in (loaded automatically by the pane).
+const catalog = new URL("data/catalog.csv", root);
+if (existsSync(catalog)) {
+  await cp(catalog, new URL("catalog.csv", out));
+  console.log("Embedded catalog: data/catalog.csv");
+} else {
+  console.log("No data/catalog.csv: users choose a CSV on first use.");
+}
 
 const template = await readFile(new URL("manifest/manifest.template.xml", root), "utf8");
 const manifest = template.replaceAll("{{BASE_URL}}", baseUrl).replaceAll("{{VERSION}}", manifestVersion);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { candidateLabel, dateTag, earlierSpellings, lookup, matchHint, parseLaunch, planDate, quickInsertBlocker } from "../src/addin/logic.js";
+import { DEFAULT_SETTINGS, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, orderByNameForm, parseLaunch, planDate, quickInsertBlocker, scopeRule, settingValue, settingsSummary } from "../src/addin/logic.js";
 import { Catalog, nameOptions, personKey, sourceName, withEnding, type Person } from "../src/core/index.js";
 
 const DIA = "https://islamansiklopedisi.org.tr/";
@@ -126,7 +126,9 @@ describe("ribbon launch", () => {
     ["?view=dokum", { view: "dokum", action: null, tool: null }],
     ["?view=denetim", { view: "dokum", action: null, tool: null }],
     ["?tool=dizin", { view: "teslim", action: null, tool: "dizin" }],
-    ["?view=ayarlar", { view: "ayarlar", action: null, tool: null }],
+    ["?view=katalog", { view: "katalog", action: null, tool: null }],
+    ["?view=yardim", { view: "yardim", action: null, tool: null }],
+    ["?view=ayarlar", { view: "katalog", action: null, tool: null }],
     ["", { view: "secili", action: null, tool: null }],
     ["?view=bilinmeyen&action=sil", { view: "secili", action: null, tool: null }],
   ])("%j", (search, expected) => {
@@ -134,11 +136,35 @@ describe("ribbon launch", () => {
   });
 
   it("quick insert only for an unambiguous selection", () => {
-    expect(quickInsertBlocker(false, "Gazzâlî", null)).toMatch(/kataloğunuzu/);
+    expect(quickInsertBlocker(false, "Gazzâlî", null)).toMatch(/Katalog yüklenemedi/);
     expect(quickInsertBlocker(true, null, null)).toMatch(/şahıs adı seçip/);
     expect(quickInsertBlocker(true, "Mâlik", lookup(catalog, "Mâlik"))).toMatch(/eşleşen şahıs yok/);
     expect(quickInsertBlocker(true, "Râzî", lookup(catalog, "Râzî"))).toMatch(/Birden fazla aday/);
     expect(quickInsertBlocker(true, "Gazali", lookup(catalog, "Gazali"))).toMatch(/benzer yazım/);
     expect(quickInsertBlocker(true, "Gazzâlî", lookup(catalog, "Gazzâlî"))).toBeNull();
+  });
+});
+
+describe("settings", () => {
+  it("defaults and unknown values", () => {
+    expect(settingValue("prefix", undefined)).toBe("o");
+    expect(settingValue("prefix", "v")).toBe("v");
+    expect(settingValue("scope", "sil")).toBe("first");
+    expect(settingValue("nameForm", "full")).toBe("full");
+    expect(settingValue("auditMode", 3)).toBe("all");
+  });
+  it("scope rules", () => {
+    expect(scopeRule("first")).toEqual({ allowed: true, checkEarlier: true });
+    expect(scopeRule("all")).toEqual({ allowed: true, checkEarlier: false });
+    expect(scopeRule("none").allowed).toBe(false);
+  });
+  it("summary", () => {
+    expect(settingsSummary(DEFAULT_SETTINGS)).toBe("Kısaltma: ö. · Yalnız ilk kullanım · Ad biçimi: Her seferinde sor");
+  });
+  it("preferred spelling first", () => {
+    const options = nameOptions(gazzali, "Gazali");
+    expect(orderByNameForm(options, "ask").map((o) => o.label)[0]).toBe("Seçili ada yakın yazım");
+    expect(orderByNameForm(options, "full").map((o) => o.label)[0]).toBe("Tam / uzun ad");
+    expect(orderByNameForm(options, "original").map((o) => o.value)[0]).toBe("الغزالي");
   });
 });
