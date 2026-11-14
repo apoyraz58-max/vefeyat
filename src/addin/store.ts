@@ -1,0 +1,56 @@
+/**
+ * Keeps the user's CSV catalog in the add-in's own browser storage
+ * (IndexedDB) so it is chosen once. Nothing is sent anywhere. When storage is
+ * unavailable (private mode, policy), the catalog lives only for this session.
+ */
+
+const DB_NAME = "vefeyat";
+const STORE = "catalog";
+const KEY = "current";
+
+export interface StoredCatalog {
+  readonly csv: string;
+  readonly fileName: string;
+  readonly savedAt: string;
+}
+
+function open(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(STORE);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error("IndexedDB unavailable"));
+  });
+}
+
+async function withStore<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  const db = await open();
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const request = run(db.transaction(STORE, mode).objectStore(STORE));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error ?? new Error("IndexedDB request failed"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export async function loadCatalog(): Promise<StoredCatalog | null> {
+  try {
+    const value = await withStore<StoredCatalog | undefined>("readonly", (s) => s.get(KEY));
+    return value ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Returns false when the catalog could only be kept for this session. */
+export async function saveCatalog(value: StoredCatalog): Promise<boolean> {
+  try {
+    await withStore("readwrite", (s) => s.put(value, KEY));
+    return true;
+  } catch {
+    return false;
+  }
+}

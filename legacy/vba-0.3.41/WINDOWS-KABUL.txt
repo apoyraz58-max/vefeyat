@@ -1,0 +1,125 @@
+﻿# Windows Word kabul matrisi — 0.3.41
+
+Bu bir yürütülmüş Windows test raporu değildir. Linux kaynak/model sonuçlarını
+native Word kabulü saymayın. Önce belge kopyası kullanın. KABUL-TESTI.ps1 gerçek
+Word'ü başlatıp yalnız geçici sentetik belgelerle test eder. Office sürümü, 32/64 bit,
+ekran ölçeği, Compatibility Mode ve varsa diğer eklentileri sonuçla kaydedin.
+
+1. Yeni temiz üç 0341 bileşeni Debug → Compile ile derleyin; Startup sürümünü doğrulayın.
+2. Yalnız ilk kullanım varsayılan olmalı. İlk/bütün/yalnız denetle (ve 0.3.41 öncesi kısaltma)
+   değişimi mevcut metne, alanlara ve elle yazılmış tarihlere dokunmamalı.
+3. Aynı kimliğin Gazzâlî/Gazali, kısa/tam/orijinal ve ekli yazımlarını deneyin.
+   İlk kullanımı ana metin/dipnot referans sırasına göre kontrol edin. Belirsiz
+   önceki Râzî çözülmeden sonraki aday kesin ilk kullanım sayılmamalı.
+4. Mevcut aynı/farklı/belirsiz, ö./öl./v., çıplak yıl, takvim/yıl aralığı, numaralı
+   açıklama ve diğer paragrafa ait tarihleri kontrol edin. Doğru tarih değiştirilmemeli,
+   ikinci tarih eklenmemeli. Numaralı açıklama yalancı tarih olmamalı.
+5. Önizleme: her yazım/tarih ayrı satır; seçim görünür. Tümünü seç, temizle, tek
+   seçim, çift tıklama, kimliği/yazımı seç, iptal, X, Tab/Enter/Escape ve yüksek DPI.
+   Bilgi satırları seçilmemeli. Seçilmeyen ad/tarih değişmemeli. İlk öneriyi seçmemek
+   sonraki geçişi ilk yapmamalı. Yeniden kimlik seçiminde eski onaylar korunmalı.
+6. Son hedefi önizlemeden sonra değiştirmek bütün uygulamayı ilk yazmadan önce
+   durdurmalı. Belge/katalog/izin/tercih değişimi ve başka belgeye geçiş aynı şekilde.
+7. Ana metin, başlık stili, tek/çok hücreli ve birleştirilmiş tablolar, dipnot
+   açıklaması. Önce/sonra: stiller, bold/italic, hücre sayısı ve sınır işaretleri,
+   diğer hücre, dipnot numarası/referansı ve metin. Karma biçimli ad değişmemeli.
+8. Üst/altbilgi, sonnot, metin kutusu, bağlı/gruplu şekil ve yorumlar tarama dışında
+   raporlanmalı; buralara tarih/yazım değişikliği yapılmamalı. Word API varlığı ile
+   uygulamanın desteklediği öykü kapsamı ayrı kavramlardır.
+9. Zotero/atıf alanları, içerik denetimleri ve salt okunur/korumalı bölümler değişmemeli.
+   Dipnottaki atıf adaları atlanmalı, atıf dışı açıklama cümlesi incelemede kalmalı.
+10. Tek gruplu Ctrl+Z ve Ctrl+Y: görünür ad/tarih, alan kodu/sonucu, kaynak bağı,
+    gizli onay yer imi ve belge değişkenlerini inceleyin. Orphan metadata etkin
+    kimlik sayılmamalı. Önceki yazar işlemi yanlışlıkla geri alınmamalı.
+11. Özel Undo kaydı desteklenmiyorsa yeni toplu işlem yazmadan durmalı. Değişiklik
+    İzleme açıkken önizleme yapılmalı, yeni toplu uygulama engellenmeli, mevcut
+    revision'lar ve izleme tercihi korunmalı. Önceden var olan tek geçiş işlemleri
+    ayrıca test edilmeden Track Changes destekli diye sertifikalanmamalı.
+12. 200 bağlamsal onay sınırı, mevcut onayı düzeltme ve bir toplu grupta sınırı aşma;
+    kapasite hatası ilk yazmadan önce gelmeli. Undo sonrası onay/alan ilişkisi incelenmeli.
+13. .docx tez, .docm çalışma, .dotm'den yeni belge ve varsa .doc uyumluluk kopyası;
+    soğuk/sıcak hazırlık ve ilk öneri süresi, en az 20 ölçümde ortanca/p95. Durdur ve X
+    yeni taramayı kendiliğinden başlatmamalı. Bir saniyelik performans iddiası yapılmıyor.
+
+Native otomasyon tablo/başlık/dipnot alan yazımı, farklı scope seçenekleri,
+Undo/Redo, unsupported stories ve izleme engelini geçici belgelerde sınar.
+Tam metin tespiti ve önizleme fare etkileşimleri ayrıca manuel kabul gerektirir.
+
+14. Dinamik kayıt kapalı: uzun belgede ek tarama/yer imi olmamalı. Açın; yeni tarih
+    ve onaylı yazım için tek kayıt oluşmalı. Eski ad/düz tarih açık kayıtla bağlanmalı,
+    metin değişmemeli. Aynı işlemi tekrarlayın; kontrol/yer imi çoğalmamalı.
+15. Aynı adlı farklı DİA bağlantıları ayrılmalı. Aynı şahsın farklı yazımları tek
+    kaynak kimliği altında bulunmalı. Kaynakta ad/tarih değişince ayrı öneriler;
+    seçilmeyen değişikliklere dokunulmamalı. Yanlış kimliği ayırıp yeniden onaylayın.
+16. Adı, tarihi ve alan kimlik bağını elle değiştirin. Ad değişmişse ad/tarih; tarih
+    değişmişse tarih güncellemesi engellenmeli. Karma tarih biçimi korunmalı.
+    Silinen yer imi benzer ada otomatik bağlanmamalı. Kapama/iptal yazmamalı.
+17. DOCX/DOCM/DOTX/DOTM ve ayrıca eski DOC/DOT: kaydet, Word'ü kapat/aç, ikinci
+    bilgisayara kopyala. DİA kimliği, altı kaynak sütunu, literal, yer imi, date
+    code/result/binding tutarlı kalmalı. Yerel katalog yokken görüntüleme/bulma
+    çalışmalı; güncelleme yapılmamalı. TXT/RTF/PDF'de registry yazması engellenmeli.
+18. Registry ad/tarih güncellemesi: Ctrl+Z/Ctrl+Y metin, alan, yer imi ve docvar
+    birlikteliğini doğrulayın. Undo API yoksa uygulama engellenmeli. İzleme açık veya
+    bekleyen revision varsa yalnız önizleme. Eşzamanlı yazarlık ayrıca kabul bekler.
+19. Native kabul makrosuna geçici DOCX save/reopen/cleanup testi eklendi. Yalnız
+    bu testin PASS olması ikinci fiziksel bilgisayar testinin geçtiği anlamına gelmez.
+
+Gerçek Word sürümleri henüz bu ortamda çalıştırılmadı; API kapısı ve güvenli
+alternatif kaynak/model düzeyinde test edildi. Eski sürümde eksik API veya ayrı Undo
+yoksa mevcut tarih/yazım araçları kalır; yeni toplu registry uygulaması kapalıdır.
+
+## 0.3.37 ek kontrolleri
+
+20. Teslim öncesi temizle: kaydedilmemiş belgede, izleme açıkken, bekleyen revizyonda,
+    korumalı/salt okunur belgede ve açık döküm/inceleme penceresiyle reddetmeli; hiçbir
+    şeyi değiştirmemeli. Onay penceresinde Hayır hiçbir şeyi değiştirmemeli.
+21. Zotero (veya EndNote/Mendeley) atıflı, dipnotlu, tablolu bir tez kopyasında: Evet
+    sonrası Vefeyât tarihleri düz metin olmalı, görünen metin ve biçim aynı kalmalı;
+    Zotero alanları ve Zotero "Refresh" çalışmaya devam etmeli; Alt+F9 ile yalnız
+    yabancı alanlar görünmeli. Farklı Kaydet → kapat/aç → PDF'e aktar sonrası tarihler
+    yerinde olmalı. Belge İnceleyicisi'nde Vefeyât belge değişkeni kalmamalı.
+22. Tutarlılık raporu: ö./öl./v. karışık ve 505/1111 ile tek yıl karışık bir belgede
+    sayılar ve azınlık örnekleri doğru olmalı; belge değişmemeli (Kaydet simgesi kirlenmemeli).
+23. Dipnot işaretinden hemen önce/sonra, tablo hücresinde, Shift+Enter satır sonundan
+    sonra ve isteğe bağlı tire içeren paragrafta belirsiz bir ada "Yine de ekle" ile tarih
+    ekleyin; hata vermemeli, kaydet/kapat/aç sonrası kimlik onayı korunmalı.
+
+## 0.3.39 ek kontrolleri
+
+24. Şahıs dökümünde kesin ve belirsiz adlar içeren bir tez kopyasında Dizini oluştur:
+    onay penceresindeki sayılar dökümle uyumlu olmalı; Hayır hiçbir şeyi değiştirmemeli.
+    Evet sonrası imleç konumunda dizin oluşmalı, belirsiz adlar dizinde olmamalı,
+    dipnottaki adların sayfası dipnotun sayfası olmalı.
+25. Komutu ikinci kez çalıştırın: XE sayısı ikiye katlanmamalı, dizin güncellenmeli.
+    Kendi XE işaretleriniz ve varsa kendi INDEX alanınız değişmemeli. Ctrl+Z tek adımda
+    bütün işaretleri geri almalı.
+26. Dizin sonrası Şahıs dökümü, Tüm belgeyi denetle ve Ölüm tarihi ekle aynı sonuçları
+    vermeli (XE işaretleri ad sayılmamalı, mevcut tarihler korunmalı). Önceden bağlamsal
+    onay verilmiş belirsiz bir adın onayının korunup korunmadığını kaydedin.
+27. Dizin işaretlerini kaldır yalnız Vefeyât öğelerini silmeli. Teslim öncesi temizle
+    dizine dokunmamalı; PDF'te dizin görünmeli.
+28. Şahıs raporu: yeni belgede yatay tablo; ilk geçiş sırası, sayfa, notlar doğru olmalı;
+    tez belgesi kirlenmemeli (Kaydet uyarısı çıkmamalı).
+
+## 0.3.40 ek kontrolleri
+
+29. "Gazzâlî, Râzî ve İbn Sînâ" gibi bir cümlede dizin oluşturduktan sonra her ada tarih
+    ekleyin (tek ad, döküm, inceleme): hepsi eklenmeli.
+30. Belirsiz bir adı (ör. Râzî) dökümde elle onaylayın, sonra dizin oluşturun: onay
+    korunmalı, ad dizinde görünmeli, onay penceresi "elle onayladığınız" sayısını göstermeli.
+31. "Yine de ekle" tek adda, dökümde ve incelemede: ya tarih eklenmeli ya da nedenini
+    söyleyen bir mesaj çıkmalı; sessizce hiçbir şey olmaması hatadır. Hata mesajında
+    [Vefeyat 0.3.40] görünmeli.
+32. Şahıs raporu: Kronoloji tablosu milâdî yıla göre sıralı, (?) işaretleri tek sayılı tarihlerde.
+
+## 0.3.41 ek kontrolleri
+
+33. Yeni belgeye "Gazzâlî … Gazzâlî" içeren birkaç paragrafı YAPIŞTIRIN; imleci ilk geçişe
+    götürmeden ikinci geçişi seçip Ölüm tarihi ekle: "daha önce geçti" uyarısı çıkmalı.
+    Aynısını önceki geçiş bir dipnottayken ve önceki geçiş Zotero atfının içindeyken deneyin
+    (atıf içindeki ad sayılmamalı). İlk geçişin kendisinde uyarı çıkmamalı.
+34. Bellek yenilemesinin her eklemede tekrarlanmadığını kontrol edin (aynı yerde ikinci
+    denemede ilerleme penceresi çıkmamalı). 200 sayfalık kopyada ilk geçiş eklemesinin süresini not edin.
+35. Kısaltmayı ö. → v. değiştirin: soru çıkmalı; Evet sonrası bütün Vefeyât tarihleri v.
+    olmalı, elle düzeltilen tarih ve elle yazılmış "(ö. …)" düz metin değişmemeli; tek Ctrl+Z
+    tarihleri ve ayarı geri almalı. Hayır: yalnız ayar değişmeli. İzleme açıkken çevrilmemeli.

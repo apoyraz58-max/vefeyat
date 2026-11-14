@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vefeyât</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <link rel="stylesheet" href="taskpane.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Vefeyât</h1>
+      <button id="refresh" type="button" class="link" title="Seçimi yeniden oku">Yenile</button>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="Vefeyât bölümleri">
+      <button type="button" role="tab" id="tab-secili" aria-controls="view-secili" data-view="secili">Seçili ad</button>
+      <button type="button" role="tab" id="tab-dokum" aria-controls="view-dokum" data-view="dokum">Döküm</button>
+      <button type="button" role="tab" id="tab-teslim" aria-controls="view-teslim" data-view="teslim">Teslim</button>
+      <button type="button" role="tab" id="tab-ayarlar" aria-controls="view-ayarlar" data-view="ayarlar">Ayarlar</button>
+    </nav>
+
+    <p id="message" class="message" hidden role="status"></p>
+
+    <div id="view-secili" class="view" role="tabpanel" aria-labelledby="tab-secili">
+      <section id="no-catalog" class="notice" hidden>
+        <p>Önce DİA kataloğunuzu (CSV) seçin. Dosya bilgisayarınızda kalır.</p>
+        <button id="choose-catalog-inline" type="button" class="primary">CSV seç</button>
+      </section>
+
+      <section aria-labelledby="selection-heading">
+        <h2 id="selection-heading">Seçili ad</h2>
+        <p id="selected-name" class="selected">Metinde bir şahıs adı seçin.</p>
+        <div id="candidates" role="radiogroup" aria-label="Katalogdaki adaylar"></div>
+      </section>
+
+      <section id="details" hidden aria-labelledby="details-heading">
+        <h2 id="details-heading">Şahıs</h2>
+        <dl>
+          <dt>Tam ad</dt>
+          <dd id="detail-full"></dd>
+          <dt>Orijinal ad</dt>
+          <dd id="detail-original" dir="auto"></dd>
+          <dt>Ölüm tarihi</dt>
+          <dd id="detail-date"></dd>
+        </dl>
+        <a id="detail-link" href="#" target="_blank" rel="noopener noreferrer">DİA maddesini aç</a>
+
+        <div class="actions">
+          <button id="insert" type="button" class="primary" disabled>Ölüm tarihi ekle</button>
+        </div>
+
+        <div id="earlier" class="message warning" hidden>
+          <p>Bu şahsın adı metinde daha önce geçiyor. İlk geçiş kuralına göre tarih ilk geçişe eklenir.</p>
+          <div class="actions">
+            <button id="go-earlier" type="button">Önceki geçişe git</button>
+            <button id="insert-anyway" type="button">Yine de ekle</button>
+          </div>
+        </div>
+
+        <label for="spelling">İsim yazımı</label>
+        <div class="row">
+          <select id="spelling"></select>
+          <button id="respell" type="button" disabled>Değiştir</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="view-dokum" class="view" role="tabpanel" aria-labelledby="tab-dokum" hidden>
+      <section>
+        <h2 id="dokum-heading">Şahıs dökümü</h2>
+        <p>Belgedeki bütün şahıs adlarını DİA karşılığı, mevcut tarih ve uyarılarla listeler; satır
+          seçip yazım değiştirme veya tarih ekleme yapılır.</p>
+        <h2 id="denetim-heading">Belgeyi denetle</h2>
+        <p>Adları ilk geçişten başlayarak sırayla gösterir; her biri için onaylar veya atlarsınız.</p>
+        <p class="soon">Bu bölüm Office.js sürümüne taşınıyor. Şimdilik VBA sürümündeki
+          <strong>Şahıs dökümü</strong> ve <strong>Tüm belgeyi denetle</strong> komutlarını kullanın.</p>
+      </section>
+    </div>
+
+    <div id="view-teslim" class="view" role="tabpanel" aria-labelledby="tab-teslim" hidden>
+      <section>
+        <h2>Teslim araçları</h2>
+        <ul class="tools">
+          <li id="tool-tutarlilik"><strong>Tutarlılık raporu</strong>: ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerler.</li>
+          <li id="tool-rapor"><strong>Şahıs raporu ve kronoloji</strong>: ilk geçiş sırası, eksik tarih ve kısa ad notları; milâdî yıla göre sıralı liste.</li>
+          <li id="tool-dizin"><strong>Şahıslar dizini</strong>: kimliği kesin geçişlerden Word dizini.</li>
+          <li id="tool-temizlik"><strong>Teslim öncesi temizle</strong>: teslim kopyasından Vefeyât izlerini kaldırır.</li>
+        </ul>
+        <p class="soon">Bu araçlar Office.js sürümüne taşınıyor. Şimdilik VBA sürümündeki
+          <strong>Teslim ve dizin</strong> grubunu kullanın.</p>
+      </section>
+    </div>
+
+    <div id="view-ayarlar" class="view" role="tabpanel" aria-labelledby="tab-ayarlar" hidden>
+      <section aria-labelledby="catalog-heading">
+        <h2 id="catalog-heading">Katalog</h2>
+        <p id="catalog-status" class="muted">Yükleniyor…</p>
+        <button id="choose-catalog" type="button">CSV seç</button>
+        <input id="catalog-file" type="file" accept=".csv,text/csv" hidden />
+      </section>
+      <section aria-labelledby="settings-heading">
+        <h2 id="settings-heading">Tarih</h2>
+        <label for="prefix">Kısaltma</label>
+        <select id="prefix">
+          <option value="original">Kaynakta olduğu gibi</option>
+          <option value="o">ö.</option>
+          <option value="ol">öl.</option>
+          <option value="v">v.</option>
+        </select>
+        <p class="muted">Belgeyle birlikte kaydedilir. Yeni eklenen tarihlere uygulanır.</p>
+      </section>
+    </div>
+
+    <footer>
+      <span>Vefeyât <span id="version"></span></span>
+      <span>Belge metni bilgisayarınızdan çıkmaz.</span>
+    </footer>
+    <script src="taskpane.js"></script>
+  </body>
+</html>

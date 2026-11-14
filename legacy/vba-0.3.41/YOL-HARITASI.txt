@@ -1,0 +1,141 @@
+﻿# 0.3.41 — ilk geçiş uyarısı ve kısaltma düzeltmeleri
+
+Sonraki: yazım stili profili (tam transkripsiyon / sade yazım).
+
+---
+
+# 0.3.40 — "Yine de ekle" düzeltmeleri, onaylı adlar dizinde, kronoloji
+
+Sonraki: yazım stili profili (tam transkripsiyon / sade yazım).
+
+---
+
+# 0.3.39 — şahıslar dizini ve şahıs raporu
+
+Kimliği kesin geçişler için Word XE/INDEX tabanlı şahıslar dizini; ilk geçişte kısa ad ve
+eksik tarih notlarını gösteren, Excel'e kopyalanabilir şahıs raporu. Sonraki adaylar:
+bağlamsal onaylı geçişleri dizine alma, kişisel ek katalog, hicrî-milâdî yardımcısı.
+
+---
+
+# 0.3.38 — kimlik metadata düzeltmesi
+
+Ad yanındaki Word kontrol işaretleri kimlik onayı kaydını engelliyordu; kayıpsız kaçış eklendi.
+
+---
+
+# 0.3.37 — teslim öncesi temizlik ve tutarlılık raporu
+
+Teslim grubu: yalnız Vefeyât alanlarını düz metne çeviren, Vefeyât yer imi ve belge
+değişkenlerini silen onaylı temizlik; salt okunur tarih kısaltma/biçim raporu; native
+kabul makrosuna temizlik testi. Öncelik: Windows'ta Compile ve KABUL-TESTI.ps1.
+Sonraki adaylar: şahıs dizini (XE/INDEX), kişisel ek katalog, hicrî-milâdî yardımcısı,
+şahıs listesinin Excel'e aktarımı.
+
+---
+
+# 0.3.32 — şahıs dökümü hassasiyeti
+
+Tamamlanan kaynak değişiklikleri: sıkı ortak katalog/bağlam yolu; açık şahıs rolü
+olmayan katalog dışı büyük-harf tahminlerinin kaldırılması; onaylı, belgeye özgü
+Şahıs değil düğmesi; yeni tarama yapmadan hazır listeden çıkarma; sözleşme 12 ve
+Sub/Function kapanış koruması. Native Word kabulü bekler. Katalog dışı adsız rol
+bağlamları daha sonra gerçek örneklerle geliştirilir; geniş tahmin varsayılan yapılmaz.
+
+# 0.3.31 — belgeye göre ad dizini ve doğal isim sırası
+
+Önce belge anahtarları, sonra ilgili katalog satırlarının ayrıntılı adları hazırlanır. Hafif karakter/ön ek önbelleği katalog başına tutulur. Yazım önerileri tek virgüllü katalog adlarını metin sırasına çevirir. Eski 0329 hatası için yalnız yeni bileşenlerle temiz hazırlık ve native Compile kabulü gerekir.
+
+---
+
+# 0.3.30 — pencere düğmeleri
+
+Dekoratif tıklama katmanı kapatıldı; fare ve klavye yerel CommandButton olaylarını kullanır. Renk/yerleşim ve belge işlemleri korunur. Windows fare kabulü bekler.
+
+---
+
+# 0.3.29 — şahıs dökümü
+
+Belgedeki algılanan şahıs geçişleri; metindeki ad, DİA karşılığı, mevcut tarih ve
+uyarıyla listelenir. Tek geçiş için korumalı yazım değiştirme/tarih ekleme, belirsiz
+kimlikte yerel katalog seçimi, canlı gezinme, küçültme ve 250 satırlık sayfalama eklendi.
+Form sözleşmesi 11; üç bileşen birlikte güncellenir. Windows kabulü bekler.
+
+---
+
+# 0.3.28 — tarama tekrarı ve hız
+
+Hazırlıkta tek çalıştırma ve katalog sahipliği kilidi, tüm aşamalara ortak ekran yenileme sınırı, kısa metinler için tek girdilik sözcük tamponu ve dipnotlar için doğrudan referans dizisi eklendi. Kaynak/model kanıtları raporda; Word/tez hız ölçümü bekler.
+
+---
+
+# 0.3.27 — düz işlem düğmeleri
+
+Pencerelerdeki kabartmalı düğmelere düz yüzey, ortalanmış yazı, odak ve basılma durumu eklendi. Asıl düğmeler, klavye davranışı ve belge işlemleri korunur. Ek içe alınacak bileşen yoktur. Windows görsel ve erişilebilirlik kabulü bekler.
+
+---
+
+# 0.3.26 — pencerelerin görsel yenilenmesi
+
+Şahıs seçimi ve denetim pencerelerinde ortak açık palet, Segoe UI ve belirgin işlem düğmeleri uygulandı. Belge araçları alt sırasında görsel çakışma giderildi. İşlem mantığı, form sözleşmesi 10 ve FRX korunur. Windows görsel kabulü bekler; ayrıntı paketteki rapordadır.
+
+---
+
+# 0.3.25 güncellemesi
+
+Sekme altı gruba toplandı; üç ana işlem öne alındı. Normal eklemede tarih alanından çıkılır, genel Word gölge tercihi korunur. Ayrıntı paketteki ILK-KURULUM ve DENETIM-RAPORU dosyalarındadır. Native Windows kabulü bekler.
+
+# Vefeyât 0.3.25 — sekme ve görünüm denetimi
+
+11 Kasım 2026. 0.3.24 üzerine güncelleme. Form sözleşmesi 10, gözden geçirilmiş FRX
+ikilisi aynı kalır. Kullanıcının form yükleme bildirimi eski dosya seçimine bağlıydı;
+form bozulması olarak sunulmaz. Yalnız paket bileşen adları 0325 olarak birlikte değişir.
+
+- Sekme 11 gruptan 6 gruba iner. İlk üç komut büyük, diğerleri görevlerine göre
+  gruplanır; seyrek seçenekler menülere taşınır. Komut kimlikleri ve sekiz bağlam
+  menüsü korunur. Yerel Office simgeleri, keytip'ler ve açıklamalar kullanılır.
+- Normal eklemede yalnız hedef geçişin alanından sonraki canlı aralık seçilir.
+  Alan bağlantısı, tarih metni, yazı biçimi ve Word gölge tercihi değiştirilmez.
+  Geometri yalnız seçimden ve oluşturulan alandan alınır; belge tekrar taranmaz.
+- İptal, başka belge/hikâye, başka geçiş, taşınmış seçim ve geçersiz alan geometrisi
+  odak taşınmasını engeller. Hedef belgenin kapanması geçici aralıkları bırakır.
+- Gelişmiş gölge komutu hâlâ açık kullanıcı seçimidir; bütün Word alanlarını
+  etkilediği belirtilir. Önceki gölge değeri pencere kaydında saklanır; farklı
+  pencere kayıtları birbirine karıştırılmaz. Önceki kayıt yoksa seçiliyken gölge
+  kullanılır. Kaydın üst sınırı 32 penceredir; kapanan belge kayıtları bırakılır.
+- XML'den üretilen bağımsız HTML/PNG yerleşim önizlemesi gerçek Word ekranı gibi
+  sunulmaz. Tarayıcı testleri de Word Ribbon veya MSForms kabul testi sayılmaz.
+
+Kaynak/model testleri, paket sözleşmeleri ve önizlemenin tarayıcı kontrolleri ayrı
+raporlanır. Yerel Windows kabul makrosuna imleç konumu ve genel gölge ayarının
+korunması kontrolleri eklendi. Burada Windows Word ve PowerShell çalıştırılmadı;
+gerçek Ribbon yerleşimi, alan geometrisi ve farklı Office sürümleri için kabul bekler.
+
+Yazarken otomatik tarih ekleme kapalı kalır. İlk kaynak şablonu hazırlama ve yayıncı
+imzası otomatik sayılmaz. Kişisel CSV, tez, tercih dosyası veya hazır DOTM yayımlanmaz.
+
+
+---
+
+# Vefeyât 0.3.24 geliştirme ve kabul durumu
+
+11 Kasım 2026. 0.3.23 kaynak paketi üzerine geliştirme.
+
+| Öncelik | Uygulanan | Açık kalan kabul |
+|---|---|---|
+| Gerçek Word testleri | Sentetik alan/form/dipnot/200 sayfa makrosu ve PowerShell çalıştırıcısı | Windows'ta çalıştırma, 32/64 bit, Undo/Track Changes ve gerçek tez ölçümleri |
+| Belge sağlığı | Modeless bulgular, canlı doğrulama, tek bulgu için onaylı kayıtlı tarih onarımı / bağı kaldırma | Word entegrasyonu; kullanılmayan metadata otomatik temizlenmez |
+| Bağlam | Eser rolü ve yazar-yıl-sayfa atıf adaları; önceki karma dipnot kuralları | Uzman etiketli geniş doğruluk veri kümesi |
+| Geri bildirim | Belgeye özgü, kapsamı açık istisna; başka kişi için genel dışlama yok | Proje dışına kendiliğinden öğrenme yapılmaz |
+| Açıklanabilir arama | Eşleşme gerekçesi, belirsizlik notu, tek zayıf aday için doğrulama | Genel anlamsal kişi çözümleme yok |
+| Katalog kimliği | Kanonik DİA maddesiyle değişim önizlemesi ve açık bağ yenileme | URL'siz kişiler için yayımlanmış sabit-ID kataloğu gerekir |
+| Proje yazımı | Kişiye özel tercih, ad biçimi ve .vfp dışa/içe alma | Otomatik metin dönüştürme yapılmaz |
+| Önizleme/geçmiş | Mevcut geçiş onayları + RAM'de son 100 geçiş; Word Undo ile birlikte | Yerel Undo ve ortak yazarlık kabulü |
+| Tarih/kaynak | Ham belirsizlik ve takvim korunur; çelişki raporlanır | Tarihin akademik doğruluğu otomatik tasdik edilmez |
+| Kurulum | Hazır DOTM için kapalı Word'de yedekli, atomik kur/geri al aracı | İlk kaynak hazırlama elle; yayıncı imzası ve çevrimiçi güncelleme yok |
+
+Yazarken otomatik ekleme kapalı kalır. Geçmiş yalnız yerel oturum RAM'indedir;
+sayısal tanı raporuna isim veya belge metni eklenmez. Proje dosyaları tercih edilen
+isimler ve dışlanan ifadeleri içerebilir; kamu kaynak ZIP'ine kişisel tercihler eklenmez.
+
+Kabul testleri geçmeden bu sürüm imzalı kararlı yayın veya native hız sertifikası sayılmaz.

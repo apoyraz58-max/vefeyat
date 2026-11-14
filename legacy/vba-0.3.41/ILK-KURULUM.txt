@@ -1,0 +1,201 @@
+﻿# Vefeyât 0.3.41 — ilk geçiş uyarısı ve kısaltma düzeltmeleri
+
+Mevcut eşleştirme, bağlamsal kimlik, tek tek denetim ve döküm korunur.
+Yeni **Toplu düzeltme önizlemesi** yazım ve tarih önerilerini ayrı satırda gösterir.
+Varsayılan yalnız ilk kullanımdır. İlk kullanım aynı kimliğin farklı yazımlarıyla
+birlikte, ana metin/dipnot sırasına göre belirlenir. Belirsiz kimlik tahminle atanmaz.
+
+Üç 0341 bileşeni birlikte kullanılmalıdır; form sözleşmesi **15** oldu. FRX tasarımı
+değişmedi. CSV, tez ve derlenmiş DOTM pakete eklenmez. Önce belge kopyasında deneyin.
+
+## 0.3.41 ile gelenler
+
+- **"Daha önce geçti" uyarısı artık kaçmıyor.** Vefeyât adları hızlı bulmak için belgenin bir
+  kopyasını bellekte tutar ve bunu imlecin dolaştığı yerlere göre günceller. Yapıştırılan veya
+  imlecin uğramadığı yerlere eklenen metin bu kopyada eksik kalabiliyordu; önceki geçiş
+  bulunamayınca uyarı çıkmıyor, tarih doğrudan ekleniyordu. Artık bellek "önceki geçiş yok"
+  dediğinde Word'ün kendi Bul komutuyla ayrıca bakılır (ana metin ve önceki dipnotlar).
+  Bul bir önceki geçiş bulursa bellek bir kez baştan yenilenir (ilerleme penceresi görünebilir)
+  ve kontrol tekrarlanır. Alan içindeki adlar (atıf, dizin işareti) sayılmaz; başka bir şahsa
+  bağlanmış önceki adlar sayılmaz.
+- **Kısaltma değişince mevcut tarihler de değişir.** Tercihler → Kısaltma'dan ö./öl./v. veya
+  "Kaynakta olduğu gibi" seçtiğinizde, belgede çevrilecek Vefeyât tarihi varsa "Belgedeki N
+  Vefeyât tarihi de v. kısaltmasına çevrilsin mi?" diye bir kez sorulur. Evet: hepsi çevrilir,
+  ayar kaydedilir; Ctrl+Z ile birlikte geri alınır. Hayır: yalnız ayar değişir. Elle
+  düzelttiğiniz Vefeyât tarihleri ve elle yazılmış düz metin tarihler değişmez (sayısı
+  söylenir). Değişiklik İzleme açıkken tarihler çevrilmez. Aynı kısaltmayı yeniden seçmek,
+  daha önce çevrilmemiş tarihleri çevirmeyi tekrar önerir.
+
+## 0.3.40 ile gelenler
+
+Düzeltmeler:
+- Dizin işaretleri (0.3.39) artık tarih eklemeyi engellemez. "Gazzâlî, Râzî" gibi yan yana
+  adlarda ikinci adın önündeki gizli işaret, birinci adın arkasında "alan var" sayılıyor ve
+  tarih sessizce eklenmiyordu.
+- Dizin işaretleri artık elle verdiğiniz kimlik onaylarını geçersiz kılmaz. Onay, adın
+  çevresindeki metinle saklanır; gizli işaretler bu metinden çıkarılır. Daha önce dizin
+  oluşturduktan sonra kaybolan onaylar da yeniden geçerli olur. Kendi XE işaretleriniz de
+  aynı şekilde yok sayılır; yakınında kendi XE'niz bulunan eski onaylar bir kez yeniden onay isteyebilir.
+- "Yine de ekle" ve diğer tarih ekleme yollarında işlem artık sessizce durmaz; nedeni
+  yazılır: adın arkasında zaten tarih var, adın arkasında başka bir Word alanı (ör. Zotero
+  atfı) var, adın çevresi onay sırasında değişti, katalog/ayar değişti vb.
+- Hata pencerelerinin sonunda çalışan sürüm görünür, ör. [Vefeyat 0.3.40]. Burada daha eski
+  bir sürüm görüyorsanız Word hâlâ eski eklentiyi yüklüyordur: Word'ü tamamen kapatıp
+  KUR-GUNCELLE.ps1 ile güncellemeyi tamamlayın ve Veri bilgisi'nde sürümü kontrol edin.
+
+Yeni:
+- Şahıs dökümünde veya incelemede elle onayladığınız belirsiz adlar artık Şahıslar dizinine
+  ve Şahıs raporuna girer. Onay penceresi kaç geçişin bu yolla eklendiğini gösterir.
+- Şahıs raporuna ikinci tablo olarak **Kronoloji** eklendi: şahıslar milâdî ölüm yılına göre
+  sıralanır. "505/1111" gibi tarihlerde milâdî yıl kullanılır; tek sayılı tarihler "(?)" ile
+  işaretlenir (hicrî olabilir); m.ö. tarihler başa, yılı okunamayanlar sona gelir.
+
+## 0.3.39 ile gelenler
+
+"Teslim ve dizin" grubuna iki komut eklendi. İkisi de Şahıs dökümünün taramasını
+kullanır ve yalnız kimliği kesin geçişleri (tek güçlü katalog eşleşmesi veya mevcut
+Vefeyât tarih bağı) alır. Belirsiz adlar tahminle eklenmez; sayıları raporlanır.
+
+- **Şahıslar dizini → Dizini oluştur / güncelle**: Her kesin geçişin ÖNÜNE gizli bir
+  Word dizin işareti (XE "Gazzâlî" \f "v") koyar. İmleç ana metindeyse oraya Word dizini
+  (INDEX \f "v") ekler; belgede Vefeyât dizini varsa onu günceller. Önce dizin sayfasını
+  ve başlığını kendiniz hazırlayıp imleci başlığın altına koyun. Dizin girişi katalogdaki
+  kısa addır; aynı kısa adı taşıyan farklı şahıslar tarihle ayrılır. Komut her
+  çalıştığında eski Vefeyât işaretlerini silip yeniden oluşturur. Kendi XE işaretlerinize
+  dokunmaz. Değişiklik İzleme açıkken çalışmaz. Ctrl+Z ile geri alınabilir.
+  Sütun sayısı ve görünüm için Word'ün Başvurular → Dizin Ekle penceresini kullanabilirsiniz.
+- **Şahıslar dizini → Dizin işaretlerini kaldır**: Yalnız Vefeyât işaretlerini ve dizinini siler.
+- **Şahıs raporu**: Yeni bir belgede tablo hazırlar: şahıs, ilk geçişteki yazım, yer,
+  sayfa, geçiş sayısı, DİA tarihi, notlar, DİA bağlantısı. Notlar sütunu ilk geçişte kısa
+  ad kullanıldığını (tam ad önerisiyle), ilk geçişte tarih olmadığını veya tarihin
+  sonraki bir geçişte bulunduğunu gösterir. Tezi değiştirmez; tablo Excel'e kopyalanabilir.
+
+Teslim öncesi temizlik dizin işaretlerine ve dizine dokunmaz; teslim kopyasında dizin
+kalır. PDF'e aktarmadan önce dizine sağ tıklayıp Alanı Güncelleştir (F9) seçin.
+Not: Gizli metin veya alan kodları (Alt+F9) görünürken tarama yapmayın.
+
+## 0.3.38 düzeltmesi
+
+"Yine de ekle" ve belirsiz kimlik onaylı tarih eklemelerinde görülen "Unsupported identity
+metadata character" hatası giderildi. Ad dipnot işareti, satır sonu, tablo hücresi, sayfa
+sonu veya isteğe bağlı tire yanındaysa kimlik onayı artık kaydedilir. 0.3.37 ile aynı
+şekilde temiz kurulum yapın.
+
+## 0.3.37 ile gelenler
+
+Şeritte yeni **Teslim** grubu var:
+
+- **Tutarlılık raporu**: Ana metin ve dipnotlardaki (ö. …), (öl. …), (v. …) tarihlerini
+  sayar; karışık kısaltma ve biçimleri (505/1111, tek yıl, aralık) örnekleriyle gösterir.
+  Belgeyi değiştirmez.
+- **Teslim öncesi temizle**: Yalnız Vefeyât tarih alanlarını düz metne çevirir; Vefeyât
+  gizli yer imlerini ve belge değişkenlerini siler. Zotero, EndNote, Mendeley, sayfa
+  numarası ve diğer alanlara dokunmaz; görünen metin değişmez. Belge önce kaydedilmiş
+  olmalı, Değişiklik İzleme kapalı olmalı ve açık Vefeyât pencereleri kapatılmalıdır.
+  Temizlikten sonra **Dosya → Farklı Kaydet** ile ayrı bir teslim kopyası kaydedin;
+  asıl çalışma dosyanızın üzerine kaydetmeyin. Temizlenen kopyada Vefeyât eski
+  tarihleri artık tanımaz. Belge değişkenleri Word'ün Geri Al kaydına tam girmeyebilir;
+  geri dönüş yolu belgeyi kaydetmeden kapatıp diskteki sürümü yeniden açmaktır.
+
+Diğer bütün işlevler 0.3.36 ile aynıdır. Sade kullanım özeti KULLANIM-KILAVUZU.txt içindedir.
+
+## Kurulum
+
+Üç güncel bileşeni yeni boş hazırlık şablonuna birlikte alın. Eski hazırlığa yeni
+modüller eklemeyin; mevcut katalog ve şablon yedeklerini saklayın.
+
+1. Tezinizi kaydedip Word'ün bütün pencerelerini kapatın.
+2. Windows'ta `%APPDATA%\Microsoft\Word\STARTUP` klasörünü açın. Buradaki
+   **VefeyatEklenti.dotm** ve diğer eski **Vefeyat** DOTM kopyalarını ayrı bir yedek
+   klasörüne taşıyın. Silmeyin; diğer eklentilere dokunmayın. Özel Word Startup
+   klasörü kullanıyorsanız Word'ün gerçek Startup yolunu esas alın.
+3. Word'de yeni boş belgeyi yeni bir klasöre **VefeyatHazirlik.dotm**, türü
+   **Word Makro İçerebilen Şablonu** olacak şekilde kaydedin. Eski hazırlık dosyasını
+   kopyalamayın. Sayfa boş kalsın. Dosya → Aç ile bu şablonu düzenlemek için açın.
+4. Geliştirici → Visual Basic'te yalnız bu yeni hazırlık projesine şu üç dosyayı
+   File → Import File ile birer kez alın:
+   **VefeyatOlaylar0341.cls**, **VefeyatKisiSec0341.frm**, **VefeyatEklenti0341.bas**.
+   **VefeyatKisiSec0341.frx** aynı klasörde kalır, ayrıca alınmaz. XML içe alınmaz.
+5. **Debug → Compile** ile projeyi derleyin. Hata çıkarsa kuruluma geçmeyin;
+   hata metniyle vurgulanan satırı kaydedin. Bu ortamda native VBA derlemesi çalıştırılmadı.
+6. Şablonu kaydedin. Yeni modülden **Vefeyat0341Kur** çalıştırın ve bu paketin
+   **VefeyatRibbon.xml** dosyasını seçin. İlk kurulum doğrudan Startup dosyasını
+   hazırlar. Güncelleme klasörüne hazırladıysa verilen kapalı-Word kopyalama adımını izleyin.
+7. Bütün Word pencerelerini kapatıp yeni boş Word açın. Veri bilgisi içinde **0.3.41**
+   ve **STARTUP\VefeyatEklenti.dotm** yolu görünmeli. Eski hazırlıkları günlük kullanımda açmayın.
+
+CSV dosyanız yerel veri klasöründe kalır; yeniden yüklemeniz gerekmez. Eski sürümü
+silmek veya Normal projesini değiştirmek gerekmez. Yedekler Startup dışında tutulmalıdır.
+
+## Kullanım
+
+**Tarih ekleme** listesinden Yalnız ilk kullanım / Bütün kullanımlar / Yalnız denetle
+seçin. Tarih ekleme ayarını değiştirmek mevcut metni değiştirmez. Kısaltmayı değiştirince
+(0.3.41) belgedeki Vefeyât tarihlerinin de çevrilmesi önerilir; onaylarsanız hepsi çevrilir.
+Tarihleri güncelle komutu da artık önizlemeye yönlendirir; eski tarihleri topluca silmez.
+
+**Toplu düzeltme önizlemesi** bütün yakalanmış geçişleri, mevcut tarih/belirsizlik
+uyarılarını ve uygulanabilir yazım/tarih önerilerini gösterir. Yazım ile tarih ayrı
+satırlardır. [x] seçili, [ ] seçilmemiştir. Seçimi değiştir veya çift tıklama ile
+tek satırı değiştirin; Tümünü seç ve Seçimleri temizle kullanılabilir. Bilgi satırları
+uygulanamaz. Seçilenleri uygula yalnız onayladığınız önerileri uygular. İptal/X hiçbir
+metin değişikliği yapmaz. Daha sonra eklenmiş adlar için yeni önizleme hazırlayın.
+
+Kimliği / yazımı seç ile ilgili geçişe gidip mevcut şahıs seçimini ve ad biçimini
+kullanın. Kaynakta bulunmayan kişi için tarih uydurulmaz. Yeni belirsiz onay aynı
+belgenin kimlik yönetiminden sonradan düzeltilebilir. Bağlamsal onay sınırı 200'dür;
+sınır dolunca yeni belirsiz toplu onaylar yazmadan önce durdurulur.
+
+İlk kullanımın tarih önerisini seçmezseniz sonraki kullanım ilk sayılmaz. Daha
+önceki bir geçişin kimliği belirsizse önce onu doğrulayın. Mevcut doğru, farklı,
+belirsiz veya elle yazılmış tarihler korunur; yeni ikinci tarih eklenmez. Eski
+yönetilen tarih yanında ad değişiyorsa ham tarih korunarak yalnız kimlik bağı taşınır.
+
+Başlıklar ve tablolar ana metin öyküsündeyse kapsam dahilindedir. Dipnot açıklamaları
+taranır, akademik atıflar korunur. Sonnot, metin kutusu, üstbilgi/altbilgi ve yorumlar
+bu sürümde taranmaz/değiştirilmez; **Diğer araçlar → Denetim kapsamını göster** bunları
+raporlar. Bütün kişilerin bulunması garantisi yoktur; kaynak/algoritma eksikleri raporlanır.
+
+Karma karakter biçimindeki adlara toplu yazım değişikliği yapılmaz. Değişiklik İzleme
+açıksa veya belgede bekleyen izlenen değişiklikler varsa yeni toplu yol yalnız önizleme sunar. Birleştirilmiş bağımsız Word Geri Al
+kaydı başlatılamıyorsa uygulama yapılmaz. Başarılı toplu işlem Ctrl+Z ile tek grup
+olarak geri alınır; native Undo/Redo doğrulaması bu ortamda çalıştırılmadı.
+
+DENETIM-RAPORU.txt ve WINDOWS-KABUL.txt gerçek test kapsamını ve bekleyen Windows
+kontrollerini açıklar. AKADEMIK-TESTLER.zip geliştirici içindir. KABUL-TESTI.ps1
+sadece geçici sentetik belgelerde gerçek Word kontrollerini çalıştırmak içindir;
+yazar belgesini/CSV'yi kaydetmez veya değiştirmez. Native sonuç alınmadan PASS saymayın.
+
+## Dinamik kayıt yönetimi (varsayılan kapalı)
+
+Vefeyât → Belge → Diğer araçlar → Dinamik şahıs kayıtları menüsünü açın.
+“Kayıt yönetimini etkinleştir” yalnız bu belge için geçerlidir. Kapalıyken eski
+işlevler çalışır. Açmak eski metni otomatik taramaz veya yeniden yazmaz.
+
+- Yeni onaylı ölüm tarihi eklemeleri ve isim düzeltmeleri, tekil DİA kimliği
+  mevcutsa o geçişin gizli yer imi ve belge değişkeniyle izlenir.
+- Eski bir düz metin adı seçip **Seçili şahsı kayda bağla** kullanın. Şahsı seçip
+  onaylayın; bu işlem ad veya tarihe dokunmaz. Her geçiş ayrı kaydedilir.
+- **Kayıtları ve güncellemeleri göster** bütün kayıtlı geçişleri; **Bu şahsın
+  kayıtlı kullanımlarını bul** seçili geçişle aynı kaynak kimliğindekileri açar.
+- Ad biçimi / belgeye özgü tercih veya katalog değişirse aynı pencerede yazım
+  ve mevcut yönetilen tarih için ayrı öneriler görünür. Tümünü seç, temizle,
+  tek satır seçimi ve **Seçilenleri uygula** kullanılır. Bilgi satırları yazılmaz.
+- **Metinde göster** pencereyi kapatıp ilgili geçişe gider. Başka bir geçiş için
+  menüyü yeniden açın. Adı elle değiştirilmiş, yer imi silinmiş veya tarih/kimlik
+  bağı değiştirilmiş kayıtlar korunur; güncelleme gerekirse önce inceleyin.
+- **Seçili geçişin kaydını ayır** yalnız dinamik ilişkiyi kaldırır; görünen ad,
+  tarih ve mevcut tarih kaynak bağı korunur. Yanlış kimlik için sonra yeniden
+  “kayda bağla” ile doğru şahsı seçin. Bu işlem eski ölüm tarihini doğrulamış sayılmaz.
+
+Belge kaydedilince kayıtlar DOCX/DOCM/DOTX/DOTM içinde taşınır. Diğer bilgisayarda
+eklenti olmadan metin okunur; yönetim için uyumlu Vefeyât gerekir. Yerel katalog
+yoksa kayıtlı kaynak özeti ve yer imi kullanılabilir, güncelleme önerilmez.
+TXT/RTF/PDF dışa aktarımı metadata korumaz; dinamik yazma engellenir. Eski DOC/DOT
+API kapısından geçebilir fakat native formatlar arası kabul henüz yapılmadı.
+Gizli yer imlerinin kullanıcı tarafından silinmesi veya yalnız metin kopyalama
+kayıt bağını kaybettirebilir; otomatik benzer ada bağlanmaz.
+
+Bu sürüm kaynak/model testlerinden geçer; gerçek Windows Word, kaydet/aç, farklı
+bilgisayar ve Undo/Redo kabulü bekler. Önce belge kopyasında deneyin. Ayrıntılar
+DENETIM-RAPORU.txt ve WINDOWS-KABUL.txt içindedir.

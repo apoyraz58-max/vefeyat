@@ -1,0 +1,239 @@
+﻿# Vefeyât 0.3.41 — ilk geçiş uyarısı ve kısaltma
+
+Kullanıcı bildirimi: (1) sonraki geçiş seçiliyken "daha önce geçti" uyarısı çıkmıyor;
+(2) kısaltma değişince yalnız sonraki eklemeler etkileniyor.
+
+1. Neden: `VfmFindEarlier` yalnız RAM'deki belge parçalarında arar. Parçalar seçim/imleç
+   olaylarıyla onarılır (`VfmObserve`/`VfmDirty`); yapıştırılan çok paragraflı metin veya
+   parça sınırına eklenen metin kapsanmayabilir. `state("MainLength")` yazılıyor fakat hiç
+   karşılaştırılmıyordu. Düzeltme: bellek sonuç vermezse `VfmStaleEarlier` Word Find ile
+   hedeften önceki ana metinde ve önceki dipnotlarda kişinin harfiyen yazımlarını (sorgu,
+   katalogdaki üç ad, makalesiz biçimler, bilinen yazımlar, kısa ad) arar; alan içi isabetler,
+   sol sözcük sınırı olmayanlar ve başka kişiye bağlı geçişler (`VfmIdentity` < 0) sayılmaz.
+   İsabet varsa bellek bir kez tamamen yenilenir (`VfmRebuild`) ve `VfmFindEarlier` tekrar
+   çalışır; bağlam/istisna kuralları yine bellekteki mantıkla uygulanır. Aynı belge uzunluğu,
+   dipnot sayısı, hedef ve kişi için yenileme tekrarlanmaz (`FallbackKey`). Find aksana
+   duyarlıdır: farklı transkripsiyonla yazılmış önceki geçişi yalnız bellek bulabilir.
+2. `Vefeyat0341UiSetPrefix` artık `VfpReformatDates` ile çevrilebilir Vefeyât alanlarını sayar,
+   onay ister ve ayarla aynı Undo kaydında çevirir. Çevrilebilir: sonucu, saklanan kaynak
+   tarihin (`Raw`) dört kısaltmadan birindeki biçimiyle birebir aynı olan alan. Diğerleri korunur.
+   İzleme açıkken yalnız ayar değişir. Dinamik kayıt açık belgelerde çevrilen tarih kayıt
+   tarafından elle değişmiş sayılabilir (native doğrulanmadı).
+
+Native makroya `prefix_reformat` testi eklendi. Native Word'de **çalıştırılmadı**.
+
+---
+
+# Vefeyât 0.3.40 — "Yine de ekle" ve dizin işareti düzeltmeleri
+
+Kullanıcı 0.3.38/0.3.39 sonrasında "Yine de ekle"nin hâlâ çalışmadığını bildirdi; hata metni
+gelmedi. Kod incelemesinde bulunan ve düzeltilenler:
+
+1. `VfbAnyDate` ve `VfjDateState`, adın 2 karakter yakınında başlayan HER alanı tarih
+   sayıyordu. 0.3.39'un XE işaretleri adın önüne konduğu için "A, B" dizilimlerinde B'nin
+   XE'si A'nın tarihini engelliyordu. XE (wdFieldIndexEntry) artık sayılmaz.
+2. `VdiSignature` ±100/160 karakteri Move ile alıyordu; gizli XE kodları bu pencereyi
+   kaydırıp bağlamsal onay imzasını değiştiriyordu. Yeni `VdiSpanText` XE yoksa eski metnin
+   aynısını verir; XE varsa pencereyi XE uzunluğu kadar genişletip XE aralıklarını çıkarır.
+3. XE'nin sonucu yoktur; `Result.End + 1` yerine `VfdFieldEnd` (Code.End + 1) kullanılır
+   (korunan aralıklar, düz metin parçaları, hedef dışlama).
+4. Sessiz çıkışlar: tek ad ekleme (`VdiCurrent` başarısız, `VdiInsertOne`/`VfmInsertFirst`
+   atlama), Şahıs dökümü (`Blocked`, `VfbAnyDate`) ve canlı inceleme (`VfbAnyDate` →
+   "Metin değişti" yanıltıcı mesajı) artık `VfaDateBlockReason` / `mVdiReason` ile neden gösterir.
+5. `VfaReportFailure` mesajına `[Vefeyat <sürüm>]` eklendi; eski eklentinin yüklü kalması
+   (Startup güncellemesi tamamlanmamış) ayırt edilebilir. 0.3.38 öncesinin "Unsupported
+   identity metadata character" mesajı bu sürümde yoktur.
+
+Yeni: `VfdPeople` canlı ve geçerli `Vdi` kayıtlarını (`VdiLiveRecord`) okuyup aday satırlardan
+kişi anahtarı ve kaynak damgası eşleşeni seçer; bu geçişler dizine/rapora girer. Şahıs raporuna
+milâdî yıla göre sıralı Kronoloji tablosu eklendi.
+
+Native kabul makrosuna `index_marks_neutral` testi eklendi: iki XE eklendikten sonra iki adın
+kimlik imzası değişmez, komşu XE tarih engeli sayılmaz, işaretler temiz kaldırılır.
+Native Word'de **çalıştırılmadı**. Kesin kök neden bilinmiyor; mesajlar bunu ortaya çıkarmak için eklendi.
+
+---
+
+# Vefeyât 0.3.39 — şahıslar dizini ve şahıs raporu denetim notu
+
+Temel sürüm 0.3.38. Tespit, eşleştirme ve mevcut komutlar değişmedi. Yeni komutlar
+Şahıs dökümünün `VfjPrepare` taramasını panelsiz çalıştırır (`VfdPrepare`) ve yalnız
+`ChoiceReady` (tek güçlü eşleşme veya mevcut tarih bağı) geçişleri kullanır.
+
+- `Vefeyat0339UiIndex`: Onaydan önce sayıları gösterir. Eski `XE … \f "v"` alanlarını
+  siler, kesin geçişlere ters belge sırasıyla adın başına yeni XE ekler; imleç ana
+  metindeyse `INDEX \f "v" \z "1055"` ekler, varsa mevcut alanı günceller. İşaret adın
+  önüne konduğu için adın arkasındaki tarih alanı/düz tarih algılaması etkilenmez.
+  Giriş metninde ters bölü ve tırnak çıkarılır, iki nokta `\:` olarak kaçışlanır.
+  Belgenin düzenlenebilir olması ve Değişiklik İzleme'nin kapalı olması gerekir; tek Undo kaydı.
+- `Vefeyat0339UiIndexRemove`: Yalnız `\f "v"` taşıyan XE ve INDEX alanlarını siler.
+- `Vefeyat0339UiPeopleReport`: Yeni belgeye 8 sütunlu tablo yazar; incelenen belgeye yazmaz.
+- Native kabul makrosuna sentetik dizin testi eklendi (`person_index`): kullanıcının
+  kendi XE alanı korunur, Vefeyât girişi dizinde görünür, kullanıcının girişi Vefeyât
+  dizininde görünmez, kaldırma yalnız Vefeyât öğelerini siler.
+
+Bilinen sınırlar: Bağlamsal (Vdi) kimlik onayları envanterde kesin sayılmadığı için o
+geçişler dizine girmez ve "belirsiz" olarak sayılır. XE işareti adın önündeki görünür
+metni değiştirmez, fakat adın 100 karakter yakınındaki bağlamsal onaylar Word'ün alan
+karakterlerini bağlama katarsa yeniden onay isteyebilir; native olarak doğrulanmadı.
+"Kısa ad" notu kelime sayısı karşılaştırmasıdır, dilbilgisel değildir.
+
+Yapılan kontroller: ASCII/CRLF kaynak, yinelenen yordam yok, yeni kodda blok dengesi,
+Ribbon XML geçerli ve kimlik/keytip çakışması yok. Native Word'de **çalıştırılmadı**.
+
+---
+
+# Vefeyât 0.3.38 — kimlik metadata düzeltmesi
+
+Kullanıcı Windows Word'de "Yine de ekle" ile tarih eklerken "Word tarih işlemini
+tamamlayamadı. Unsupported identity metadata character." hatası bildirdi.
+
+Neden: Bağlamsal kimlik onayı adın önündeki 100 ve arkasındaki 160 karakteri imza olarak
+saklar. Word öykü metni bu aralıkta kontrol işaretleri içerir (dipnot başvurusu 2, resim 1,
+hücre sonu 7, satır sonu 11, sayfa sonu 12, alan işaretleri 19-21, tireler 30/31).
+`VdiEncode` bunları reddediyordu. Hata `VdiCheckStore` içinde, belgeye yazmadan önce oluşur;
+bu nedenle hata anında belge değişmemiş olmalıdır.
+
+Düzeltme: `VdiEncode` 0-31 ve 127 kodlu karakterleri `%XX` olarak kayıpsız kaçışlar;
+`VdiDecode` bunları geri çözer. Eski kayıtlar bu karakterleri içeremediği için aynen okunur.
+0.3.38 ile yazılmış bir kayıt 0.3.37 veya öncesinde "Invalid identity escape" verebilir;
+eski sürüme dönmeyin. Native kabul makrosuna gidiş-dönüş kontrolü eklendi (control_marks).
+Native Word'de bu sürüm henüz çalıştırılmadı.
+
+---
+
+# Vefeyât 0.3.37 — teslim öncesi temizlik denetim notu
+
+Temel sürüm 0.3.36'dır. Tespit, eşleştirme, tarih ekleme, döküm, önizleme ve dinamik
+kayıt kodu değiştirilmedi. Bileşen ve geri çağırma adları sürüm kuralı gereği 0337 oldu.
+
+## Eklenenler
+
+- `Vefeyat0337UiFinalize` (Teslim öncesi temizle): Bütün öykülerde (NextStoryRange
+  zinciri dahil) yalnız kodu `ADDIN Vefeyat.Date.` ile başlayan alanları ters sırada
+  Unlink eder; `_VfM_`, `_Vdc_`, `_Vrg_` gizli yer imlerini ve adı `Vefeyat` ile başlayan
+  belge değişkenlerini siler. Başka alan, yer imi veya değişkene dokunmaz.
+  Ön koşullar: düzenlenebilir ve korumasız belge, Değişiklik İzleme kapalı ve bekleyen
+  revizyon yok, belge diskte kayıtlı ve kaydedilmemiş değişiklik yok, açık/duraklatılmış
+  Vefeyât penceresi ve çalışan komut yok. Sayılarla onay istenir (varsayılan: Hayır);
+  onaydan sonra durum yeniden doğrulanır. Ardından RAM önbelleği geçersiz kılınır.
+- `Vefeyat0337UiConsistency` (Tutarlılık raporu): Salt okunur. Ana metin ve dipnot
+  öykülerinin düz metninde `(ö.`, `(öl.`, `(v.` ile başlayıp 60 karakter içinde `)` ile
+  biten ve rakamla başlayan tarihleri sayar; kısaltma ve biçim (hicrî/milâdî, tek yıl,
+  aralık, diğer) dağılımını, azınlıkta kalan biçimlerden en çok 3 örnekle gösterir.
+- Şeritte yeni **Teslim** grubu (iki büyük düğme). Mevcut komut kimlikleri değişmedi.
+- Native kabul makrosuna (`Vefeyat0337UiNativeChecks`) sentetik belgede temizlik testi
+  eklendi: sahip olunan alanların tamamı düz metne döner, yabancı `ADDIN ZOTERO_ITEM`
+  alanı ve kodu korunur, görünen tarih metni kalır, Vefeyât yer imi/değişkenleri silinir.
+
+## Yapılan ve yapılamayan kontroller
+
+| Kontrol | Sonuç |
+| --- | --- |
+| Kaynak ASCII/CRLF, Türkçe metinler `\u` kaçışlı | Geçti |
+| Yinelenen yordam adı, çağrılan yardımcıların varlığı | Geçti (statik tarama) |
+| Ribbon XML biçimi, yinelenen kimlik/keytip | Geçti |
+| AKADEMIK-TESTLER.zip model testleri | Bu sürüm için **çalıştırılmadı**; arşiv 0.3.36 kaynağıdır |
+| Native VBA derlemesi, gerçek Word'de temizlik/rapor | **Çalıştırılmadı** |
+
+Bilinen sınırlar: Rapor yalnız düz metin desenine bakar; aynı kişinin farklı yazımları
+için Şahıs dökümü kullanılmalıdır. Belge değişkeni silme Word Geri Al kaydına tam
+girmeyebilir; geri dönüş kayıtlı dosyayı yeniden açmaktır (bu yüzden kayıtlı belge
+zorunludur). Üst/altbilgi ve metin kutularındaki Vefeyât alanları da temizlenir, fakat
+Vefeyât bu öykülere zaten yazmaz.
+
+---
+
+# Vefeyât 0.3.36 — dinamik şahıs kaydı denetim raporu
+
+Temel sürüm yayımlanmış 0.3.35 kaynak paketidir. Yeni özellik varsayılan kapalıdır.
+Mevcut tespit, arama, ölüm tarihi, yazım denetimi, bağlamsal kimlik, tek tek denetim,
+şahıs dökümü, önizleme, belge istisnaları ve kaynak araçları yeniden yazılmadı.
+
+## Uygulanan değişiklikler
+
+- Mevcut tekil DİA kimliği, altı sütunlu CSV, uzunluk önekli codec, gizli yer imi,
+  belge değişkeni ve önizleme altyapısı kullanıldı. Yeni bağımlılık eklenmedi.
+- İsteğe bağlı kayıt: onaylı ad/tarih yazımından sonra ilgili geçiş kaydedilir.
+  Eski düz metin için açık şahıs seçimi ve onayla metadata-only kayıt bulunur.
+- Belgeye kaynak kimliği, kullanılan literal, onay anındaki kaynak bilgileri,
+  yer imi ve varsa mevcut yönetilen tarihin kod/sonuç/bağ bilgileri gömülür.
+- Aynı kimlikteki kayıtlı kullanımlar bulunur. Ad tercihi veya kaynak kaydı değişirse
+  bağımsız yazım/tarih önerileri, bilgi satırları ve seçili/toplu onay gösterilir.
+- Eski manuel tarihler alana dönüştürülmez; yeni ikinci tarih eklenmez. Elle
+  değişen ad, tarih veya kimlik bağı korunur. Silinmiş yer imi tahminle bağlanmaz.
+- Kapama eski kayıtları silmez. Ayırma yalnız registry ilişkisini kaldırır; ad,
+  tarih ve eski tarih kaynağı kalır. Yanlış kimlik açık seçimle yeniden bağlanabilir.
+- API/format kapısı, önizleme sonrası kaynak/hedef/metadata kontrolü, ayrı Undo
+  gereksinimi ve aktif/bekleyen izlenen değişikliklerde yazma engeli eklendi.
+
+Kayıt sınırı 2000. Yönetici yalnız kayıtları okur; açılışta belge keşfi yapılmaz.
+Kapalı özellik tarih ekleme sırasında belge metnini okumadan çıkar. Kaynak bağlantısı
+olmayan/paylaşılan kimliklere kalıcı kayıt atanmaz; isim benzerliği kimlik değildir.
+
+## Yapılan testler
+
+| Kontrol | Gerçek sonuç | Sınır |
+| --- | --- | --- |
+| Yeni registry kaynak yordamları | 66 geçti | Word/bookmark/docvar/Undo/serialization modeli |
+| Önceki regresyon aileleri | 25/25 geçti; 1261 ayrı assertion | 55 tekrar sayılmaz; native Word değildir |
+| Toplu karar/yazma planı | 44 geçti | Gerçek VBA, modellenmiş Word/Undo |
+| Form seçim yardımcıları | 10 geçti | Gerçek form yordamları, modellenmiş MSForms |
+| Bağlamsal kimlik | 81 geçti | 77 sentetik/sınır + 4 yerel katalog kontrolü |
+| Kritik metin/katalog bütünlüğü | 18/18 geçti; 0 hata | 13 belge müdahalesi, 5 katalog kontrolü |
+| Paket/uyumluluk/ölçüm unit testleri | 77 geçti | Kaynak/paket sözleşmeleri |
+| HTML önizleme tarayıcı testleri | 60 geçti | Temsilî HTML; gerçek Word ekranı değildir |
+| VBA grameri | Modül, sınıf ve form kodunda 0 sözdizimi hatası | Native VBA derlemesi değildir |
+| Form ikili tasarımı | FRX değişmedi | Önceki native düğmeler korunur |
+
+Registry örnekleri: default-off, aynı kaydı tekrar bağlama, aynı adlı farklı kaynaklar,
+aynı kimlikte farklı yazımlar, ad/tarih kaynak değişimi, seçilmemiş öneriler, manuel
+ad/tarih/kimlik bağı, karma tarih biçimi, düz tarih, Undo yokluğu, tracking/pending
+revision, read-only/yalnız denetle, kaynak/bağlam değişimi, bozuk kayıt, yer imi
+kaybı/çakışması, kapasite, Türkçe/Arapça/yüzde/satır sonları, katalog olmadan okuma,
+serialize/restore, mevcut toplu ad onayı ve gerçek isteğe bağlı tarih yakalama hook'u.
+
+Uyumluluk testi 0.3.35'teki 146 form yordamının korunduğunu, yalnız sözleşme/başlık
+ve yeni SetRegistryMode ekini doğrular. Tespit/eşleştirme kodunda yeniden yazım yoktur.
+Eski Ribbon komutları ve olay sınıfı aynı kalır; altı yeni menü kimliği eklenir.
+
+## Akademik doğruluk ölçümlerinin durumu
+
+Küçük doğrulanmış küme tekrar çalıştırıldı: 48 metin, 32 etiketli şahıs geçişi,
+30 sorgu. Strict precision %96, recall %75; döküm precision %96,43, recall %84,38.
+Tekil hedef sorguları 19/19; bu bağımsız tarihsel kimlik doğruluğu değildir. Tespit
+algoritması değiştirilmediği için bu değerler 0.3.35 ile aynıdır. Kaynakta olmayan
+şahsa tarih veya biyografik ayrıntı üretilmedi. Canlı DİA biyografik doğrulaması
+bu çalışmada yapılmadı. Katalog SHA256 ve ayrıntılı hata örnekleri AKADEMIK-OLCUMLER.json.
+
+## Henüz doğrulanmayanlar ve açık sınırlar
+
+Gerçek Windows Word / native VBA derlemesi, MSForms fare etkileşimi, DOCX/DOCM/DOTM/DOC
+kaydet/aç, ikinci fiziksel bilgisayar, Undo/Redo metadata birlikteliği, birlikte
+çalışma ve büyük tez süreleri bu ortamda test edilmedi. Native hata oranı **bilinmiyor**.
+Bunlar başarılı diye gösterilmez. Windows kabul makrosuna geçici sentetik DOCX
+kaydet/aç/sil senaryosu eklendi; çalıştırılmadı. Kabul matrisi WINDOWS-KABUL.txt.
+
+Şema ve salt metin tarihleri korunur. Registry yalnız açıkça kayda bağlanmış veya
+özellik açıkken onaylı yazma yapılmış geçişleri içerir. Bütün eski kullanımlar
+kendiliğinden kayda alınmaz; eski tarama/döküm komutları keşif için kullanılabilir.
+Ana metin, başlıklar/tablolar ve dipnot öyküleri kapsamda; üst/altbilgi, sonnot,
+yorum ve metin kutuları kapsam dışında kalır. Atıf/koruma kuralları mevcut sistemindir;
+genel dil anlama garantisi verilmez. DİA bağlantısının değişmesi otomatik birleştirilmez.
+
+TXT/RTF/PDF gibi metadata taşımayan biçimlerde registry yazması engellenir. DOC/DOT
+API kapısından geçebilir; sürüm/format kabulü bekler. Bookmark/docvar korunması
+standart Word dosyasını kaydetmeye bağlıdır; yalnız metin kopyalama veya metadata
+silme ile kayıt kaybolabilir. Katalog yokken gömülü kayıt görünür, güncelleme yoktur.
+
+Ad/tarih güncellemesi ayrı Undo gerektirir. Beklenmedik Word hatası yazma başladıktan
+sonra kısmi işlem bırakabilir; işlem durdurulur ve Ctrl+Z bildirilir. Atomik işlem
+veya native geri alma garantisi verilmez. Önce belge kopyasıyla kabul yapılmalıdır.
+
+## Tekrarlama
+
+    python scripts/run-academic-audit.py --csv /yerel/people.csv --dotnet /dotnet/yolu --output work/yeni-sonuc
+    python scripts/tests/check_word_registry.py --dotnet /dotnet/yolu
+
+Paket içindeki AKADEMIK-TESTLER.zip kaynak/test kodunu içerir. Gerçek CSV, yazar
+belgesi, yüklenmiş DOTM, özel profil, derlenmiş DLL/EXE ve çalışma logları içermez.

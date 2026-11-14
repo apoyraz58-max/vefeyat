@@ -1,0 +1,25 @@
+{
+  "name": "vefeyat",
+  "version": "0.4.0-dev",
+  "private": true,
+  "description": "Vefeyât: Word eklentisi için şahıs adı ve vefat tarihi denetimi (Office.js çekirdeği)",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/office-js": "1.0.450",
+    "esbuild": "0.24.0",
+    "typescript": "5.6.3",
+    "vitest": "2.1.8"
+  }
+}
