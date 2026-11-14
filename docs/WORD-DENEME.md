@@ -28,34 +28,33 @@ yeniden başlatın → **Ekle → Eklentilerim → Paylaşılan Klasör → Vefe
 
 ## 3. Kullanım
 
-**Şerit.** Üstte **Vefeyât** sekmesi:
+**Şerit.** Üstte **Vefeyât** sekmesi, VBA sürümündeki gibi beş grup:
 
 | Grup | Düğme | Ne yapar |
 | --- | --- | --- |
-| Ekle | **Ölüm tarihi ekle** | Seçili ad tek ve kesin eşleşiyorsa, ilk geçişse ve arkasında tarih yoksa tarihi hemen ekler. Aksi hâlde paneli açıp nedenini söyler (aday seçimi, önceki geçiş uyarısı vb.). |
-| Ekle | **İsim yazımı** | Paneli yazım önerisiyle açar. |
-| Belge | **Şahıs dökümü**, **Belgeyi denetle** | Panelin Döküm bölümünü açar (henüz taşınıyor). |
-| Teslim | **Teslim araçları ▾** | Tutarlılık raporu, Şahıs raporu ve kronoloji, Şahıslar dizini, Teslim öncesi temizle (henüz taşınıyor). |
+| Ekle | **Ölüm tarihi ekle** | Seçili ad tek ve kesin eşleşiyorsa, ilk geçişse ve arkasında tarih yoksa tarihi hemen ekler; aksi hâlde Vefeyât penceresini açıp seçim veya onay ister. |
+| Ekle | **İsim yazımı** | Yazım önerilerini pencerede gösterir. |
+| Belge | **Şahıs dökümü**, **Belgeyi denetle** | (taşınıyor) |
+| Teslim | **Teslim araçları ▾** | Tutarlılık raporu, Şahıs raporu ve kronoloji, Şahıslar dizini, Teslim öncesi temizle (taşınıyor) |
+| Tercihler | **Kısaltma ▾**, **Tarih ekleme ▾**, **Ad biçimi ▾**, **Denetlenecek ▾** | Seçince hemen bu belgeye kaydedilir. Word, Office.js eklentilerinde seçili seçeneği işaretlemeye izin vermediği için geçerli değerler Vefeyât penceresinin üstünde yazar. |
+| Veri ve yardım | **Katalog**, **Kılavuz** | Yüklü kataloğu gösterir / değiştirir; kısa kılavuz. |
 
-**Sağ tık.** Metinde bir adı seçip sağ tıklayın → **Vefeyât → Ölüm tarihi ekle /
-İsim yazımı**.
+**Sağ tık.** Metinde bir adı seçip sağ tıklayın → **Vefeyât → Ölüm tarihi ekle / İsim yazımı**.
 
-**Panel.** Dört bölüm: **Seçili ad | Döküm | Teslim | Ayarlar**.
+**Pencere.** Sağdaki Vefeyât penceresi, VBA'daki pencereler gibi yalnız düğmenin istediği işi
+gösterir (aday seçimi, onay, katalog, kılavuz). Ayar içermez.
 
-1. İlk açılışta **CSV seç** ile DİA kataloğunuzu bir kez seçin (Ayarlar bölümünde de
-   var). Dosya yalnız bu bilgisayarda, eklentinin kendi tarayıcı deposunda tutulur.
-2. Metinde bir adı seçin. Tek ve güçlü eşleşmede şahıs kendiliğinden seçilir; aynı
-   adlı birden fazla şahısta veya benzer yazımda listeden seçin. Her adayın yanında
-   "adın bir parçası" veya "benzer yazım, doğrulayın" notu görünür.
-3. **Ölüm tarihi ekle**: Ad metinde daha önce geçiyorsa uyarı çıkar (**Önceki geçişe
-   git** / **Yine de ekle**). Adın arkasında zaten tarih varsa eklenmez.
-4. **İsim yazımı**: Önerilen yazımı seçip **Değiştir**. Türkçe ek korunur
-   ("Gazali'nin" → "Gazzâlî'nin"). Yalnız adı seçin.
-5. **Ayarlar → Kısaltma**: ö. / öl. / v. / kaynakta olduğu gibi. Belgeyle birlikte
-   kaydedilir.
+**Katalog.** Eklentiyle yayımlanan DİA kataloğu kendiliğinden yüklenir. **Katalog → Başka bir
+CSV seç** ile kendi dosyanızı kullanabilirsiniz; **Eklentinin kataloğuna dön** ile geri
+dönersiniz.
 
-Panel açıkken şerit düğmesine yeniden basıldığında Word paneli yeniden
-yüklemeyebilir; bu durumda paneldeki düğmeyi kullanın.
+**Tarih ekleme kuralları.** "Yalnız ilk kullanım" (varsayılan): ad metinde daha önce
+geçiyorsa uyarı çıkar (**Önceki geçişe git** / **Yine de ekle**). "Bütün kullanımlar": uyarı
+çıkmaz. "Yalnız denetle": tarih eklenmez. Her durumda adın arkasında zaten tarih varsa
+ikinci tarih eklenmez.
+
+Panel açıkken şerit düğmesine yeniden basıldığında Word pencereyi yeniden yüklemeyebilir;
+bu durumda penceredeki düğmeyi kullanın.
 
 ## Bu sürümün sınırları
 

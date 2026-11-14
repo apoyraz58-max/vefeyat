@@ -1,24 +1,51 @@
 /**
- * Vefeyât task pane. Reads the selected name, shows catalog candidates and
- * writes a date or a spelling only on an explicit click.
+ * Vefeyât pane. Opened by the ribbon like a VBA window: it shows the view the
+ * button asked for. Settings live in the ribbon's Tercihler menus; the pane
+ * only displays them. Writes happen only on an explicit click.
  */
-import { Catalog, CatalogError, type Person, type PrefixKey, nameOptions, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
-import { type Launch, type Lookup, type View, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, parseLaunch, planDate, quickInsertBlocker } from "./logic.js";
-import { loadCatalog, saveCatalog } from "./store.js";
-import { findEarlier, insertDate, onSelectionChanged, readPrefix, readSelection, replaceSelection, writePrefix } from "./word.js";
+import { Catalog, CatalogError, type Person, nameOptions, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
+import {
+  DEFAULT_SETTINGS,
+  type Launch,
+  type Lookup,
+  type Settings,
+  type View,
+  candidateLabel,
+  dateTag,
+  earlierSpellings,
+  lookup,
+  matchHint,
+  orderByNameForm,
+  parseLaunch,
+  planDate,
+  quickInsertBlocker,
+  scopeRule,
+  settingsSummary,
+} from "./logic.js";
+import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
+import { findEarlier, insertDate, onSelectionChanged, readSelection, readSettings, refreshSettings, replaceSelection } from "./word.js";
 
 declare const __VERSION__: string;
 
 interface State {
   catalog: Catalog | null;
+  catalogSource: "user" | "embedded" | null;
   alias: string | null;
   found: Lookup | null;
   chosen: Person | null;
-  prefix: PrefixKey;
+  settings: Settings;
   busy: boolean;
 }
 
-const state: State = { catalog: null, alias: null, found: null, chosen: null, prefix: "o", busy: false };
+const state: State = {
+  catalog: null,
+  catalogSource: null,
+  alias: null,
+  found: null,
+  chosen: null,
+  settings: DEFAULT_SETTINGS,
+  busy: false,
+};
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const element = document.getElementById(id);
@@ -35,58 +62,88 @@ function setMessage(text: string, kind: "info" | "warning" | "error" | "success"
 
 function showView(view: View): void {
   document.querySelectorAll<HTMLElement>(".view").forEach((element) => {
-    element.hidden = element.id !== `view-${view}`;
+    const active = element.id === `view-${view}`;
+    element.hidden = !active;
+    if (active) $("view-title").textContent = element.dataset.title ?? "Vefeyât";
   });
-  document.querySelectorAll<HTMLButtonElement>(".tabs button").forEach((tab) => {
-    tab.setAttribute("aria-selected", String(tab.dataset.view === view));
-    tab.tabIndex = tab.dataset.view === view ? 0 : -1;
-  });
+  $("back").hidden = view === "secili";
 }
 
-function showCatalogNotice(): void {
-  $("no-catalog").hidden = state.catalog !== null;
+async function loadSettings(): Promise<void> {
+  await refreshSettings();
+  state.settings = readSettings();
+  $("settings-summary").textContent = settingsSummary(state.settings);
 }
 
-function hideEarlier(): void {
-  $("earlier").hidden = true;
+// ---- Catalog ----
+
+function describeCatalog(fileName: string, count: number, source: "user" | "embedded", persisted: boolean): void {
+  const origin = source === "embedded" ? "eklentiyle gelen katalog" : `sizin seçtiğiniz dosya: ${fileName}`;
+  $("catalog-status").textContent = `${count.toLocaleString("tr-TR")} şahıs · ${origin}${persisted ? "" : " (yalnız bu oturum)"}`;
+  $("reset-catalog").hidden = source !== "user";
+  $("no-catalog").hidden = true;
 }
 
-function describeCatalog(fileName: string, count: number, persisted: boolean): void {
-  $("catalog-status").textContent = `${count.toLocaleString("tr-TR")} şahıs · ${fileName}${persisted ? "" : " (yalnız bu oturum)"}`;
+function useCatalog(csv: string, fileName: string, source: "user" | "embedded", persisted: boolean): void {
+  state.catalog = Catalog.fromCsv(csv);
+  state.catalogSource = source;
+  describeCatalog(fileName, state.catalog.people.length, source, persisted);
 }
 
+/** User's own CSV first; otherwise the catalog published with the add-in. */
 async function restoreCatalog(): Promise<void> {
   const stored = await loadCatalog();
-  if (!stored) {
-    $("catalog-status").textContent = "Katalog seçilmedi. Bilgisayarınızdaki DİA CSV dosyasını seçin.";
-    return;
+  if (stored?.source === "user") {
+    try {
+      useCatalog(stored.csv, stored.fileName, "user", true);
+      return;
+    } catch (error) {
+      console.error(error);
+    }
   }
-  try {
-    state.catalog = Catalog.fromCsv(stored.csv);
-    describeCatalog(stored.fileName, state.catalog.people.length, true);
-    showCatalogNotice();
-  } catch (error) {
-    $("catalog-status").textContent = "Kayıtlı katalog okunamadı; CSV dosyasını yeniden seçin.";
-    console.error(error);
+  const embedded = await fetchEmbeddedCatalog();
+  const candidates: Array<StoredCatalog | null> = [
+    embedded === null ? null : { csv: embedded, fileName: "catalog.csv", savedAt: new Date().toISOString(), source: "embedded" },
+    stored, // offline fallback: last copy
+  ];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      useCatalog(candidate.csv, candidate.fileName, candidate.source ?? "embedded", true);
+      if (candidate === candidates[0]) void saveCatalog(candidate);
+      return;
+    } catch (error) {
+      console.error(error);
+    }
   }
+  state.catalog = null;
+  $("catalog-status").textContent = "Katalog yüklenemedi. Bilgisayarınızdaki DİA CSV dosyasını seçin.";
+  $("no-catalog").hidden = false;
 }
 
 async function chooseCatalog(file: File): Promise<void> {
   try {
     const csv = await file.text();
-    const catalog = Catalog.fromCsv(csv);
-    state.catalog = catalog;
-    const persisted = await saveCatalog({ csv, fileName: file.name, savedAt: new Date().toISOString() });
-    describeCatalog(file.name, catalog.people.length, persisted);
-    showCatalogNotice();
-    showView("secili");
+    Catalog.fromCsv(csv); // validate before replacing anything
+    const persisted = await saveCatalog({ csv, fileName: file.name, savedAt: new Date().toISOString(), source: "user" });
+    useCatalog(csv, file.name, "user", persisted);
     setMessage("Katalog yüklendi. CSV dosyanız bilgisayarınızda kalır.", "success");
+    state.alias = null;
+    showView("secili");
     await refresh();
   } catch (error) {
     const detail = error instanceof CatalogError ? error.message : String(error);
     setMessage(`CSV okunamadı: ${detail}`, "error");
   }
 }
+
+async function resetCatalog(): Promise<void> {
+  await clearCatalog();
+  await restoreCatalog();
+  setMessage(state.catalogSource === "embedded" ? "Eklentinin kataloğuna dönüldü." : "Eklentiyle gelen katalog bulunamadı.", "info");
+}
+
+// ---- Selected name ----
 
 function renderCandidates(): void {
   const list = $("candidates");
@@ -150,7 +207,7 @@ function renderDetails(): void {
   const link = $<HTMLAnchorElement>("detail-link");
   link.hidden = !person.source.startsWith("https://islamansiklopedisi.org.tr/");
   link.href = link.hidden ? "#" : person.source;
-  for (const option of nameOptions(person, state.alias)) {
+  for (const option of orderByNameForm(nameOptions(person, state.alias), state.settings.nameForm)) {
     if (option.value === state.alias) continue;
     const element = document.createElement("option");
     element.value = option.value;
@@ -160,13 +217,21 @@ function renderDetails(): void {
   $<HTMLButtonElement>("respell").disabled = spelling.options.length === 0 || state.busy;
 }
 
+function hideEarlier(): void {
+  $("earlier").hidden = true;
+}
+
 async function refresh(): Promise<void> {
   if (state.busy) return;
   hideEarlier();
   try {
+    await loadSettings();
     const selection = await readSelection();
     const alias = selectionAlias(selection.text);
-    if (alias === state.alias && state.found) return;
+    if (alias === state.alias && state.found) {
+      renderDetails(); // settings such as Ad biçimi may have changed
+      return;
+    }
     if (alias !== state.alias) setMessage("");
     state.alias = alias;
     state.found = null;
@@ -197,7 +262,7 @@ async function run(task: () => Promise<void>): Promise<void> {
   }
 }
 
-/** The selection must still be the name the panel shows. */
+/** The selection must still be the name the pane shows. */
 async function currentSelection(): Promise<{ alias: string; following: string } | null> {
   const selection = await readSelection();
   const alias = selectionAlias(selection.text);
@@ -212,14 +277,20 @@ async function currentSelection(): Promise<{ alias: string; following: string } 
 async function addDate(force: boolean): Promise<void> {
   const person = state.chosen;
   if (!person) return;
+  await loadSettings();
+  const rule = scopeRule(state.settings.scope);
+  if (!rule.allowed) {
+    setMessage(rule.reason ?? "", "warning");
+    return;
+  }
   const current = await currentSelection();
   if (!current) return;
-  const plan = planDate(person, state.prefix, current.following);
+  const plan = planDate(person, state.settings.prefix, current.following);
   if (!plan.ok) {
     setMessage(plan.reason, "warning");
     return;
   }
-  if (!force && (await findEarlier(earlierSpellings(person, current.alias)))) {
+  if (!force && rule.checkEarlier && (await findEarlier(earlierSpellings(person, current.alias)))) {
     $("earlier").hidden = false;
     setMessage("", "info");
     return;
@@ -261,23 +332,19 @@ async function launch(request: Launch): Promise<void> {
 
 function initialise(): void {
   $("version").textContent = __VERSION__;
-  state.prefix = readPrefix() ?? "o";
-  const prefix = $<HTMLSelectElement>("prefix");
-  prefix.value = state.prefix;
-  prefix.addEventListener("change", () => {
-    state.prefix = prefix.value as PrefixKey;
-    void writePrefix(state.prefix).catch((error) => setMessage(`Ayar kaydedilemedi: ${String(error)}`, "error"));
-  });
   const file = $<HTMLInputElement>("catalog-file");
   $("choose-catalog").addEventListener("click", () => file.click());
   $("choose-catalog-inline").addEventListener("click", () => file.click());
-  document.querySelectorAll<HTMLButtonElement>(".tabs button").forEach((tab) => {
-    tab.addEventListener("click", () => showView(tab.dataset.view as View));
-  });
+  $("reset-catalog").addEventListener("click", () => void resetCatalog());
   file.addEventListener("change", () => {
     const chosen = file.files?.[0];
     if (chosen) void chooseCatalog(chosen);
     file.value = "";
+  });
+  $("back").addEventListener("click", () => {
+    showView("secili");
+    state.alias = null;
+    void refresh();
   });
   $("insert").addEventListener("click", () => void run(() => addDate(false)));
   $("insert-anyway").addEventListener("click", () => void run(() => addDate(true)));
@@ -289,10 +356,6 @@ function initialise(): void {
     }),
   );
   $("respell").addEventListener("click", () => void run(respell));
-  $("refresh").addEventListener("click", () => {
-    state.alias = null;
-    void refresh();
-  });
   let timer: number | undefined;
   onSelectionChanged(() => {
     window.clearTimeout(timer);
@@ -301,10 +364,7 @@ function initialise(): void {
   const request = parseLaunch(window.location.search);
   showView(request.view);
   void restoreCatalog()
-    .then(() => {
-      showCatalogNotice();
-      return refresh();
-    })
+    .then(refresh)
     .then(() => launch(request));
 }
 

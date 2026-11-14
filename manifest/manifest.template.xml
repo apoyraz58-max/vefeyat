@@ -10,7 +10,7 @@
   <ProviderName>Vefeyât</ProviderName>
   <DefaultLocale>tr-TR</DefaultLocale>
   <DisplayName DefaultValue="Vefeyât"/>
-  <Description DefaultValue="Şahıs adlarını yerel DİA kataloğuyla denetler, doğru yazımı önerir ve vefat tarihini ekler."/>
+  <Description DefaultValue="Şahıs adlarını DİA kataloğuyla denetler, doğru yazımı önerir ve vefat tarihini ekler."/>
   <IconUrl DefaultValue="{{BASE_URL}}assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="{{BASE_URL}}assets/icon-64.png"/>
   <SupportUrl DefaultValue="https://github.com/apoyraz58-max/vefeyat"/>
@@ -41,219 +41,533 @@
           <FunctionFile resid="Commands.Url"/>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <CustomTab id="Vefeyat.Tab">
-              <Group id="Vefeyat.Group.Add">
-                <Label resid="Group.Add"/>
+              <Group id="Vefeyat.G.Add">
+                <Label resid="G.Add"/>
                 <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                  <bt:Image size="16" resid="Ic.insert.16"/>
+                  <bt:Image size="32" resid="Ic.insert.32"/>
+                  <bt:Image size="80" resid="Ic.insert.80"/>
+                </Icon>
                 <Control xsi:type="Button" id="Vefeyat.Insert">
-                  <Label resid="Insert.Label"/>
+                  <Label resid="Insert"/>
                   <Supertip>
-                    <Title resid="Insert.Label"/>
+                    <Title resid="Insert"/>
                     <Description resid="Insert.Tip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
+                    <bt:Image size="16" resid="Ic.insert.16"/>
+                    <bt:Image size="32" resid="Ic.insert.32"/>
+                    <bt:Image size="80" resid="Ic.insert.80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="Url.Insert"/>
+                    <SourceLocation resid="U.Insert"/>
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="Vefeyat.Spelling">
-                  <Label resid="Spelling.Label"/>
+                  <Label resid="Spelling"/>
                   <Supertip>
-                    <Title resid="Spelling.Label"/>
+                    <Title resid="Spelling"/>
                     <Description resid="Spelling.Tip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
+                    <bt:Image size="16" resid="Ic.spelling.16"/>
+                    <bt:Image size="32" resid="Ic.spelling.32"/>
+                    <bt:Image size="80" resid="Ic.spelling.80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="Url.Spelling"/>
+                    <SourceLocation resid="U.Spelling"/>
                   </Action>
                 </Control>
               </Group>
-              <Group id="Vefeyat.Group.Document">
-                <Label resid="Group.Document"/>
+              <Group id="Vefeyat.G.Doc">
+                <Label resid="G.Doc"/>
                 <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                  <bt:Image size="16" resid="Ic.inventory.16"/>
+                  <bt:Image size="32" resid="Ic.inventory.32"/>
+                  <bt:Image size="80" resid="Ic.inventory.80"/>
+                </Icon>
                 <Control xsi:type="Button" id="Vefeyat.Inventory">
-                  <Label resid="Inventory.Label"/>
+                  <Label resid="Inventory"/>
                   <Supertip>
-                    <Title resid="Inventory.Label"/>
+                    <Title resid="Inventory"/>
                     <Description resid="Inventory.Tip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
+                    <bt:Image size="16" resid="Ic.inventory.16"/>
+                    <bt:Image size="32" resid="Ic.inventory.32"/>
+                    <bt:Image size="80" resid="Ic.inventory.80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="Url.Inventory"/>
+                    <SourceLocation resid="U.Inventory"/>
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="Vefeyat.Audit">
-                  <Label resid="Audit.Label"/>
+                  <Label resid="Audit"/>
                   <Supertip>
-                    <Title resid="Audit.Label"/>
+                    <Title resid="Audit"/>
                     <Description resid="Audit.Tip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
+                    <bt:Image size="16" resid="Ic.audit.16"/>
+                    <bt:Image size="32" resid="Ic.audit.32"/>
+                    <bt:Image size="80" resid="Ic.audit.80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="Url.Audit"/>
+                    <SourceLocation resid="U.Audit"/>
                   </Action>
                 </Control>
               </Group>
-              <Group id="Vefeyat.Group.Submit">
-                <Label resid="Group.Submit"/>
+              <Group id="Vefeyat.G.Submit">
+                <Label resid="G.Submit"/>
                 <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                  <bt:Image size="16" resid="Ic.tools.16"/>
+                  <bt:Image size="32" resid="Ic.tools.32"/>
+                  <bt:Image size="80" resid="Ic.tools.80"/>
+                </Icon>
                 <Control xsi:type="Menu" id="Vefeyat.Tools">
-                  <Label resid="Tools.Label"/>
+                  <Label resid="Tools"/>
                   <Supertip>
-                    <Title resid="Tools.Label"/>
+                    <Title resid="Tools"/>
                     <Description resid="Tools.Tip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
+                    <bt:Image size="16" resid="Ic.tools.16"/>
+                    <bt:Image size="32" resid="Ic.tools.32"/>
+                    <bt:Image size="80" resid="Ic.tools.80"/>
                   </Icon>
                   <Items>
-                    <Item id="Vefeyat.Tool.Consistency">
-                      <Label resid="Tool.Consistency"/>
+                    <Item id="Vefeyat.T.Consistency">
+                      <Label resid="T.Consistency"/>
                       <Supertip>
-                        <Title resid="Tool.Consistency"/>
-                        <Description resid="Tool.Consistency.Tip"/>
+                        <Title resid="T.Consistency"/>
+                        <Description resid="T.Consistency.Tip"/>
                       </Supertip>
                       <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                        <bt:Image size="16" resid="Ic.tools.16"/>
+                        <bt:Image size="32" resid="Ic.tools.32"/>
+                        <bt:Image size="80" resid="Ic.tools.80"/>
+                      </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="Url.Consistency"/>
+                        <SourceLocation resid="U.T.tutarlilik"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Tool.Report">
-                      <Label resid="Tool.Report"/>
+                    <Item id="Vefeyat.T.Report">
+                      <Label resid="T.Report"/>
                       <Supertip>
-                        <Title resid="Tool.Report"/>
-                        <Description resid="Tool.Report.Tip"/>
+                        <Title resid="T.Report"/>
+                        <Description resid="T.Report.Tip"/>
                       </Supertip>
                       <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                        <bt:Image size="16" resid="Ic.tools.16"/>
+                        <bt:Image size="32" resid="Ic.tools.32"/>
+                        <bt:Image size="80" resid="Ic.tools.80"/>
+                      </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="Url.Report"/>
+                        <SourceLocation resid="U.T.rapor"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Tool.Index">
-                      <Label resid="Tool.Index"/>
+                    <Item id="Vefeyat.T.Index">
+                      <Label resid="T.Index"/>
                       <Supertip>
-                        <Title resid="Tool.Index"/>
-                        <Description resid="Tool.Index.Tip"/>
+                        <Title resid="T.Index"/>
+                        <Description resid="T.Index.Tip"/>
                       </Supertip>
                       <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                        <bt:Image size="16" resid="Ic.tools.16"/>
+                        <bt:Image size="32" resid="Ic.tools.32"/>
+                        <bt:Image size="80" resid="Ic.tools.80"/>
+                      </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="Url.Index"/>
+                        <SourceLocation resid="U.T.dizin"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Tool.Finalize">
-                      <Label resid="Tool.Finalize"/>
+                    <Item id="Vefeyat.T.Finalize">
+                      <Label resid="T.Finalize"/>
                       <Supertip>
-                        <Title resid="Tool.Finalize"/>
-                        <Description resid="Tool.Finalize.Tip"/>
+                        <Title resid="T.Finalize"/>
+                        <Description resid="T.Finalize.Tip"/>
                       </Supertip>
                       <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                        <bt:Image size="16" resid="Ic.tools.16"/>
+                        <bt:Image size="32" resid="Ic.tools.32"/>
+                        <bt:Image size="80" resid="Ic.tools.80"/>
+                      </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="Url.Finalize"/>
+                        <SourceLocation resid="U.T.temizlik"/>
                       </Action>
                     </Item>
                   </Items>
                 </Control>
               </Group>
-              <Label resid="Tab.Label"/>
+              <Group id="Vefeyat.G.Settings">
+                <Label resid="G.Settings"/>
+                <Icon>
+                  <bt:Image size="16" resid="Ic.prefix.16"/>
+                  <bt:Image size="32" resid="Ic.prefix.32"/>
+                  <bt:Image size="80" resid="Ic.prefix.80"/>
+                </Icon>
+                <Control xsi:type="Menu" id="Vefeyat.S.prefix">
+                  <Label resid="S.prefix"/>
+                  <Supertip>
+                    <Title resid="S.prefix"/>
+                    <Description resid="S.prefix.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Ic.prefix.16"/>
+                    <bt:Image size="32" resid="Ic.prefix.32"/>
+                    <bt:Image size="80" resid="Ic.prefix.80"/>
+                  </Icon>
+                  <Items>
+                    <Item id="Vefeyat.S.prefix.original">
+                      <Label resid="S.prefix.original"/>
+                      <Supertip>
+                        <Title resid="S.prefix.original"/>
+                        <Description resid="S.prefix.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.prefix.16"/>
+                        <bt:Image size="32" resid="Ic.prefix.32"/>
+                        <bt:Image size="80" resid="Ic.prefix.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_prefix_original</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.prefix.o">
+                      <Label resid="S.prefix.o"/>
+                      <Supertip>
+                        <Title resid="S.prefix.o"/>
+                        <Description resid="S.prefix.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.prefix.16"/>
+                        <bt:Image size="32" resid="Ic.prefix.32"/>
+                        <bt:Image size="80" resid="Ic.prefix.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_prefix_o</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.prefix.ol">
+                      <Label resid="S.prefix.ol"/>
+                      <Supertip>
+                        <Title resid="S.prefix.ol"/>
+                        <Description resid="S.prefix.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.prefix.16"/>
+                        <bt:Image size="32" resid="Ic.prefix.32"/>
+                        <bt:Image size="80" resid="Ic.prefix.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_prefix_ol</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.prefix.v">
+                      <Label resid="S.prefix.v"/>
+                      <Supertip>
+                        <Title resid="S.prefix.v"/>
+                        <Description resid="S.prefix.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.prefix.16"/>
+                        <bt:Image size="32" resid="Ic.prefix.32"/>
+                        <bt:Image size="80" resid="Ic.prefix.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_prefix_v</FunctionName>
+                      </Action>
+                    </Item>
+                  </Items>
+                </Control>
+                <Control xsi:type="Menu" id="Vefeyat.S.scope">
+                  <Label resid="S.scope"/>
+                  <Supertip>
+                    <Title resid="S.scope"/>
+                    <Description resid="S.scope.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Ic.scope.16"/>
+                    <bt:Image size="32" resid="Ic.scope.32"/>
+                    <bt:Image size="80" resid="Ic.scope.80"/>
+                  </Icon>
+                  <Items>
+                    <Item id="Vefeyat.S.scope.first">
+                      <Label resid="S.scope.first"/>
+                      <Supertip>
+                        <Title resid="S.scope.first"/>
+                        <Description resid="S.scope.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.scope.16"/>
+                        <bt:Image size="32" resid="Ic.scope.32"/>
+                        <bt:Image size="80" resid="Ic.scope.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_scope_first</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.scope.all">
+                      <Label resid="S.scope.all"/>
+                      <Supertip>
+                        <Title resid="S.scope.all"/>
+                        <Description resid="S.scope.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.scope.16"/>
+                        <bt:Image size="32" resid="Ic.scope.32"/>
+                        <bt:Image size="80" resid="Ic.scope.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_scope_all</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.scope.none">
+                      <Label resid="S.scope.none"/>
+                      <Supertip>
+                        <Title resid="S.scope.none"/>
+                        <Description resid="S.scope.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.scope.16"/>
+                        <bt:Image size="32" resid="Ic.scope.32"/>
+                        <bt:Image size="80" resid="Ic.scope.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_scope_none</FunctionName>
+                      </Action>
+                    </Item>
+                  </Items>
+                </Control>
+                <Control xsi:type="Menu" id="Vefeyat.S.nameForm">
+                  <Label resid="S.nameForm"/>
+                  <Supertip>
+                    <Title resid="S.nameForm"/>
+                    <Description resid="S.nameForm.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Ic.nameform.16"/>
+                    <bt:Image size="32" resid="Ic.nameform.32"/>
+                    <bt:Image size="80" resid="Ic.nameform.80"/>
+                  </Icon>
+                  <Items>
+                    <Item id="Vefeyat.S.nameForm.ask">
+                      <Label resid="S.nameForm.ask"/>
+                      <Supertip>
+                        <Title resid="S.nameForm.ask"/>
+                        <Description resid="S.nameForm.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.nameform.16"/>
+                        <bt:Image size="32" resid="Ic.nameform.32"/>
+                        <bt:Image size="80" resid="Ic.nameform.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_nameForm_ask</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.nameForm.near">
+                      <Label resid="S.nameForm.near"/>
+                      <Supertip>
+                        <Title resid="S.nameForm.near"/>
+                        <Description resid="S.nameForm.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.nameform.16"/>
+                        <bt:Image size="32" resid="Ic.nameform.32"/>
+                        <bt:Image size="80" resid="Ic.nameform.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_nameForm_near</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.nameForm.short">
+                      <Label resid="S.nameForm.short"/>
+                      <Supertip>
+                        <Title resid="S.nameForm.short"/>
+                        <Description resid="S.nameForm.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.nameform.16"/>
+                        <bt:Image size="32" resid="Ic.nameform.32"/>
+                        <bt:Image size="80" resid="Ic.nameform.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_nameForm_short</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.nameForm.full">
+                      <Label resid="S.nameForm.full"/>
+                      <Supertip>
+                        <Title resid="S.nameForm.full"/>
+                        <Description resid="S.nameForm.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.nameform.16"/>
+                        <bt:Image size="32" resid="Ic.nameform.32"/>
+                        <bt:Image size="80" resid="Ic.nameform.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_nameForm_full</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.nameForm.original">
+                      <Label resid="S.nameForm.original"/>
+                      <Supertip>
+                        <Title resid="S.nameForm.original"/>
+                        <Description resid="S.nameForm.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.nameform.16"/>
+                        <bt:Image size="32" resid="Ic.nameform.32"/>
+                        <bt:Image size="80" resid="Ic.nameform.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_nameForm_original</FunctionName>
+                      </Action>
+                    </Item>
+                  </Items>
+                </Control>
+                <Control xsi:type="Menu" id="Vefeyat.S.auditMode">
+                  <Label resid="S.auditMode"/>
+                  <Supertip>
+                    <Title resid="S.auditMode"/>
+                    <Description resid="S.auditMode.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Ic.auditmode.16"/>
+                    <bt:Image size="32" resid="Ic.auditmode.32"/>
+                    <bt:Image size="80" resid="Ic.auditmode.80"/>
+                  </Icon>
+                  <Items>
+                    <Item id="Vefeyat.S.auditMode.all">
+                      <Label resid="S.auditMode.all"/>
+                      <Supertip>
+                        <Title resid="S.auditMode.all"/>
+                        <Description resid="S.auditMode.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.auditmode.16"/>
+                        <bt:Image size="32" resid="Ic.auditmode.32"/>
+                        <bt:Image size="80" resid="Ic.auditmode.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_auditMode_all</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.auditMode.undated">
+                      <Label resid="S.auditMode.undated"/>
+                      <Supertip>
+                        <Title resid="S.auditMode.undated"/>
+                        <Description resid="S.auditMode.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.auditmode.16"/>
+                        <bt:Image size="32" resid="Ic.auditmode.32"/>
+                        <bt:Image size="80" resid="Ic.auditmode.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_auditMode_undated</FunctionName>
+                      </Action>
+                    </Item>
+                  </Items>
+                </Control>
+              </Group>
+              <Group id="Vefeyat.G.Data">
+                <Label resid="G.Data"/>
+                <Icon>
+                  <bt:Image size="16" resid="Ic.catalog.16"/>
+                  <bt:Image size="32" resid="Ic.catalog.32"/>
+                  <bt:Image size="80" resid="Ic.catalog.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="Vefeyat.Catalog">
+                  <Label resid="Catalog"/>
+                  <Supertip>
+                    <Title resid="Catalog"/>
+                    <Description resid="Catalog.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Ic.catalog.16"/>
+                    <bt:Image size="32" resid="Ic.catalog.32"/>
+                    <bt:Image size="80" resid="Ic.catalog.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>VefeyatPane</TaskpaneId>
+                    <SourceLocation resid="U.Catalog"/>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="Vefeyat.Help">
+                  <Label resid="Help"/>
+                  <Supertip>
+                    <Title resid="Help"/>
+                    <Description resid="Help.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Ic.help.16"/>
+                    <bt:Image size="32" resid="Ic.help.32"/>
+                    <bt:Image size="80" resid="Ic.help.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>VefeyatPane</TaskpaneId>
+                    <SourceLocation resid="U.Help"/>
+                  </Action>
+                </Control>
+              </Group>
+              <Label resid="Tab"/>
             </CustomTab>
           </ExtensionPoint>
           <ExtensionPoint xsi:type="ContextMenu">
             <OfficeMenu id="ContextMenuText">
               <Control xsi:type="Menu" id="Vefeyat.Context">
-                <Label resid="Context.Label"/>
+                <Label resid="Context"/>
                 <Supertip>
-                  <Title resid="Context.Label"/>
+                  <Title resid="Context"/>
                   <Description resid="Context.Tip"/>
                 </Supertip>
                 <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                  <bt:Image size="16" resid="Ic.insert.16"/>
+                  <bt:Image size="32" resid="Ic.insert.32"/>
+                  <bt:Image size="80" resid="Ic.insert.80"/>
+                </Icon>
                 <Items>
-                    <Item id="Vefeyat.Context.Insert">
-                      <Label resid="Insert.Label"/>
+                    <Item id="Vefeyat.C.Insert">
+                      <Label resid="Insert"/>
                       <Supertip>
-                        <Title resid="Insert.Label"/>
+                        <Title resid="Insert"/>
                         <Description resid="Insert.Tip"/>
                       </Supertip>
                       <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                        <bt:Image size="16" resid="Ic.insert.16"/>
+                        <bt:Image size="32" resid="Ic.insert.32"/>
+                        <bt:Image size="80" resid="Ic.insert.80"/>
+                      </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="Url.Insert"/>
+                        <SourceLocation resid="U.Insert"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Context.Spelling">
-                      <Label resid="Spelling.Label"/>
+                    <Item id="Vefeyat.C.Spelling">
+                      <Label resid="Spelling"/>
                       <Supertip>
-                        <Title resid="Spelling.Label"/>
+                        <Title resid="Spelling"/>
                         <Description resid="Spelling.Tip"/>
                       </Supertip>
                       <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
+                        <bt:Image size="16" resid="Ic.spelling.16"/>
+                        <bt:Image size="32" resid="Ic.spelling.32"/>
+                        <bt:Image size="80" resid="Ic.spelling.80"/>
+                      </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="Url.Spelling"/>
+                        <SourceLocation resid="U.Spelling"/>
                       </Action>
                     </Item>
                 </Items>
@@ -265,51 +579,111 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="{{BASE_URL}}assets/icon-16.png"/>
-        <bt:Image id="Icon.32" DefaultValue="{{BASE_URL}}assets/icon-32.png"/>
-        <bt:Image id="Icon.80" DefaultValue="{{BASE_URL}}assets/icon-80.png"/>
+        <bt:Image id="Ic.insert.16" DefaultValue="{{BASE_URL}}assets/icons/insert-16.png"/>
+        <bt:Image id="Ic.insert.32" DefaultValue="{{BASE_URL}}assets/icons/insert-32.png"/>
+        <bt:Image id="Ic.insert.80" DefaultValue="{{BASE_URL}}assets/icons/insert-80.png"/>
+        <bt:Image id="Ic.spelling.16" DefaultValue="{{BASE_URL}}assets/icons/spelling-16.png"/>
+        <bt:Image id="Ic.spelling.32" DefaultValue="{{BASE_URL}}assets/icons/spelling-32.png"/>
+        <bt:Image id="Ic.spelling.80" DefaultValue="{{BASE_URL}}assets/icons/spelling-80.png"/>
+        <bt:Image id="Ic.inventory.16" DefaultValue="{{BASE_URL}}assets/icons/inventory-16.png"/>
+        <bt:Image id="Ic.inventory.32" DefaultValue="{{BASE_URL}}assets/icons/inventory-32.png"/>
+        <bt:Image id="Ic.inventory.80" DefaultValue="{{BASE_URL}}assets/icons/inventory-80.png"/>
+        <bt:Image id="Ic.audit.16" DefaultValue="{{BASE_URL}}assets/icons/audit-16.png"/>
+        <bt:Image id="Ic.audit.32" DefaultValue="{{BASE_URL}}assets/icons/audit-32.png"/>
+        <bt:Image id="Ic.audit.80" DefaultValue="{{BASE_URL}}assets/icons/audit-80.png"/>
+        <bt:Image id="Ic.tools.16" DefaultValue="{{BASE_URL}}assets/icons/tools-16.png"/>
+        <bt:Image id="Ic.tools.32" DefaultValue="{{BASE_URL}}assets/icons/tools-32.png"/>
+        <bt:Image id="Ic.tools.80" DefaultValue="{{BASE_URL}}assets/icons/tools-80.png"/>
+        <bt:Image id="Ic.prefix.16" DefaultValue="{{BASE_URL}}assets/icons/prefix-16.png"/>
+        <bt:Image id="Ic.prefix.32" DefaultValue="{{BASE_URL}}assets/icons/prefix-32.png"/>
+        <bt:Image id="Ic.prefix.80" DefaultValue="{{BASE_URL}}assets/icons/prefix-80.png"/>
+        <bt:Image id="Ic.scope.16" DefaultValue="{{BASE_URL}}assets/icons/scope-16.png"/>
+        <bt:Image id="Ic.scope.32" DefaultValue="{{BASE_URL}}assets/icons/scope-32.png"/>
+        <bt:Image id="Ic.scope.80" DefaultValue="{{BASE_URL}}assets/icons/scope-80.png"/>
+        <bt:Image id="Ic.nameform.16" DefaultValue="{{BASE_URL}}assets/icons/nameform-16.png"/>
+        <bt:Image id="Ic.nameform.32" DefaultValue="{{BASE_URL}}assets/icons/nameform-32.png"/>
+        <bt:Image id="Ic.nameform.80" DefaultValue="{{BASE_URL}}assets/icons/nameform-80.png"/>
+        <bt:Image id="Ic.auditmode.16" DefaultValue="{{BASE_URL}}assets/icons/auditmode-16.png"/>
+        <bt:Image id="Ic.auditmode.32" DefaultValue="{{BASE_URL}}assets/icons/auditmode-32.png"/>
+        <bt:Image id="Ic.auditmode.80" DefaultValue="{{BASE_URL}}assets/icons/auditmode-80.png"/>
+        <bt:Image id="Ic.catalog.16" DefaultValue="{{BASE_URL}}assets/icons/catalog-16.png"/>
+        <bt:Image id="Ic.catalog.32" DefaultValue="{{BASE_URL}}assets/icons/catalog-32.png"/>
+        <bt:Image id="Ic.catalog.80" DefaultValue="{{BASE_URL}}assets/icons/catalog-80.png"/>
+        <bt:Image id="Ic.help.16" DefaultValue="{{BASE_URL}}assets/icons/help-16.png"/>
+        <bt:Image id="Ic.help.32" DefaultValue="{{BASE_URL}}assets/icons/help-32.png"/>
+        <bt:Image id="Ic.help.80" DefaultValue="{{BASE_URL}}assets/icons/help-80.png"/>
       </bt:Images>
       <bt:Urls>
+        <bt:Url id="U.Insert" DefaultValue="{{BASE_URL}}taskpane.html?action=insert"/>
+        <bt:Url id="U.Spelling" DefaultValue="{{BASE_URL}}taskpane.html?action=spelling"/>
+        <bt:Url id="U.Inventory" DefaultValue="{{BASE_URL}}taskpane.html?view=dokum"/>
+        <bt:Url id="U.Audit" DefaultValue="{{BASE_URL}}taskpane.html?view=denetim"/>
+        <bt:Url id="U.T.tutarlilik" DefaultValue="{{BASE_URL}}taskpane.html?tool=tutarlilik"/>
+        <bt:Url id="U.T.rapor" DefaultValue="{{BASE_URL}}taskpane.html?tool=rapor"/>
+        <bt:Url id="U.T.dizin" DefaultValue="{{BASE_URL}}taskpane.html?tool=dizin"/>
+        <bt:Url id="U.T.temizlik" DefaultValue="{{BASE_URL}}taskpane.html?tool=temizlik"/>
+        <bt:Url id="U.Catalog" DefaultValue="{{BASE_URL}}taskpane.html?view=katalog"/>
+        <bt:Url id="U.Help" DefaultValue="{{BASE_URL}}taskpane.html?view=yardim"/>
         <bt:Url id="Commands.Url" DefaultValue="{{BASE_URL}}commands.html"/>
-        <bt:Url id="Url.Insert" DefaultValue="{{BASE_URL}}taskpane.html?action=insert"/>
-        <bt:Url id="Url.Spelling" DefaultValue="{{BASE_URL}}taskpane.html?action=spelling"/>
-        <bt:Url id="Url.Inventory" DefaultValue="{{BASE_URL}}taskpane.html?view=dokum"/>
-        <bt:Url id="Url.Audit" DefaultValue="{{BASE_URL}}taskpane.html?view=denetim"/>
-        <bt:Url id="Url.Consistency" DefaultValue="{{BASE_URL}}taskpane.html?tool=tutarlilik"/>
-        <bt:Url id="Url.Report" DefaultValue="{{BASE_URL}}taskpane.html?tool=rapor"/>
-        <bt:Url id="Url.Index" DefaultValue="{{BASE_URL}}taskpane.html?tool=dizin"/>
-        <bt:Url id="Url.Finalize" DefaultValue="{{BASE_URL}}taskpane.html?tool=temizlik"/>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/apoyraz58-max/vefeyat"/>
       </bt:Urls>
       <bt:ShortStrings>
+        <bt:String id="G.Add" DefaultValue="Ekle"/>
+        <bt:String id="Insert" DefaultValue="Ölüm tarihi ekle"/>
+        <bt:String id="Spelling" DefaultValue="İsim yazımı"/>
+        <bt:String id="G.Doc" DefaultValue="Belge"/>
+        <bt:String id="Inventory" DefaultValue="Şahıs dökümü"/>
+        <bt:String id="Audit" DefaultValue="Belgeyi denetle"/>
+        <bt:String id="T.Consistency" DefaultValue="Tutarlılık raporu"/>
+        <bt:String id="T.Report" DefaultValue="Şahıs raporu ve kronoloji"/>
+        <bt:String id="T.Index" DefaultValue="Şahıslar dizini"/>
+        <bt:String id="T.Finalize" DefaultValue="Teslim öncesi temizle"/>
+        <bt:String id="G.Submit" DefaultValue="Teslim"/>
+        <bt:String id="Tools" DefaultValue="Teslim araçları"/>
+        <bt:String id="S.prefix.original" DefaultValue="Kaynakta olduğu gibi"/>
+        <bt:String id="S.prefix.o" DefaultValue="ö."/>
+        <bt:String id="S.prefix.ol" DefaultValue="öl."/>
+        <bt:String id="S.prefix.v" DefaultValue="v."/>
+        <bt:String id="S.prefix" DefaultValue="Kısaltma"/>
+        <bt:String id="S.scope.first" DefaultValue="Yalnız ilk kullanım"/>
+        <bt:String id="S.scope.all" DefaultValue="Bütün kullanımlar"/>
+        <bt:String id="S.scope.none" DefaultValue="Yalnız denetle"/>
+        <bt:String id="S.scope" DefaultValue="Tarih ekleme"/>
+        <bt:String id="S.nameForm.ask" DefaultValue="Her seferinde sor"/>
+        <bt:String id="S.nameForm.near" DefaultValue="Seçili ada yakın"/>
+        <bt:String id="S.nameForm.short" DefaultValue="Kısa ad"/>
+        <bt:String id="S.nameForm.full" DefaultValue="Tam / uzun ad"/>
+        <bt:String id="S.nameForm.original" DefaultValue="Orijinal ad"/>
+        <bt:String id="S.nameForm" DefaultValue="Ad biçimi"/>
+        <bt:String id="S.auditMode.all" DefaultValue="Tüm geçişler"/>
+        <bt:String id="S.auditMode.undated" DefaultValue="Tarihi olmayanlar"/>
+        <bt:String id="S.auditMode" DefaultValue="Denetlenecek"/>
+        <bt:String id="G.Settings" DefaultValue="Tercihler"/>
+        <bt:String id="G.Data" DefaultValue="Veri ve yardım"/>
+        <bt:String id="Catalog" DefaultValue="Katalog"/>
+        <bt:String id="Help" DefaultValue="Kılavuz"/>
+        <bt:String id="Tab" DefaultValue="Vefeyât"/>
+        <bt:String id="Context" DefaultValue="Vefeyât"/>
         <bt:String id="GetStarted.Title" DefaultValue="Vefeyât hazır"/>
-        <bt:String id="Tab.Label" DefaultValue="Vefeyât"/>
-        <bt:String id="Group.Add" DefaultValue="Ekle"/>
-        <bt:String id="Group.Document" DefaultValue="Belge"/>
-        <bt:String id="Group.Submit" DefaultValue="Teslim"/>
-        <bt:String id="Insert.Label" DefaultValue="Ölüm tarihi ekle"/>
-        <bt:String id="Spelling.Label" DefaultValue="İsim yazımı"/>
-        <bt:String id="Inventory.Label" DefaultValue="Şahıs dökümü"/>
-        <bt:String id="Audit.Label" DefaultValue="Belgeyi denetle"/>
-        <bt:String id="Tools.Label" DefaultValue="Teslim araçları"/>
-        <bt:String id="Tool.Consistency" DefaultValue="Tutarlılık raporu"/>
-        <bt:String id="Tool.Report" DefaultValue="Şahıs raporu ve kronoloji"/>
-        <bt:String id="Tool.Index" DefaultValue="Şahıslar dizini"/>
-        <bt:String id="Tool.Finalize" DefaultValue="Teslim öncesi temizle"/>
-        <bt:String id="Context.Label" DefaultValue="Vefeyât"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Metinde bir şahıs adı seçin ve üstteki Vefeyât sekmesinden Ölüm tarihi ekle düğmesine basın."/>
-        <bt:String id="Insert.Tip" DefaultValue="Seçili adın ölüm tarihini ekler. Tek ve kesin eşleşmede, ilk geçişte ve adın arkasında tarih yoksa doğrudan ekler; aksi hâlde paneli açıp seçim ister."/>
+        <bt:String id="Insert.Tip" DefaultValue="Seçili adın ölüm tarihini ekler. Tek ve kesin eşleşmede, ilk geçişte ve adın arkasında tarih yoksa doğrudan ekler; aksi hâlde pencerede seçim veya onay ister."/>
         <bt:String id="Spelling.Tip" DefaultValue="Seçili adın katalogdaki yazımlarını önerir; Türkçe eki koruyarak yalnız seçili adı değiştirir."/>
         <bt:String id="Inventory.Tip" DefaultValue="Belgedeki bütün şahıs adlarını DİA karşılığı ve tarihiyle listeler."/>
         <bt:String id="Audit.Tip" DefaultValue="Belgedeki adları sırayla gösterip her biri için onay ister."/>
+        <bt:String id="T.Consistency.Tip" DefaultValue="ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerleri gösterir; belgeyi değiştirmez."/>
+        <bt:String id="T.Report.Tip" DefaultValue="Şahısları ilk geçiş sırasıyla ve milâdî ölüm yılına göre yeni bir belgede listeler."/>
+        <bt:String id="T.Index.Tip" DefaultValue="Kimliği kesin geçişlerden Word şahıslar dizini oluşturur veya günceller."/>
+        <bt:String id="T.Finalize.Tip" DefaultValue="Teslim kopyası için Vefeyât izlerini kaldırır; görünen metin değişmez."/>
         <bt:String id="Tools.Tip" DefaultValue="Teslimden önce tutarlılık, rapor, dizin ve temizlik araçları."/>
-        <bt:String id="Tool.Consistency.Tip" DefaultValue="ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerleri gösterir; belgeyi değiştirmez."/>
-        <bt:String id="Tool.Report.Tip" DefaultValue="Şahısları ilk geçiş sırasıyla ve milâdî ölüm yılına göre yeni bir belgede listeler."/>
-        <bt:String id="Tool.Index.Tip" DefaultValue="Kimliği kesin geçişlerden Word şahıslar dizini oluşturur veya günceller."/>
-        <bt:String id="Tool.Finalize.Tip" DefaultValue="Teslim kopyası için Vefeyât izlerini kaldırır; görünen metin değişmez."/>
+        <bt:String id="S.prefix.Tip" DefaultValue="Ölüm tarihinin başındaki kısaltma. Yeni eklenen tarihlere uygulanır. Seçili değer Vefeyât penceresinin üstünde yazar."/>
+        <bt:String id="S.scope.Tip" DefaultValue="Tarihin hangi geçişlere ekleneceği. Seçili değer Vefeyât penceresinin üstünde yazar."/>
+        <bt:String id="S.nameForm.Tip" DefaultValue="İsim yazımında önce önerilecek biçim. Seçili değer Vefeyât penceresinin üstünde yazar."/>
+        <bt:String id="S.auditMode.Tip" DefaultValue="Belgeyi denetle komutunun hangi geçişleri göstereceği. Seçili değer Vefeyât penceresinin üstünde yazar."/>
+        <bt:String id="Catalog.Tip" DefaultValue="Yüklü DİA kataloğunu gösterir; isterseniz başka bir CSV seçersiniz."/>
+        <bt:String id="Help.Tip" DefaultValue="Vefeyât komutlarının kısa kılavuzu."/>
         <bt:String id="Context.Tip" DefaultValue="Seçili şahıs adı için Vefeyât komutları."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Metinde bir şahıs adı seçin ve üstteki Vefeyât sekmesinden Ölüm tarihi ekle düğmesine basın."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

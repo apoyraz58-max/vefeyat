@@ -124,7 +124,7 @@ export function candidateLabel(person: Person): string {
   return person.deathDate ? `${name} ${person.deathDate}` : name;
 }
 
-export type View = "secili" | "dokum" | "teslim" | "ayarlar";
+export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim";
 export type Tool = "tutarlilik" | "rapor" | "dizin" | "temizlik";
 
 export interface Launch {
@@ -148,7 +148,8 @@ export function parseLaunch(search: string): Launch {
     return { view: "teslim", action: null, tool };
   }
   if (view === "dokum" || view === "denetim") return { view: "dokum", action: null, tool: null };
-  if (view === "teslim" || view === "ayarlar") return { view, action: null, tool: null };
+  if (view === "teslim" || view === "katalog" || view === "yardim") return { view, action: null, tool: null };
+  if (view === "ayarlar") return { view: "katalog", action: null, tool: null };
   return { view: "secili", action: null, tool: null };
 }
 
@@ -157,9 +158,73 @@ export function parseLaunch(search: string): Launch {
  * selection is unambiguous and the normal checks may run.
  */
 export function quickInsertBlocker(hasCatalog: boolean, alias: string | null, found: Lookup | null): string | null {
-  if (!hasCatalog) return "Önce Ayarlar bölümünden DİA kataloğunuzu (CSV) seçin.";
+  if (!hasCatalog) return "Katalog yüklenemedi. Vefeyât → Katalog düğmesinden CSV dosyasını seçin.";
   if (!alias) return "Metinde bir şahıs adı seçip yeniden deneyin.";
   if (!found || found.candidates.length === 0) return "Katalogda bu adla eşleşen şahıs yok.";
   if (!found.automatic) return "Birden fazla aday veya benzer yazım var. Listeden şahsı seçip Ölüm tarihi ekle'ye basın.";
   return null;
+}
+
+// ---- Document settings (VBA: VfpScope, VfpPrefix, VfuNameForm, VfpAuditMode) ----
+
+export type Scope = "first" | "all" | "none";
+export type NameForm = "ask" | "near" | "short" | "full" | "original";
+export type AuditMode = "all" | "undated";
+
+export interface Settings {
+  readonly prefix: PrefixKey;
+  readonly scope: Scope;
+  readonly nameForm: NameForm;
+  readonly auditMode: AuditMode;
+}
+
+export const DEFAULT_SETTINGS: Settings = { prefix: "o", scope: "first", nameForm: "ask", auditMode: "all" };
+
+export const SETTING_CHOICES = {
+  prefix: { original: "Kaynakta olduğu gibi", o: "ö.", ol: "öl.", v: "v." },
+  scope: { first: "Yalnız ilk kullanım", all: "Bütün kullanımlar", none: "Yalnız denetle" },
+  nameForm: { ask: "Her seferinde sor", near: "Seçili ada yakın", short: "Kısa ad", full: "Tam / uzun ad", original: "Orijinal ad" },
+  auditMode: { all: "Tüm geçişler", undated: "Tarihi olmayanlar" },
+} as const;
+
+export type SettingName = keyof typeof SETTING_CHOICES;
+
+/** A stored value, or the default when missing or unknown. */
+export function settingValue<K extends SettingName>(name: K, stored: unknown): Settings[K] {
+  const choices = SETTING_CHOICES[name] as Record<string, string>;
+  return (typeof stored === "string" && stored in choices ? stored : DEFAULT_SETTINGS[name]) as Settings[K];
+}
+
+/** One-line summary shown at the top of the pane. */
+export function settingsSummary(settings: Settings): string {
+  return [
+    `Kısaltma: ${SETTING_CHOICES.prefix[settings.prefix]}`,
+    SETTING_CHOICES.scope[settings.scope],
+    `Ad biçimi: ${SETTING_CHOICES.nameForm[settings.nameForm]}`,
+  ].join(" · ");
+}
+
+/**
+ * Whether the scope setting blocks a date or requires the earlier-mention
+ * check. "none" never writes; "all" writes at every mention.
+ */
+export function scopeRule(scope: Scope): { allowed: boolean; checkEarlier: boolean; reason?: string } {
+  if (scope === "none") {
+    return { allowed: false, checkEarlier: false, reason: "Tarih ekleme ayarı \"Yalnız denetle\": tarih eklenmez. Vefeyât → Tarih ekleme menüsünden değiştirebilirsiniz." };
+  }
+  return { allowed: true, checkEarlier: scope === "first" };
+}
+
+const FORM_LABELS: Record<Exclude<NameForm, "ask">, string> = {
+  near: "Seçili ada yakın yazım",
+  short: "Kısa ad",
+  full: "Tam / uzun ad",
+  original: "Orijinal ad",
+};
+
+/** Puts the preferred spelling (Ad biçimi) first; "ask" keeps the closest-first order. */
+export function orderByNameForm<T extends { label: string }>(options: readonly T[], form: NameForm): T[] {
+  if (form === "ask") return [...options];
+  const wanted = FORM_LABELS[form];
+  return [...options.filter((o) => o.label === wanted), ...options.filter((o) => o.label !== wanted)];
 }

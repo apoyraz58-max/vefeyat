@@ -13,7 +13,8 @@ olmayan kişiye tarih uydurmaz; internete bağlanmaz.
 | `src/core/` | Word'den bağımsız çekirdek (TypeScript): normalleştirme, ad eşleştirme, CSV kataloğu, tarih biçimleri, seçili ad kuralları |
 | `test/` | Çekirdek testleri; VBA eklentisinin yerleşik öz denetimleri birebir taşınmıştır |
 | `legacy/vba-0.3.41/` | Dondurulmuş VBA eklentisi (son VBA sürümü), kurulum ve kabul belgeleri |
-| `manifest/`, `assets/` | Eklenti manifest şablonu ve simgeler |
+| `manifest/`, `assets/` | Eklenti manifest şablonu; simgeler (Fluent UI System Icons, MIT, `assets/icon-src/NOTICE.txt`) |
+| `data/` | Eklentiyle yayımlanan katalog (`catalog.csv`, herkese açık yayımlanır) |
 | `scripts/` | Derleme (`build.mjs`) ve tarayıcıda duman testi (`smoke.mjs`) |
 | `docs/` | Geçiş planı, Word'de deneme kılavuzu |
 
