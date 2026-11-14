@@ -3,7 +3,7 @@
  * writes a date or a spelling only on an explicit click.
  */
 import { Catalog, CatalogError, type Person, type PrefixKey, nameOptions, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
-import { type Lookup, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, planDate } from "./logic.js";
+import { type Launch, type Lookup, type View, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, parseLaunch, planDate, quickInsertBlocker } from "./logic.js";
 import { loadCatalog, saveCatalog } from "./store.js";
 import { findEarlier, insertDate, onSelectionChanged, readPrefix, readSelection, replaceSelection, writePrefix } from "./word.js";
 
@@ -33,6 +33,20 @@ function setMessage(text: string, kind: "info" | "warning" | "error" | "success"
   box.hidden = text.length === 0;
 }
 
+function showView(view: View): void {
+  document.querySelectorAll<HTMLElement>(".view").forEach((element) => {
+    element.hidden = element.id !== `view-${view}`;
+  });
+  document.querySelectorAll<HTMLButtonElement>(".tabs button").forEach((tab) => {
+    tab.setAttribute("aria-selected", String(tab.dataset.view === view));
+    tab.tabIndex = tab.dataset.view === view ? 0 : -1;
+  });
+}
+
+function showCatalogNotice(): void {
+  $("no-catalog").hidden = state.catalog !== null;
+}
+
 function hideEarlier(): void {
   $("earlier").hidden = true;
 }
@@ -50,6 +64,7 @@ async function restoreCatalog(): Promise<void> {
   try {
     state.catalog = Catalog.fromCsv(stored.csv);
     describeCatalog(stored.fileName, state.catalog.people.length, true);
+    showCatalogNotice();
   } catch (error) {
     $("catalog-status").textContent = "Kayıtlı katalog okunamadı; CSV dosyasını yeniden seçin.";
     console.error(error);
@@ -63,6 +78,8 @@ async function chooseCatalog(file: File): Promise<void> {
     state.catalog = catalog;
     const persisted = await saveCatalog({ csv, fileName: file.name, savedAt: new Date().toISOString() });
     describeCatalog(file.name, catalog.people.length, persisted);
+    showCatalogNotice();
+    showView("secili");
     setMessage("Katalog yüklendi. CSV dosyanız bilgisayarınızda kalır.", "success");
     await refresh();
   } catch (error) {
@@ -228,6 +245,20 @@ async function respell(): Promise<void> {
   await refresh();
 }
 
+/** Carries out what the ribbon or context-menu button asked for. */
+async function launch(request: Launch): Promise<void> {
+  showView(request.view);
+  if (request.tool) document.getElementById(`tool-${request.tool}`)?.classList.add("focus");
+  if (request.action === "insert") {
+    const blocker = quickInsertBlocker(state.catalog !== null, state.alias, state.found);
+    if (blocker) setMessage(blocker, "info");
+    else await run(() => addDate(false));
+  } else if (request.action === "spelling") {
+    if (state.chosen && !$<HTMLButtonElement>("respell").disabled) $<HTMLSelectElement>("spelling").focus();
+    else setMessage(quickInsertBlocker(state.catalog !== null, state.alias, state.found) ?? "Bu ad için farklı bir yazım önerisi yok.", "info");
+  }
+}
+
 function initialise(): void {
   $("version").textContent = __VERSION__;
   state.prefix = readPrefix() ?? "o";
@@ -239,6 +270,10 @@ function initialise(): void {
   });
   const file = $<HTMLInputElement>("catalog-file");
   $("choose-catalog").addEventListener("click", () => file.click());
+  $("choose-catalog-inline").addEventListener("click", () => file.click());
+  document.querySelectorAll<HTMLButtonElement>(".tabs button").forEach((tab) => {
+    tab.addEventListener("click", () => showView(tab.dataset.view as View));
+  });
   file.addEventListener("change", () => {
     const chosen = file.files?.[0];
     if (chosen) void chooseCatalog(chosen);
@@ -263,7 +298,14 @@ function initialise(): void {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => void refresh(), 250);
   });
-  void restoreCatalog().then(refresh);
+  const request = parseLaunch(window.location.search);
+  showView(request.view);
+  void restoreCatalog()
+    .then(() => {
+      showCatalogNotice();
+      return refresh();
+    })
+    .then(() => launch(request));
 }
 
 Office.onReady((info) => {

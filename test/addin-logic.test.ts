@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { candidateLabel, dateTag, earlierSpellings, lookup, matchHint, planDate } from "../src/addin/logic.js";
+import { candidateLabel, dateTag, earlierSpellings, lookup, matchHint, parseLaunch, planDate, quickInsertBlocker } from "../src/addin/logic.js";
 import { Catalog, nameOptions, personKey, sourceName, withEnding, type Person } from "../src/core/index.js";
 
 const DIA = "https://islamansiklopedisi.org.tr/";
@@ -116,5 +116,29 @@ describe("tags and labels", () => {
   it("candidate label", () => {
     expect(candidateLabel(gazzali)).toBe("Gazzâlî (ö. 505/1111)");
     expect(candidateLabel(p("Râzî, Fahreddin", "", "", "r"))).toBe("Fahreddin Râzî");
+  });
+});
+
+describe("ribbon launch", () => {
+  it.each([
+    ["?action=insert", { view: "secili", action: "insert", tool: null }],
+    ["?action=spelling", { view: "secili", action: "spelling", tool: null }],
+    ["?view=dokum", { view: "dokum", action: null, tool: null }],
+    ["?view=denetim", { view: "dokum", action: null, tool: null }],
+    ["?tool=dizin", { view: "teslim", action: null, tool: "dizin" }],
+    ["?view=ayarlar", { view: "ayarlar", action: null, tool: null }],
+    ["", { view: "secili", action: null, tool: null }],
+    ["?view=bilinmeyen&action=sil", { view: "secili", action: null, tool: null }],
+  ])("%j", (search, expected) => {
+    expect(parseLaunch(search)).toEqual(expected);
+  });
+
+  it("quick insert only for an unambiguous selection", () => {
+    expect(quickInsertBlocker(false, "Gazzâlî", null)).toMatch(/kataloğunuzu/);
+    expect(quickInsertBlocker(true, null, null)).toMatch(/şahıs adı seçip/);
+    expect(quickInsertBlocker(true, "Mâlik", lookup(catalog, "Mâlik"))).toMatch(/eşleşen şahıs yok/);
+    expect(quickInsertBlocker(true, "Râzî", lookup(catalog, "Râzî"))).toMatch(/Birden fazla aday/);
+    expect(quickInsertBlocker(true, "Gazali", lookup(catalog, "Gazali"))).toMatch(/benzer yazım/);
+    expect(quickInsertBlocker(true, "Gazzâlî", lookup(catalog, "Gazzâlî"))).toBeNull();
   });
 });

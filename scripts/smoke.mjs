@@ -26,7 +26,7 @@ const base = `http://127.0.0.1:${server.address().port}/`;
 
 const FAKE_OFFICE = String.raw`
 (() => {
-  const doc = (window.__doc = { text: "", sel: [0, 0], controls: [], settings: {} });
+  const doc = (window.__doc = Object.assign({ text: "", sel: [0, 0], controls: [], settings: {} }, window.__docInit || {}));
   const shift = (at, by) => { doc.controls.forEach((c) => { if (c.range.s >= at) { c.range.s += by; c.range.e += by; } }); };
   class R {
     constructor(s, e) { this.s = s; this.e = e; }
@@ -102,7 +102,8 @@ const check = (label, condition, detail = "") => {
 
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ viewport: { width: 360, height: 900 }, deviceScaleFactor: shotPath ? 2 : 1 });
+  const context = await browser.newContext({ viewport: { width: 360, height: 900 }, deviceScaleFactor: shotPath ? 2 : 1 });
+  const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("https://appsforoffice.microsoft.com/**", (route) => route.fulfill({ contentType: "text/javascript", body: FAKE_OFFICE }));
@@ -119,9 +120,12 @@ try {
     await page.waitForTimeout(400);
   };
 
+  check("catalog notice before a catalog is chosen", await page.isVisible("#no-catalog"));
+  check("four tabs", (await page.$$eval(".tabs button", (b) => b.map((x) => x.textContent))).join("|") === "Seçili ad|Döküm|Teslim|Ayarlar");
   await page.setInputFiles("#catalog-file", { name: "people.csv", mimeType: "text/csv", buffer: Buffer.from(CSV, "utf8") });
   await page.waitForFunction(() => document.getElementById("catalog-status").textContent.includes("şahıs"));
   check("catalog loaded", (await page.textContent("#catalog-status")).includes("3 şahıs"), await page.textContent("#catalog-status"));
+  check("catalog notice hidden after loading", await page.isHidden("#no-catalog"));
 
   await select("Gazzâlî");
   check("selected name shown", (await page.textContent("#selected-name")) === "Gazzâlî");
@@ -154,7 +158,10 @@ try {
   await page.waitForTimeout(300);
   check("spelling replaced with ending kept", (await doc()).includes("Gazzâlî'nin eseri"), await doc());
 
+  await page.click("#tab-ayarlar");
+  check("settings tab shows settings", await page.isVisible("#prefix") && (await page.isHidden("#view-secili")));
   await page.selectOption("#prefix", "v");
+  await page.click("#tab-secili");
   await select("Râzî");
   const candidates = await page.$$eval("#candidates .candidate strong", (n) => n.map((x) => x.textContent));
   check("homonyms listed, well-known first", candidates[0]?.startsWith("Fahreddin er-Râzî") && candidates.length === 2, candidates.join(" | "));
@@ -169,6 +176,34 @@ try {
   check("prefix setting applied", (await doc()).includes("Râzî (v. 606/1210) de"), await doc());
   check("prefix stored in document settings", (await page.evaluate(() => window.__doc.settings["vefeyat.prefix"])) === "v");
   check("no page errors", errors.length === 0, errors.join("; "));
+
+  // Ribbon buttons open the pane with a query; the catalog persists in IndexedDB.
+  const open = async (query, text, needle, last = false) => {
+    const at = last ? text.lastIndexOf(needle) : text.indexOf(needle);
+    const tab = await context.newPage();
+    tab.on("pageerror", (error) => errors.push(error.message));
+    await tab.route("https://appsforoffice.microsoft.com/**", (route) => route.fulfill({ contentType: "text/javascript", body: FAKE_OFFICE }));
+    await tab.addInitScript((init) => { window.__docInit = init; }, { text, sel: at < 0 ? [0, 0] : [at, at + needle.length] });
+    await tab.goto(`${base}taskpane.html${query}`);
+    await tab.waitForTimeout(600);
+    return tab;
+  };
+  let tab = await open("?action=insert", "İlk kez Gazzâlî burada.", "Gazzâlî");
+  check("ribbon insert writes at once when unambiguous", (await tab.evaluate(() => window.__doc.text)) === "İlk kez Gazzâlî (ö. 505/1111) burada.", await tab.evaluate(() => window.__doc.text));
+  await tab.close();
+  tab = await open("?action=insert", "Râzî der ki.", "Râzî");
+  check("ribbon insert asks for a choice with homonyms", (await tab.textContent("#message")).includes("Birden fazla aday") && (await tab.evaluate(() => window.__doc.text)) === "Râzî der ki.");
+  await tab.close();
+  tab = await open("?action=insert", "Gazzâlî önce. Sonra Gazzâlî.", "Gazzâlî", true);
+  check("ribbon insert still warns about an earlier mention", (await tab.isVisible("#earlier")) && (await tab.evaluate(() => window.__doc.text)) === "Gazzâlî önce. Sonra Gazzâlî.");
+  await tab.close();
+  tab = await open("?tool=dizin", "", "");
+  check("teslim menu opens the tools view", (await tab.isVisible("#view-teslim")) && (await tab.getAttribute("#tool-dizin", "class")) === "focus");
+  await tab.close();
+  tab = await open("?view=denetim", "", "");
+  check("audit button opens the document view", await tab.isVisible("#view-dokum"));
+  await tab.close();
+  check("no page errors in ribbon launches", errors.length === 0, errors.join("; "));
 } finally {
   await browser.close();
   server.close();

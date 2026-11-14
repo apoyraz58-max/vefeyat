@@ -28,18 +28,34 @@ yeniden başlatın → **Ekle → Eklentilerim → Paylaşılan Klasör → Vefe
 
 ## 3. Kullanım
 
-1. Üstte **Vefeyât** sekmesi görünür; **Vefeyât paneli** düğmesi paneli açar.
-2. **CSV seç** ile DİA kataloğunuzu bir kez seçin. Dosya yalnız bu bilgisayarda,
-   eklentinin kendi tarayıcı deposunda tutulur.
-3. Metinde bir adı seçin. Tek ve güçlü eşleşmede şahıs kendiliğinden seçilir;
-   aynı adlı birden fazla şahıs veya benzer yazımda listeden seçin.
-4. **Ölüm tarihi ekle**: Ad metinde daha önce geçiyorsa uyarı çıkar
-   (**Önceki geçişe git** / **Yine de ekle**). Adın arkasında zaten tarih varsa
-   eklenmez.
-5. **İsim yazımı**: Önerilen yazımı seçip **Değiştir**. Türkçe ek korunur
+**Şerit.** Üstte **Vefeyât** sekmesi:
+
+| Grup | Düğme | Ne yapar |
+| --- | --- | --- |
+| Ekle | **Ölüm tarihi ekle** | Seçili ad tek ve kesin eşleşiyorsa, ilk geçişse ve arkasında tarih yoksa tarihi hemen ekler. Aksi hâlde paneli açıp nedenini söyler (aday seçimi, önceki geçiş uyarısı vb.). |
+| Ekle | **İsim yazımı** | Paneli yazım önerisiyle açar. |
+| Belge | **Şahıs dökümü**, **Belgeyi denetle** | Panelin Döküm bölümünü açar (henüz taşınıyor). |
+| Teslim | **Teslim araçları ▾** | Tutarlılık raporu, Şahıs raporu ve kronoloji, Şahıslar dizini, Teslim öncesi temizle (henüz taşınıyor). |
+
+**Sağ tık.** Metinde bir adı seçip sağ tıklayın → **Vefeyât → Ölüm tarihi ekle /
+İsim yazımı**.
+
+**Panel.** Dört bölüm: **Seçili ad | Döküm | Teslim | Ayarlar**.
+
+1. İlk açılışta **CSV seç** ile DİA kataloğunuzu bir kez seçin (Ayarlar bölümünde de
+   var). Dosya yalnız bu bilgisayarda, eklentinin kendi tarayıcı deposunda tutulur.
+2. Metinde bir adı seçin. Tek ve güçlü eşleşmede şahıs kendiliğinden seçilir; aynı
+   adlı birden fazla şahısta veya benzer yazımda listeden seçin. Her adayın yanında
+   "adın bir parçası" veya "benzer yazım, doğrulayın" notu görünür.
+3. **Ölüm tarihi ekle**: Ad metinde daha önce geçiyorsa uyarı çıkar (**Önceki geçişe
+   git** / **Yine de ekle**). Adın arkasında zaten tarih varsa eklenmez.
+4. **İsim yazımı**: Önerilen yazımı seçip **Değiştir**. Türkçe ek korunur
    ("Gazali'nin" → "Gazzâlî'nin"). Yalnız adı seçin.
-6. **Ayarlar → Kısaltma**: ö. / öl. / v. / kaynakta olduğu gibi. Belgeyle
-   birlikte kaydedilir.
+5. **Ayarlar → Kısaltma**: ö. / öl. / v. / kaynakta olduğu gibi. Belgeyle birlikte
+   kaydedilir.
+
+Panel açıkken şerit düğmesine yeniden basıldığında Word paneli yeniden
+yüklemeyebilir; bu durumda paneldeki düğmeyi kullanın.
 
 ## Bu sürümün sınırları
 

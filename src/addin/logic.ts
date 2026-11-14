@@ -123,3 +123,43 @@ export function candidateLabel(person: Person): string {
   const name = textName(person.shortName);
   return person.deathDate ? `${name} ${person.deathDate}` : name;
 }
+
+export type View = "secili" | "dokum" | "teslim" | "ayarlar";
+export type Tool = "tutarlilik" | "rapor" | "dizin" | "temizlik";
+
+export interface Launch {
+  readonly view: View;
+  readonly action: "insert" | "spelling" | null;
+  readonly tool: Tool | null;
+}
+
+/**
+ * Which view and action a ribbon or context-menu button asked for, from the
+ * task pane URL query (?action=insert, ?view=dokum, ?tool=dizin …).
+ * Unknown values fall back to the selected-name view.
+ */
+export function parseLaunch(search: string): Launch {
+  const query = new URLSearchParams(search);
+  const action = query.get("action");
+  const tool = query.get("tool");
+  const view = query.get("view");
+  if (action === "insert" || action === "spelling") return { view: "secili", action, tool: null };
+  if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "temizlik") {
+    return { view: "teslim", action: null, tool };
+  }
+  if (view === "dokum" || view === "denetim") return { view: "dokum", action: null, tool: null };
+  if (view === "teslim" || view === "ayarlar") return { view, action: null, tool: null };
+  return { view: "secili", action: null, tool: null };
+}
+
+/**
+ * Why the ribbon's "Ölüm tarihi ekle" cannot write at once, or null when the
+ * selection is unambiguous and the normal checks may run.
+ */
+export function quickInsertBlocker(hasCatalog: boolean, alias: string | null, found: Lookup | null): string | null {
+  if (!hasCatalog) return "Önce Ayarlar bölümünden DİA kataloğunuzu (CSV) seçin.";
+  if (!alias) return "Metinde bir şahıs adı seçip yeniden deneyin.";
+  if (!found || found.candidates.length === 0) return "Katalogda bu adla eşleşen şahıs yok.";
+  if (!found.automatic) return "Birden fazla aday veya benzer yazım var. Listeden şahsı seçip Ölüm tarihi ekle'ye basın.";
+  return null;
+}
