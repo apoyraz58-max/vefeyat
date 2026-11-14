@@ -28,7 +28,7 @@ yeniden başlatın → **Ekle → Eklentilerim → Paylaşılan Klasör → Vefe
 
 ## 3. Kullanım
 
-1. **Giriş** sekmesinde **Vefeyât** düğmesi paneli açar.
+1. Üstte **Vefeyât** sekmesi görünür; **Vefeyât paneli** düğmesi paneli açar.
 2. **CSV seç** ile DİA kataloğunuzu bir kez seçin. Dosya yalnız bu bilgisayarda,
    eklentinin kendi tarayıcı deposunda tutulur.
 3. Metinde bir adı seçin. Tek ve güçlü eşleşmede şahıs kendiliğinden seçilir;

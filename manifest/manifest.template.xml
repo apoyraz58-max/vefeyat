@@ -40,7 +40,7 @@
           </GetStarted>
           <FunctionFile resid="Commands.Url"/>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <OfficeTab id="TabHome">
+            <CustomTab id="Vefeyat.Tab">
               <Group id="Vefeyat.Group">
                 <Label resid="Group.Label"/>
                 <Icon>
@@ -65,7 +65,8 @@
                   </Action>
                 </Control>
               </Group>
-            </OfficeTab>
+              <Label resid="Tab.Label"/>
+            </CustomTab>
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
@@ -83,11 +84,12 @@
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Vefeyât hazır"/>
-        <bt:String id="Group.Label" DefaultValue="Vefeyât"/>
-        <bt:String id="Button.Label" DefaultValue="Vefeyât"/>
+        <bt:String id="Tab.Label" DefaultValue="Vefeyât"/>
+        <bt:String id="Group.Label" DefaultValue="Şahıs ve tarih"/>
+        <bt:String id="Button.Label" DefaultValue="Vefeyât paneli"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Giriş sekmesindeki Vefeyât düğmesiyle paneli açın ve metinde bir şahıs adı seçin."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Üstteki Vefeyât sekmesinden Vefeyât paneli düğmesine basın ve metinde bir şahıs adı seçin."/>
         <bt:String id="Button.Tooltip" DefaultValue="Seçili şahıs adını DİA kataloğuyla karşılaştırır, yazımı önerir ve vefat tarihini ekler."/>
       </bt:LongStrings>
     </Resources>
