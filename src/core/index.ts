@@ -9,3 +9,4 @@ export * from "./names.js";
 export * from "./catalog.js";
 export * from "./dates.js";
 export * from "./alias.js";
+export * from "./spelling.js";

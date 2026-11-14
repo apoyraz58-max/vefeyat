@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vefeyât</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <link rel="stylesheet" href="taskpane.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Vefeyât</h1>
+      <button id="refresh" type="button" class="link" title="Seçimi yeniden oku">Yenile</button>
+    </header>
+
+    <section aria-labelledby="catalog-heading">
+      <h2 id="catalog-heading">Katalog</h2>
+      <p id="catalog-status" class="muted">Yükleniyor…</p>
+      <button id="choose-catalog" type="button">CSV seç</button>
+      <input id="catalog-file" type="file" accept=".csv,text/csv" hidden />
+    </section>
+
+    <section aria-labelledby="selection-heading">
+      <h2 id="selection-heading">Seçili ad</h2>
+      <p id="selected-name" class="selected">Metinde bir şahıs adı seçin.</p>
+      <div id="candidates" role="radiogroup" aria-label="Katalogdaki adaylar"></div>
+    </section>
+
+    <section id="details" hidden aria-labelledby="details-heading">
+      <h2 id="details-heading">Şahıs</h2>
+      <dl>
+        <dt>Tam ad</dt>
+        <dd id="detail-full"></dd>
+        <dt>Orijinal ad</dt>
+        <dd id="detail-original" dir="auto"></dd>
+        <dt>Ölüm tarihi</dt>
+        <dd id="detail-date"></dd>
+      </dl>
+      <a id="detail-link" href="#" target="_blank" rel="noopener noreferrer">DİA maddesini aç</a>
+
+      <div class="actions">
+        <button id="insert" type="button" class="primary" disabled>Ölüm tarihi ekle</button>
+      </div>
+
+      <div id="earlier" class="message warning" hidden>
+        <p>Bu şahsın adı metinde daha önce geçiyor. İlk geçiş kuralına göre tarih ilk geçişe eklenir.</p>
+        <div class="actions">
+          <button id="go-earlier" type="button">Önceki geçişe git</button>
+          <button id="insert-anyway" type="button">Yine de ekle</button>
+        </div>
+      </div>
+
+      <label for="spelling">İsim yazımı</label>
+      <div class="row">
+        <select id="spelling"></select>
+        <button id="respell" type="button" disabled>Değiştir</button>
+      </div>
+    </section>
+
+    <p id="message" class="message" hidden role="status"></p>
+
+    <section aria-labelledby="settings-heading">
+      <h2 id="settings-heading">Ayarlar</h2>
+      <label for="prefix">Kısaltma</label>
+      <select id="prefix">
+        <option value="original">Kaynakta olduğu gibi</option>
+        <option value="o">ö.</option>
+        <option value="ol">öl.</option>
+        <option value="v">v.</option>
+      </select>
+    </section>
+
+    <footer>
+      <span>Vefeyât <span id="version"></span></span>
+      <span>Belge metni bilgisayarınızdan çıkmaz.</span>
+    </footer>
+    <script src="taskpane.js"></script>
+  </body>
+</html>
