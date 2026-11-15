@@ -321,7 +321,7 @@ try {
   await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length > 0);
   const listed = await tab.$$eval("#inventory-list li strong", (n) => n.map((x) => x.textContent));
   check("Şahıs dökümü lists every mention", listed.join("|") === "Gazali|Gazzâlî|Râzî|Gazzâlî'nin", listed.join("|"));
-  check("inventory summary", (await tab.textContent("#inventory-summary")).startsWith("4 geçiş · 1 kesin şahıs · 2 doğrulanacak"), await tab.textContent("#inventory-summary"));
+  check("inventory summary", (await tab.textContent("#inventory-summary")).startsWith("4 geçiş · 1 kesin şahıs · 1 doğrulanacak"), await tab.textContent("#inventory-summary"));
   await tab.click("#inventory-list li:nth-child(3)");
   await tab.waitForTimeout(200);
   check("clicking a row selects it in the document", (await tab.evaluate(() => window.__doc.text.slice(...window.__doc.sel))) === "Râzî");
@@ -331,10 +331,11 @@ try {
   await tab.close();
   tab = await open("?view=denetim", book);
   await tab.waitForTimeout(400);
-  check("audit visits mentions in order", (await tab.isVisible("#audit-bar")) && (await tab.textContent("#audit-position")).startsWith("Denetim: 1 / 3") && (await tab.textContent("#selected-name")) === "Gazali", await tab.textContent("#audit-position"));
+  check("audit visits mentions in order", (await tab.isVisible("#audit-bar")) && (await tab.textContent("#audit-position")).startsWith("Denetim: 1 / 2") && (await tab.textContent("#selected-name")) === "Gazali" && (await tab.textContent("#audit-position")).includes("kimlik belgedeki diğer geçişlerden"), await tab.textContent("#audit-position"));
   await tab.click("#audit-next");
   await tab.waitForTimeout(400);
-  check("audit moves to the next mention", (await tab.textContent("#selected-name")) === "Gazzâlî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 2 / 3"));
+  // The dated Gazzâlî is a repeat of the person already met as "Gazali": skipped under "Yalnız ilk kullanım".
+  check("audit moves to the next mention", (await tab.textContent("#selected-name")) === "Râzî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 2 / 2"));
   await tab.click("#audit-next");
   await tab.waitForTimeout(400);
   check("first-use audit skips the verified repeat", (await tab.textContent("#selected-name")) === "Râzî" && (await tab.textContent("#audit-next")) === "Bitir");
