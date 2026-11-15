@@ -133,3 +133,4 @@ input[type="search"] {
 .results { list-style: none; margin: 8px 0 0; padding: 0; }
 .results li { border-top: 1px solid var(--border); padding: 6px 0; }
 .results a { margin-left: 6px; }
+#back { white-space: nowrap; flex: none; }
