@@ -330,7 +330,10 @@ async function run(task: () => Promise<void>): Promise<void> {
   try {
     await task();
   } catch (error) {
-    setMessage(`Word işlemi tamamlanamadı: ${String(error)} [Vefeyât ${__VERSION__}]`, "error");
+    const office = error as { code?: string; debugInfo?: { errorLocation?: string; statement?: string } };
+    const detail = [office.code, office.debugInfo?.errorLocation].filter(Boolean).join(" · ");
+    console.error(error);
+    setMessage(`Word işlemi tamamlanamadı: ${String(error)}${detail ? ` (${detail})` : ""} [Vefeyât ${__VERSION__}]`, "error");
   } finally {
     state.busy = false;
     renderDetails();
@@ -612,7 +615,8 @@ async function createIndex(): Promise<void> {
     return;
   }
   const people = new Set(rows.map((r) => r.person?.source)).size;
-  const result = await buildIndex(read.segments, rows);
+  setMessage(`Dizin işaretleri ekleniyor… 0 / ${rows.length}`, "info");
+  const result = await buildIndex(read.segments, rows, (done, total) => setMessage(`Dizin işaretleri ekleniyor… ${done} / ${total}`, "info"));
   logHistory("index", `${people} şahıs, ${result.marks} işaret`);
   setMessage(
     `Şahıslar dizini hazır: ${people} şahıs, ${result.marks} işaret.` + (result.missing ? ` ${result.missing} geçiş metinde bulunamadı.` : "") + " Dizin işaretleri gizli metindir; ¶ düğmesiyle görünür.",

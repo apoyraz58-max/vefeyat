@@ -230,6 +230,11 @@ export function onSelectionChanged(handler: () => void): void {
 // ---- Whole-document reading for Şahıs dökümü and Belgeyi denetle ----
 
 /** Main-text paragraphs and, where WordApi 1.5 is available, footnotes. */
+/** Word requests queued per sync in long operations. */
+const CHUNK = 200;
+
+export type Progress = (done: number, total: number) => void;
+
 export async function readSegments(): Promise<{ segments: Segment[]; footnotes: boolean }> {
   return Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
@@ -238,15 +243,18 @@ export async function readSegments(): Promise<{ segments: Segment[]; footnotes: 
     const segments: Segment[] = paragraphs.items.map((p, i) => ({ part: "main", anchor: i, order: 0, text: p.text }));
     const footnotes = Office.context.requirements.isSetSupported("WordApi", "1.5");
     if (footnotes) {
-      const notes = paragraphs.items.map((p) => {
-        const collection = p.getRange("Whole").footnotes;
-        collection.load("items/body/text");
-        return collection;
-      });
-      await context.sync();
-      notes.forEach((collection, anchor) => {
-        collection.items.forEach((note, i) => segments.push({ part: "note", anchor, order: i + 1, text: note.body.text }));
-      });
+      // In chunks: one request per paragraph of a 500-page thesis is too much for one sync.
+      for (let from = 0; from < paragraphs.items.length; from += CHUNK) {
+        const notes = paragraphs.items.slice(from, from + CHUNK).map((p) => {
+          const collection = p.getRange("Whole").footnotes;
+          collection.load("items/body/text");
+          return collection;
+        });
+        await context.sync();
+        notes.forEach((collection, k) => {
+          collection.items.forEach((note, i) => segments.push({ part: "note", anchor: from + k, order: i + 1, text: note.body.text }));
+        });
+      }
     }
     return { segments, footnotes };
   });
@@ -319,18 +327,21 @@ export async function finalizeDocument(): Promise<{ controls: number; settings: 
       await context.sync();
       for (const note of notes.items) lists.push(note.body.contentControls);
     }
-    for (const list of lists) list.load("items/tag");
-    await context.sync();
     let count = 0;
-    for (const list of lists) {
-      for (const control of list.items) {
-        if (!control.tag?.startsWith("vefeyat:")) continue;
-        control.cannotDelete = false;
-        control.delete(true);
-        count++;
+    for (let from = 0; from < lists.length; from += CHUNK) {
+      const chunk = lists.slice(from, from + CHUNK);
+      for (const list of chunk) list.load("items/tag");
+      await context.sync();
+      for (const list of chunk) {
+        for (const control of list.items) {
+          if (!control.tag?.startsWith("vefeyat:")) continue;
+          control.cannotDelete = false;
+          control.delete(true);
+          count++;
+        }
       }
+      await context.sync();
     }
-    await context.sync();
     return count;
   });
   const settings = Office.context.document.settings;
@@ -360,19 +371,22 @@ async function deleteIndexFields(context: Word.RequestContext): Promise<{ marks:
   notes.load("items");
   await context.sync();
   const lists = [context.document.body.fields, ...notes.items.map((n) => n.body.fields)];
-  for (const list of lists) list.load("items/code");
-  await context.sync();
   let marks = 0;
   let indexes = 0;
-  for (const list of lists) {
-    for (const field of list.items) {
-      if (!isVefeyatIndexField(field.code)) continue;
-      if (/^\s*INDEX\b/i.test(field.code)) indexes++;
-      else marks++;
-      field.delete();
+  for (let from = 0; from < lists.length; from += CHUNK) {
+    const chunk = lists.slice(from, from + CHUNK);
+    for (const list of chunk) list.load("items/code");
+    await context.sync();
+    for (const list of chunk) {
+      for (const field of list.items) {
+        if (!isVefeyatIndexField(field.code)) continue;
+        if (/^\s*INDEX\b/i.test(field.code)) indexes++;
+        else marks++;
+        field.delete();
+      }
     }
+    await context.sync();
   }
-  await context.sync();
   return { marks, indexes };
 }
 
@@ -466,7 +480,7 @@ export async function removeIndex(): Promise<{ marks: number; index: boolean }> 
  * every certain mention and puts the INDEX field at the end of the document
  * (or where the previous index stood). Returns the number of marks.
  */
-export async function buildIndex(segments: readonly Segment[], rows: readonly InventoryRow[]): Promise<{ marks: number; missing: number }> {
+export async function buildIndex(segments: readonly Segment[], rows: readonly InventoryRow[], progress: Progress = () => {}): Promise<{ marks: number; missing: number }> {
   return Word.run(async (context) => {
     // Where the old index was, so the new one goes back there.
     const blocks = context.document.body.contentControls.getByTag(INDEX_TAG);
@@ -485,39 +499,45 @@ export async function buildIndex(segments: readonly Segment[], rows: readonly In
     paragraphs.load("items");
     await context.sync();
     const noteLists = new Map<number, Word.NoteItemCollection>();
-    for (const row of rows) {
-      const segment = segments[row.segment];
-      if (segment?.part === "note" && !noteLists.has(segment.anchor)) {
-        const host = paragraphs.items[segment.anchor];
+    const anchors = [...new Set(rows.filter((r) => segments[r.segment]?.part === "note").map((r) => (segments[r.segment] as Segment).anchor))];
+    for (let from = 0; from < anchors.length; from += CHUNK) {
+      for (const anchor of anchors.slice(from, from + CHUNK)) {
+        const host = paragraphs.items[anchor];
         if (!host) continue;
         const list = host.getRange("Whole").footnotes;
         list.load("items");
-        noteLists.set(segment.anchor, list);
+        noteLists.set(anchor, list);
       }
+      await context.sync();
     }
-    await context.sync();
-    const searches: Array<{ row: InventoryRow; results: Word.RangeCollection; nth: number }> = [];
-    for (const row of rows) {
-      const segment = segments[row.segment];
-      if (!segment || row.text.length > 250) continue;
-      const host = paragraphs.items[segment.anchor];
-      if (!host) continue;
-      const scope: Word.Body | Word.Range | undefined =
-        segment.part === "note" ? noteLists.get(segment.anchor)?.items[segment.order - 1]?.body : host.getRange("Whole");
-      if (!scope) continue;
-      const results = scope.search(searchText(row.text), { matchCase: true, matchWholeWord: false });
-      results.load("items");
-      searches.push({ row, results, nth: occurrenceBefore(segment.text, row.text, row.start) });
-    }
-    await context.sync();
+    // From the end of the document backwards: a mark inserted before a name
+    // never shifts the mentions still to be found before it.
+    const ordered = [...rows].reverse();
     let marks = 0;
-    for (const { row, results, nth } of searches) {
-      const target = results.items[nth];
-      if (!target || !row.person) continue;
-      target.insertField("Before", "XE", xeCode(row.person));
-      marks++;
+    for (let from = 0; from < ordered.length; from += CHUNK) {
+      const searches: Array<{ row: InventoryRow; results: Word.RangeCollection; nth: number }> = [];
+      for (const row of ordered.slice(from, from + CHUNK)) {
+        const segment = segments[row.segment];
+        if (!segment || row.text.length > 250) continue;
+        const host = paragraphs.items[segment.anchor];
+        if (!host) continue;
+        const scope: Word.Body | Word.Range | undefined =
+          segment.part === "note" ? noteLists.get(segment.anchor)?.items[segment.order - 1]?.body : host.getRange("Whole");
+        if (!scope) continue;
+        const results = scope.search(searchText(row.text), { matchCase: true, matchWholeWord: false });
+        results.load("items");
+        searches.push({ row, results, nth: occurrenceBefore(segment.text, row.text, row.start) });
+      }
+      await context.sync();
+      for (const { row, results, nth } of searches) {
+        const target = results.items[nth];
+        if (!target || !row.person) continue;
+        target.insertField("Before", "XE", xeCode(row.person));
+        marks++;
+      }
+      await context.sync();
+      progress(Math.min(from + CHUNK, ordered.length), ordered.length);
     }
-    await context.sync();
 
     // The block: heading and INDEX field in one tagged control.
     let first: Word.Paragraph;
@@ -550,8 +570,10 @@ async function controlLists(context: Word.RequestContext): Promise<Array<{ part:
     await context.sync();
     for (const note of notes.items) lists.push({ part: "note", list: note.body.contentControls });
   }
-  for (const { list } of lists) list.load("items/id,items/tag,items/text");
-  await context.sync();
+  for (let from = 0; from < lists.length; from += CHUNK) {
+    for (const { list } of lists.slice(from, from + CHUNK)) list.load("items/id,items/tag,items/text");
+    await context.sync();
+  }
   return lists;
 }
 
