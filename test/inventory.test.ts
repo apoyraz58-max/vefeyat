@@ -140,3 +140,17 @@ describe("endnotes", () => {
     ]);
   });
 });
+
+describe("lookups ignore the Arabic article", () => {
+  it("Ebû Bekir er-Râzî is the catalog's Râzî, Ebû Bekir", async () => {
+    const { lookup } = await import("../src/addin/logic.js");
+    const inverted = new Catalog([
+      { shortName: "Râzî, Ebû Bekir", fullName: "Ebû Bekr Muhammed b. Zekeriyyâ er-Râzî", originalName: "", deathDate: "(ö. 313/925)", description: "", source: DIA + "razi-ebu-bekir" },
+      { shortName: "Fahreddin er-Râzî", fullName: "", originalName: "", deathDate: "(ö. 606/1210)", description: "", source: DIA + "fahreddin" },
+      { shortName: "İbn Sînâ", fullName: "Ebû Alî el-Hüseyn b. Abdillâh b. Sînâ", originalName: "", deathDate: "(ö. 428/1037)", description: "", source: DIA + "ibn-sina" },
+      { shortName: "İbn Sinân Hafâcî", fullName: "", originalName: "", deathDate: "(ö. 466/1074)", description: "", source: DIA + "ibn-sinan" },
+    ]);
+    expect(lookup(inverted, "Ebû Bekir er-Râzî").automatic?.source).toBe(DIA + "razi-ebu-bekir");
+    expect(lookup(inverted, "İbn Sînâ'nın").automatic?.source).toBe(DIA + "ibn-sina");
+  });
+});

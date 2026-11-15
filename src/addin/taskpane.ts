@@ -35,7 +35,7 @@ import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, ad
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
 import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, firstMentionBefore, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canSkipProofing, skipProofing, firstMentionBefore, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -1336,6 +1336,21 @@ async function applyPrefs(): Promise<void> {
   );
 }
 
+async function noProofing(): Promise<void> {
+  if (!canSkipProofing()) {
+    setMessage("Bu Word sürümü yazım denetimi ayarını değiştirmeye izin vermiyor (WordApiDesktop 1.3). Microsoft 365 masaüstü Word'ü güncelleyin.", "warning");
+    return;
+  }
+  const rows = (await documentRows()).filter((r) => r.person !== null || r.candidates.length > 0);
+  if (rows.length === 0) {
+    setMessage("Belgede şahıs adı bulunamadı.", "info");
+    return;
+  }
+  const marked = await skipProofing(state.segments, rows, progress("Şahıs adları işaretleniyor"));
+  logHistory("repair", `${marked} şahıs adı yazım denetiminden çıkarıldı`);
+  setMessage(`${marked} şahıs adı yazım denetiminden çıkarıldı. Bu adlara sağ tıklayınca Vefeyât menüsü görünür.`, "success");
+}
+
 async function toggleFrames(): Promise<void> {
   const result = await toggleDateFrames();
   setMessage(
@@ -1374,6 +1389,7 @@ async function launch(request: Launch): Promise<void> {
   if (request.action === "prefer") await run(preferSelection);
   if (request.action === "clearSpelling") await run(clearSpellings);
   if (request.action === "shading") await run(toggleFrames);
+  if (request.action === "noproof") await run(noProofing, "Şahıs adları işaretleniyor");
   if (request.view === "istisna") renderExclusions();
   if (request.view === "kapsam") await run(showCoverage);
   if (request.action === "resume") await run(resumeAudit, "Belge taranıyor");
@@ -1441,6 +1457,7 @@ function initialise(): void {
   $("prefs-copy").addEventListener("click", () => void copyPrefs());
   $("prefs-apply").addEventListener("click", () => void run(applyPrefs));
   $("frames-toggle").addEventListener("click", () => void run(toggleFrames));
+  $("noproof-run").addEventListener("click", () => void run(noProofing, "Şahıs adları işaretleniyor"));
   const prefsFile = $<HTMLInputElement>("prefs-file");
   $("prefs-choose").addEventListener("click", () => prefsFile.click());
   prefsFile.addEventListener("change", () => {

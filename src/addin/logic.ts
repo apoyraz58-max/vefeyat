@@ -15,7 +15,7 @@ import {
   nameQuery,
   normalize,
   personKey,
-  singleSafe,
+  safeCandidate,
   startsWithDate,
   strength,
   textName,
@@ -47,7 +47,7 @@ export function lookup(catalog: Catalog, alias: string): Lookup {
     candidates: [...exact, ...partial],
     strong,
     scores: new Map(found.map((person) => [personKey(person), strength(person, alias)])),
-    automatic: singleSafe(found, alias) ? (found[0] as Person) : null,
+    automatic: safeCandidate(found, alias),
   };
 }
 
@@ -129,7 +129,7 @@ export type Tool = "tutarlilik" | "rapor" | "dizin" | "dizinkaldir" | "dizinsil"
 
 export interface Launch {
   readonly view: View;
-  readonly action: "insert" | "spelling" | "dia" | "audit" | "resume" | "prefer" | "clearSpelling" | "shading" | null;
+  readonly action: "insert" | "spelling" | "dia" | "audit" | "resume" | "prefer" | "clearSpelling" | "shading" | "noproof" | null;
   readonly tool: Tool | null;
 }
 
@@ -145,7 +145,7 @@ export function parseLaunch(search: string): Launch {
   const tool = query.get("tool");
   const view = query.get("view");
   if (action === "insert" || action === "spelling" || action === "dia" || action === "prefer") return { view: "secili", action, tool: null };
-  if (action === "clearSpelling" || action === "shading") return { view: "tercihler", action, tool: null };
+  if (action === "clearSpelling" || action === "shading" || action === "noproof") return { view: "tercihler", action, tool: null };
   if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "dizinkaldir" || tool === "dizinsil" || tool === "temizlik") {
     return { view: "teslim", action: null, tool };
   }

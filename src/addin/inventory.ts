@@ -25,7 +25,7 @@ import {
   naturalOrder,
   normalize,
   personKey,
-  singleSafe,
+  safeCandidate,
   sourceName,
   startsWithDate,
   textName,
@@ -210,8 +210,9 @@ export function buildInventory(
           resolved = "catalog";
         }
       }
-      if (!person && (singleSafe(candidates, hit.text) || (candidates.length === 1 && wordsContained(candidates[0] as Person, hit.text)))) {
-        person = candidates[0] as Person;
+      const safe = safeCandidate(candidates, hit.text);
+      if (!person && (safe || (candidates.length === 1 && wordsContained(candidates[0] as Person, hit.text)))) {
+        person = safe ?? (candidates[0] as Person);
         resolved = "catalog";
       }
       if (!person) {

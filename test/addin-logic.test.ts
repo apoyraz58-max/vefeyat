@@ -133,6 +133,7 @@ describe("ribbon launch", () => {
     ["?action=dia", { view: "secili", action: "dia", tool: null }],
     ["?action=prefer", { view: "secili", action: "prefer", tool: null }],
     ["?action=shading", { view: "tercihler", action: "shading", tool: null }],
+    ["?action=noproof", { view: "tercihler", action: "noproof", tool: null }],
     ["?view=kimlik", { view: "kimlik", action: null, tool: null }],
     ["?view=devam", { view: "secili", action: "resume", tool: null }],
     ["?view=toplu", { view: "toplu", action: null, tool: null }],

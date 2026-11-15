@@ -36,6 +36,8 @@ export async function readSelection(): Promise<SelectionText> {
 export async function insertDate(dateText: string, tag: string, title: string): Promise<number> {
   return Word.run(async (context) => {
     const selection = context.document.getSelection();
+    // The name stops being underlined as a misspelling: its right-click menu then carries Vefeyât.
+    if (Office.context.requirements.isSetSupported("WordApiDesktop", "1.3")) selection.hasNoProofing = true;
     const inserted = selection.getRange("End").insertText(` ${dateText}`, "After");
     const control = inserted.insertContentControl();
     control.tag = tag;
@@ -1091,5 +1093,66 @@ export async function firstMentionBefore(segments: readonly Segment[], rows: rea
     });
     await context.sync();
     return relations.find((r) => r && BEFORE.has(r.relation.value))?.row ?? null;
+  });
+}
+
+// ---- Yazım denetimi (WordApiDesktop 1.3: Range.hasNoProofing) ----
+
+export function canSkipProofing(): boolean {
+  return Office.context.requirements.isSetSupported("WordApiDesktop", "1.3");
+}
+
+/**
+ * Marks every listed mention as exempt from spelling and grammar checking.
+ * Word then shows its ordinary text menu on a right click there (with the
+ * Vefeyât commands), not the spelling menu that add-ins cannot extend.
+ */
+export async function skipProofing(segments: readonly Segment[], rows: readonly InventoryRow[], progress: Progress = () => {}): Promise<number> {
+  return Word.run(async (context) => {
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("items");
+    await context.sync();
+    let done = 0;
+    let marked = 0;
+    for (let from = 0; from < rows.length; from += CHUNK) {
+      const chunk = rows.slice(from, from + CHUNK);
+      const probes = chunk.map((row) => {
+        const segment = segments[row.segment];
+        const host = segment ? paragraphs.items[segment.anchor] : undefined;
+        if (!segment || !host || row.text.length > 250) return null;
+        if (segment.part === "main") {
+          const results = host.getRange("Whole").search(searchText(row.text), { matchCase: true, matchWholeWord: false });
+          results.load("items");
+          return { row, segment, results, notes: null };
+        }
+        const foot = host.getRange("Whole").footnotes;
+        const end = host.getRange("Whole").endnotes;
+        foot.load("items");
+        end.load("items");
+        return { row, segment, results: null, notes: { foot, end } };
+      });
+      await context.sync();
+      const noteSearches = probes.map((probe) => {
+        if (!probe?.notes) return null;
+        const note = noteOf(probe.notes, probe.segment.order);
+        if (!note) return null;
+        const results = note.body.search(searchText(probe.row.text), { matchCase: true, matchWholeWord: false });
+        results.load("items");
+        return results;
+      });
+      await context.sync();
+      probes.forEach((probe, k) => {
+        if (!probe) return;
+        const results = probe.results ?? noteSearches[k];
+        const range = results?.items[occurrenceBefore(probe.segment.text, probe.row.text, probe.row.start)];
+        if (!range) return;
+        range.hasNoProofing = true;
+        marked++;
+      });
+      await context.sync();
+      done += chunk.length;
+      progress(done, rows.length);
+    }
+    return marked;
   });
 }

@@ -45,7 +45,10 @@ VBA sekmesindeki bütün komutlar bu sürümde çalışıyor; VBA eklentisini ka
 Denetlenecek, Ad biçimi, Kısaltma) Word'ün Office.js eklentilerine izin vermediği için menüdür;
 seçili değerler Vefeyât penceresinin üstünde yazar.
 
-**Sağ tık.** Metinde bir adı seçip sağ tıklayın → **Vefeyât → Ölüm tarihi ekle / İsim yazımı**.
+**Sağ tık.** Metinde bir adı seçip sağ tıklayın → **Vefeyât → Ölüm tarihi ekle / İsim yazımı / DİA maddesini aç / Tarihin kaynağı**.
+Kırmızı çizgili (yazım hatası sanılan) bir kelimede Word kendi yazım menüsünü açar ve eklentiler
+o menüye komut ekleyemez. **Tercihler → Ayarlar → Şahıs adlarını yazım denetiminden çıkar** ile
+adların çizgisi kalkar ve sağ tık menüsü görünür; tarih eklenen adlar kendiliğinden çıkarılır.
 
 **Pencere.** Sağdaki Vefeyât penceresi, VBA'daki pencereler gibi yalnız düğmenin istediği işi
 gösterir (aday seçimi, onay, katalog, kılavuz). Ayar içermez.

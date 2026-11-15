@@ -3,7 +3,7 @@
  * (tag vefeyat:date:<hash>) against the catalog. Word-independent; port of
  * VBA 0.3.41 `VfhCheck`. Nothing is repaired without the user's choice.
  */
-import { type Catalog, type NameIndex, type Person, PREFIX_KEYS, type PrefixKey, alreadyHasDate, findMatches, formatDate, isValidDate, nameQuery, singleSafe, startsWithDate } from "../core/index.js";
+import { type Catalog, type NameIndex, type Person, PREFIX_KEYS, type PrefixKey, alreadyHasDate, findMatches, formatDate, isValidDate, nameQuery, safeCandidate, startsWithDate } from "../core/index.js";
 import { dateTag } from "./logic.js";
 
 export const DATE_TAG_PREFIX = "vefeyat:date:";
@@ -100,6 +100,6 @@ export function legacyPerson(before: string, dateText: string, index: NameIndex)
   if (!last || before.slice(last.start + last.length).trim().length > 1) return null;
   const candidates = index.rank(last.key, nameQuery(last.text));
   const dated = candidates.filter((c) => isValidDate(c.deathDate) && alreadyHasDate(dateText, c.deathDate));
-  const person = dated.length === 1 ? (dated[0] as Person) : singleSafe(candidates, last.text) ? (candidates[0] as Person) : null;
+  const person = dated.length === 1 ? (dated[0] as Person) : safeCandidate(candidates, last.text);
   return { person, literal: last.text, start: last.start };
 }

@@ -12,7 +12,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { buildInventory, notePeopleOrMatches } from "../src/addin/inventory.js";
-import { Catalog, NameIndex, confirmationCandidates, singleSafe } from "../src/core/index.js";
+import { Catalog, NameIndex, confirmationCandidates, safeCandidate } from "../src/core/index.js";
 
 const catalogPath = new URL("../data/catalog.csv", import.meta.url);
 const gold = JSON.parse(readFileSync(new URL("./fixtures/academic-gold.json", import.meta.url), "utf8")) as {
@@ -89,7 +89,8 @@ describe.runIf(haveCatalog)("VBA academic challenge set", () => {
     for (const q of gold.queries) {
       const candidates = confirmationCandidates(catalog.find(q.query, false), q.query);
       const articles = candidates.map((p) => p.source.replace(/\/+$/, "").split("/").pop());
-      const automatic = singleSafe(candidates, q.query);
+      const pick = safeCandidate(candidates, q.query);
+      const automatic = pick !== null;
       if (q.target_article) {
         targets++;
         if (articles[0] === q.target_article) top1++;
@@ -98,7 +99,8 @@ describe.runIf(haveCatalog)("VBA academic challenge set", () => {
       }
       if (automatic) {
         auto++;
-        if (!(q.target_article && articles[0] === q.target_article && !q.must_confirm)) wrongAuto++;
+        const picked = pick?.source.replace(/\/+$/, "").split("/").pop();
+        if (!(q.target_article && picked === q.target_article && !q.must_confirm)) wrongAuto++;
       }
     }
     console.log(`identity: top1 ${top1}/${targets}, retrieved ${retrieved}/${targets}, automatic ${auto} (wrong ${wrongAuto})\n  ${misses.join("\n  ")}`);

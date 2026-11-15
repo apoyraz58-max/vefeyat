@@ -133,6 +133,7 @@ groups = [
             item("ExportPrefs", S("ExportPrefs", "Tercihleri dışa aktar"), L("ExportPrefs.Tip", "Ayarları, yazım tercihlerini, istisnaları ve kimlik onaylarını bir dosyaya kaydeder."), "settings", pane(U("U.ExportPrefs", "taskpane.html?view=tercihler"))),
             item("ImportPrefs", S("ImportPrefs", "Tercihleri al"), L("ImportPrefs.Tip", "Dışa aktarılmış tercih dosyasını bu belgeye uygular."), "settings", pane(U("U.ImportPrefs", "taskpane.html?view=tercihler"))),
             item("Shading", S("Shading", "Tarih alanlarını göster / gizle"), L("Shading.Tip", "Vefeyât tarihlerinin çevresine çerçeve koyar ya da kaldırır."), "settings", pane(U("U.Shading", "taskpane.html?action=shading"))),
+            item("NoProof", S("NoProof", "Şahıs adlarını yazım denetiminden çıkar"), L("NoProof.Tip", "Bulunan şahıs adlarının kırmızı çizgisini kaldırır; sağ tıkta Vefeyât menüsü görünür."), "settings", pane(U("U.NoProof", "taskpane.html?action=noproof"))),
         ]),
     ]),
     group("Data", "Veri ve yardım", "info", [
@@ -149,6 +150,7 @@ context = ("          <ExtensionPoint xsi:type=\"ContextMenu\">\n            <Of
                item("C.Insert", "Insert", "Insert.Tip", "insert", pane("U.Insert")),
                item("C.Spelling", "Spelling", "Spelling.Tip", "spelling", pane("U.Spelling")),
                item("C.Dia", "Dia", "Dia.Tip", "dia", pane("U.Dia")),
+               item("C.Source", "SourceInfo", "SourceInfo.Tip", "source", pane("U.SourceInfo")),
            ], " " * 14)
            + "            </OfficeMenu>\n          </ExtensionPoint>\n")
 

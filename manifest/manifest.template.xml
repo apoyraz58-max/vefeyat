@@ -842,6 +842,22 @@
                         <SourceLocation resid="U.Shading"/>
                       </Action>
                     </Item>
+                    <Item id="Vefeyat.NoProof">
+                      <Label resid="NoProof"/>
+                      <Supertip>
+                        <Title resid="NoProof"/>
+                        <Description resid="NoProof.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.settings.16"/>
+                        <bt:Image size="32" resid="Ic.settings.32"/>
+                        <bt:Image size="80" resid="Ic.settings.80"/>
+                      </Icon>
+                      <Action xsi:type="ShowTaskpane">
+                        <TaskpaneId>VefeyatPane</TaskpaneId>
+                        <SourceLocation resid="U.NoProof"/>
+                      </Action>
+                    </Item>
                   </Items>
                 </Control>
               </Group>
@@ -966,6 +982,22 @@
                         <SourceLocation resid="U.Dia"/>
                       </Action>
                     </Item>
+                    <Item id="Vefeyat.C.Source">
+                      <Label resid="SourceInfo"/>
+                      <Supertip>
+                        <Title resid="SourceInfo"/>
+                        <Description resid="SourceInfo.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.source.16"/>
+                        <bt:Image size="32" resid="Ic.source.32"/>
+                        <bt:Image size="80" resid="Ic.source.80"/>
+                      </Icon>
+                      <Action xsi:type="ShowTaskpane">
+                        <TaskpaneId>VefeyatPane</TaskpaneId>
+                        <SourceLocation resid="U.SourceInfo"/>
+                      </Action>
+                    </Item>
                 </Items>
               </Control>
             </OfficeMenu>
@@ -1080,6 +1112,7 @@
         <bt:Url id="U.ExportPrefs" DefaultValue="{{BASE_URL}}taskpane.html?view=tercihler"/>
         <bt:Url id="U.ImportPrefs" DefaultValue="{{BASE_URL}}taskpane.html?view=tercihler"/>
         <bt:Url id="U.Shading" DefaultValue="{{BASE_URL}}taskpane.html?action=shading"/>
+        <bt:Url id="U.NoProof" DefaultValue="{{BASE_URL}}taskpane.html?action=noproof"/>
         <bt:Url id="U.Info" DefaultValue="{{BASE_URL}}taskpane.html?view=katalog"/>
         <bt:Url id="U.Csv" DefaultValue="{{BASE_URL}}taskpane.html?view=katalog"/>
         <bt:Url id="U.Help" DefaultValue="{{BASE_URL}}taskpane.html?view=yardim"/>
@@ -1141,6 +1174,7 @@
         <bt:String id="ExportPrefs" DefaultValue="Tercihleri dışa aktar"/>
         <bt:String id="ImportPrefs" DefaultValue="Tercihleri al"/>
         <bt:String id="Shading" DefaultValue="Tarih alanlarını göster / gizle"/>
+        <bt:String id="NoProof" DefaultValue="Şahıs adlarını yazım denetiminden çıkar"/>
         <bt:String id="G.Settings" DefaultValue="Tercihler"/>
         <bt:String id="Info" DefaultValue="Veri bilgisi"/>
         <bt:String id="Csv" DefaultValue="CSV seç"/>
@@ -1185,6 +1219,7 @@
         <bt:String id="ExportPrefs.Tip" DefaultValue="Ayarları, yazım tercihlerini, istisnaları ve kimlik onaylarını bir dosyaya kaydeder."/>
         <bt:String id="ImportPrefs.Tip" DefaultValue="Dışa aktarılmış tercih dosyasını bu belgeye uygular."/>
         <bt:String id="Shading.Tip" DefaultValue="Vefeyât tarihlerinin çevresine çerçeve koyar ya da kaldırır."/>
+        <bt:String id="NoProof.Tip" DefaultValue="Bulunan şahıs adlarının kırmızı çizgisini kaldırır; sağ tıkta Vefeyât menüsü görünür."/>
         <bt:String id="Info.Tip" DefaultValue="Yüklü kataloğu ve sürümü gösterir."/>
         <bt:String id="Csv.Tip" DefaultValue="Bilgisayarınızdaki başka bir DİA CSV dosyasını kullanır."/>
         <bt:String id="Help.Tip" DefaultValue="Vefeyât komutlarının kısa kılavuzu."/>

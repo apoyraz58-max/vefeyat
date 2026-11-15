@@ -26,8 +26,12 @@ export function personFields(person: Person): readonly [string, string, string, 
   return [person.shortName, person.fullName, person.originalName, person.deathDate, person.description, person.source];
 }
 
-function names(person: Person): readonly [string, string, string] {
-  return [person.shortName, person.fullName, person.originalName];
+/** The person's names; an inverted short name ("Râzî, Ebû Bekir") also in reading order. */
+function names(person: Person): readonly string[] {
+  const comma = person.shortName.indexOf(",");
+  if (comma < 0 || person.shortName.indexOf(",", comma + 1) >= 0) return [person.shortName, person.fullName, person.originalName];
+  const natural = `${person.shortName.slice(comma + 1).trim()} ${person.shortName.slice(0, comma).trim()}`;
+  return [person.shortName, natural, person.fullName, person.originalName];
 }
 
 export class CatalogError extends Error {
@@ -261,7 +265,17 @@ export function strength(person: Person, query: string): number {
 
 /** `VfqSingleSafe`: exactly one candidate and it matches strongly (>= 3). */
 export function singleSafe(candidates: readonly Person[], query: string): boolean {
-  return candidates.length === 1 && strength(candidates[0] as Person, query) >= 3;
+  if (candidates.length === 1) return strength(candidates[0] as Person, query) >= 3;
+  // One exact name among look-alikes ("İbn Sînâ" beside "İbn Sinân Hafâcî"): the exact one.
+  const scores = candidates.map((c) => strength(c, query));
+  return scores.filter((s) => s >= 4).length === 1 && scores.filter((s) => s >= 3).length === 1;
+}
+
+/** The candidate singleSafe accepts (the only one, or the only exact one). */
+export function safeCandidate(candidates: readonly Person[], query: string): Person | null {
+  if (!singleSafe(candidates, query)) return null;
+  if (candidates.length === 1) return candidates[0] as Person;
+  return candidates.find((c) => strength(c, query) >= 4) ?? null;
 }
 
 function uniqueByKey(people: Iterable<Person>): Person[] {

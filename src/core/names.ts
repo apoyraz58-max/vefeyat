@@ -161,10 +161,19 @@ export function looseNameMatch(name: string, query: string): number {
 }
 
 /** `VefeyatNameMatch`: score of a raw catalog name against a raw query. */
+const ARTICLES = new Set(["el", "er", "es", "et", "ez", "en", "ed"]);
+const dropArticles = (value: string): string => value.split(" ").filter((w) => w && !ARTICLES.has(w)).join(" ");
+
 export function nameScore(name: string, query: string): number {
   const term = normalize(nameQuery(query));
   const normalizedName = normalize(name);
-  const score = nameMatch(normalizedName, normalizedName.split(" ").join(""), term, term.split(" ").join(""));
+  let score = nameMatch(normalizedName, normalizedName.split(" ").join(""), term, term.split(" ").join(""));
+  // The Arabic article is spelling, not identity: "Ebû Bekir er-Râzî" is "Ebû Bekir Râzî".
+  const bareName = dropArticles(normalizedName);
+  const bareTerm = dropArticles(term);
+  if (bareTerm && (bareName !== normalizedName || bareTerm !== term)) {
+    score = Math.max(score, nameMatch(bareName, bareName.split(" ").join(""), bareTerm, bareTerm.split(" ").join("")));
+  }
   return score === 0 ? looseNameMatch(normalizedName, term) : score;
 }
 
