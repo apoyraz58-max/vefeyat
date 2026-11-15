@@ -349,28 +349,73 @@ export function canIndex(): boolean {
   return Office.context.requirements.isSetSupported("WordApi", "1.5");
 }
 
+const INDEX_TAG = "vefeyat:index";
+const INDEX_HEADING = "Şahıslar Dizini";
+
 /** Deletes Vefeyât's XE and INDEX fields from body and footnotes. */
-async function deleteIndexFields(context: Word.RequestContext): Promise<number> {
+async function deleteIndexFields(context: Word.RequestContext): Promise<{ marks: number; indexes: number }> {
   const notes = context.document.body.footnotes;
   notes.load("items");
   await context.sync();
   const lists = [context.document.body.fields, ...notes.items.map((n) => n.body.fields)];
   for (const list of lists) list.load("items/code");
   await context.sync();
-  let count = 0;
+  let marks = 0;
+  let indexes = 0;
   for (const list of lists) {
     for (const field of list.items) {
       if (!isVefeyatIndexField(field.code)) continue;
+      if (/^\s*INDEX\b/i.test(field.code)) indexes++;
+      else marks++;
       field.delete();
-      count++;
     }
   }
   await context.sync();
-  return count;
+  return { marks, indexes };
 }
 
-export async function removeIndex(): Promise<number> {
-  return Word.run(deleteIndexFields);
+/**
+ * The index block: heading, page break and INDEX field inside one content
+ * control, so removing it leaves nothing behind. Indexes made by the first
+ * version (no control) are recognised by their INDEX field and heading.
+ */
+async function deleteIndexBlock(context: Word.RequestContext): Promise<boolean> {
+  const controls = context.document.body.contentControls.getByTag(INDEX_TAG);
+  controls.load("items");
+  await context.sync();
+  for (const control of controls.items) {
+    control.cannotDelete = false;
+    control.cannotEdit = false;
+    control.delete(false);
+  }
+  await context.sync();
+  return controls.items.length > 0;
+}
+
+/** Headings "Şahıslar Dizini" left by the first version, right after which the index stood. */
+async function deleteOldHeadings(context: Word.RequestContext): Promise<void> {
+  const paragraphs = context.document.body.paragraphs;
+  paragraphs.load("items/text,items/styleBuiltIn");
+  await context.sync();
+  const items = paragraphs.items;
+  for (let i = items.length - 1; i >= 0; i--) {
+    const p = items[i] as Word.Paragraph;
+    if (p.text.trim() !== INDEX_HEADING || p.styleBuiltIn !== "Heading1") continue;
+    // Only a heading with nothing but empty paragraphs after it.
+    if (items.slice(i + 1).some((q) => q.text.trim().length > 0)) continue;
+    for (const q of items.slice(i + 1)) q.delete();
+    p.delete();
+  }
+  await context.sync();
+}
+
+export async function removeIndex(): Promise<{ marks: number; index: boolean }> {
+  return Word.run(async (context) => {
+    const block = await deleteIndexBlock(context);
+    const fields = await deleteIndexFields(context);
+    if (fields.indexes > 0) await deleteOldHeadings(context);
+    return { marks: fields.marks, index: block || fields.indexes > 0 };
+  });
 }
 
 /**
@@ -381,12 +426,17 @@ export async function removeIndex(): Promise<number> {
 export async function buildIndex(segments: readonly Segment[], rows: readonly InventoryRow[]): Promise<{ marks: number; missing: number }> {
   return Word.run(async (context) => {
     // Where the old index was, so the new one goes back there.
+    const blocks = context.document.body.contentControls.getByTag(INDEX_TAG);
+    blocks.load("items");
     const oldIndex = context.document.body.fields;
     oldIndex.load("items/code");
     await context.sync();
-    const previous = oldIndex.items.find((f) => /^\s*INDEX\b/i.test(f.code) && isVefeyatIndexField(f.code));
-    const anchor = previous ? previous.result.paragraphs.getFirst().insertParagraph("", "Before") : null;
-    await deleteIndexFields(context);
+    const previous = blocks.items[0] ?? oldIndex.items.find((f) => /^\s*INDEX\b/i.test(f.code) && isVefeyatIndexField(f.code));
+    const where = previous ? ("result" in previous ? previous.result : previous.getRange("Whole")) : null;
+    const anchor = where ? where.paragraphs.getFirst().insertParagraph("", "Before") : null;
+    await deleteIndexBlock(context);
+    const removed = await deleteIndexFields(context);
+    if (removed.indexes > 0 && blocks.items.length === 0) await deleteOldHeadings(context);
 
     const paragraphs = context.document.body.paragraphs;
     paragraphs.load("items");
@@ -426,17 +476,19 @@ export async function buildIndex(segments: readonly Segment[], rows: readonly In
     }
     await context.sync();
 
-    let place: Word.Range;
-    if (anchor) {
-      place = anchor.getRange("Start");
-    } else {
-      const body = context.document.body;
-      body.insertBreak("Page", "End");
-      const heading = body.insertParagraph("Şahıslar Dizini", "End");
-      heading.styleBuiltIn = "Heading1";
-      place = body.insertParagraph("", "End").getRange("Start");
-    }
-    const index = place.insertField("Start", "Index", INDEX_CODE);
+    // The block: heading and INDEX field in one tagged control.
+    let first: Word.Paragraph;
+    first = anchor ?? context.document.body.insertParagraph("", "End");
+    first.insertText(INDEX_HEADING, "Replace");
+    first.styleBuiltIn = "Heading1";
+    const holder = first.insertParagraph("", "After");
+    holder.styleBuiltIn = "Normal";
+    const control = first.getRange("Whole").expandTo(holder.getRange("Whole")).insertContentControl();
+    control.tag = INDEX_TAG;
+    control.title = "Vefeyât: şahıslar dizini";
+    control.appearance = "BoundingBox";
+    control.insertBreak("Page", "Start"); // inside the block: removing it leaves no blank page
+    const index = holder.getRange("Start").insertField("Start", "Index", INDEX_CODE);
     await context.sync();
     index.updateResult();
     await context.sync();

@@ -625,8 +625,10 @@ async function deleteIndex(): Promise<void> {
     setMessage("Bu Word sürümü alanları düzenlemeyi desteklemiyor (WordApi 1.5 gerekir).", "warning");
     return;
   }
-  const count = await removeIndex();
-  setMessage(count ? `${count} Vefeyât dizin alanı kaldırıldı.` : "Belgede Vefeyât dizini yok.", "success");
+  const result = await removeIndex();
+  if (!result.index && result.marks === 0) setMessage("Belgede Vefeyât dizini yok.", "info");
+  else setMessage(`${result.marks} dizin işareti${result.index ? " ve Şahıslar Dizini" : ""} kaldırıldı.`, "success");
+  logHistory("index", `dizin kaldırıldı (${result.marks} işaret)`);
 }
 
 // ---- Belge sağlığı ve Tarihin kaynağı ----
