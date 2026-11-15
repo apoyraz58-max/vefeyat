@@ -124,12 +124,12 @@ export function candidateLabel(person: Person): string {
   return person.deathDate ? `${name} ${person.deathDate}` : name;
 }
 
-export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "saglik" | "kaynak" | "yakinda";
+export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "saglik" | "kaynak" | "gecmis" | "toplu" | "yakinda";
 export type Tool = "tutarlilik" | "rapor" | "dizin" | "dizinkaldir" | "temizlik";
 
 export interface Launch {
   readonly view: View;
-  readonly action: "insert" | "spelling" | "dia" | "audit" | null;
+  readonly action: "insert" | "spelling" | "dia" | "audit" | "resume" | null;
   readonly tool: Tool | null;
   /** Key of a VBA command that is not ported yet (view "yakinda"). */
   readonly soon?: string;
@@ -137,9 +137,6 @@ export interface Launch {
 
 /** VBA commands shown in the ribbon but not ported yet: title and what they do. */
 export const SOON: Readonly<Record<string, readonly [string, string]>> = {
-  resume: ["Denetime devam et", "Duraklatılmış belge denetimini kaldığı yerden sürdürür."],
-  bulk: ["Toplu düzeltme önizlemesi", "Belgedeki yazım ve tarih önerilerini tek listede gösterir; yalnız işaretlediklerinizi uygular."],
-  history: ["İşlem geçmişi", "Bu oturumdaki Vefeyât işlemlerini listeler; metindeki yerine gidebilirsiniz."],
   refresh: ["Tarihleri güncelle", "Toplu önerileri önizlemede gösterir; mevcut tarihleri yeniden yazmaz."],
   compare: ["Katalogla karşılaştır", "Belgedeki tarihleri güncel katalogla karşılaştırır."],
   registry: ["Dinamik şahıs kayıtları", "Geçişleri kaynak kimliğine bağlar; katalog değişince öneri sunar."],
@@ -170,8 +167,9 @@ export function parseLaunch(search: string): Launch {
     return { view: "teslim", action: null, tool };
   }
   if (view === "denetim") return { view: "secili", action: "audit", tool: null };
+  if (view === "devam") return { view: "secili", action: "resume", tool: null };
   if (view === "dokum") return { view: "dokum", action: null, tool: null };
-  if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara" || view === "saglik" || view === "kaynak") return { view, action: null, tool: null };
+  if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara" || view === "saglik" || view === "kaynak" || view === "gecmis" || view === "toplu") return { view, action: null, tool: null };
   if (view === "ayarlar") return { view: "katalog", action: null, tool: null };
   return { view: "secili", action: null, tool: null };
 }

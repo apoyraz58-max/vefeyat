@@ -207,11 +207,11 @@
                     </Item>
                   </Items>
                 </Control>
-                <Control xsi:type="Button" id="Vefeyat.Soon.resume">
-                  <Label resid="Soon.resume"/>
+                <Control xsi:type="Button" id="Vefeyat.Resume">
+                  <Label resid="Resume"/>
                   <Supertip>
-                    <Title resid="Soon.resume"/>
-                    <Description resid="Soon.resume.Tip"/>
+                    <Title resid="Resume"/>
+                    <Description resid="Resume.Tip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Ic.resume.16"/>
@@ -220,14 +220,14 @@
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="U.Soon.resume"/>
+                    <SourceLocation resid="U.Resume"/>
                   </Action>
                 </Control>
-                <Control xsi:type="Button" id="Vefeyat.Soon.bulk">
-                  <Label resid="Soon.bulk"/>
+                <Control xsi:type="Button" id="Vefeyat.Bulk">
+                  <Label resid="Bulk"/>
                   <Supertip>
-                    <Title resid="Soon.bulk"/>
-                    <Description resid="Soon.bulk.Tip"/>
+                    <Title resid="Bulk"/>
+                    <Description resid="Bulk.Tip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Ic.bulk.16"/>
@@ -236,7 +236,7 @@
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="U.Soon.bulk"/>
+                    <SourceLocation resid="U.Bulk"/>
                   </Action>
                 </Control>
               </Group>
@@ -445,11 +445,11 @@
                     <SourceLocation resid="U.Health"/>
                   </Action>
                 </Control>
-                <Control xsi:type="Button" id="Vefeyat.Soon.history">
-                  <Label resid="Soon.history"/>
+                <Control xsi:type="Button" id="Vefeyat.History">
+                  <Label resid="History"/>
                   <Supertip>
-                    <Title resid="Soon.history"/>
-                    <Description resid="Soon.history.Tip"/>
+                    <Title resid="History"/>
+                    <Description resid="History.Tip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Ic.history.16"/>
@@ -458,7 +458,7 @@
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="U.Soon.history"/>
+                    <SourceLocation resid="U.History"/>
                   </Action>
                 </Control>
               </Group>
@@ -1039,8 +1039,8 @@
         <bt:Url id="U.Insert" DefaultValue="{{BASE_URL}}taskpane.html?action=insert"/>
         <bt:Url id="U.Spelling" DefaultValue="{{BASE_URL}}taskpane.html?action=spelling"/>
         <bt:Url id="U.Audit" DefaultValue="{{BASE_URL}}taskpane.html?view=denetim"/>
-        <bt:Url id="U.Soon.resume" DefaultValue="{{BASE_URL}}taskpane.html?soon=resume"/>
-        <bt:Url id="U.Soon.bulk" DefaultValue="{{BASE_URL}}taskpane.html?soon=bulk"/>
+        <bt:Url id="U.Resume" DefaultValue="{{BASE_URL}}taskpane.html?view=devam"/>
+        <bt:Url id="U.Bulk" DefaultValue="{{BASE_URL}}taskpane.html?view=toplu"/>
         <bt:Url id="U.Search" DefaultValue="{{BASE_URL}}taskpane.html?view=ara"/>
         <bt:Url id="U.Dia" DefaultValue="{{BASE_URL}}taskpane.html?action=dia"/>
         <bt:Url id="U.SourceInfo" DefaultValue="{{BASE_URL}}taskpane.html?view=kaynak"/>
@@ -1052,7 +1052,7 @@
         <bt:Url id="U.Soon.identity" DefaultValue="{{BASE_URL}}taskpane.html?soon=identity"/>
         <bt:Url id="U.Soon.exclusions" DefaultValue="{{BASE_URL}}taskpane.html?soon=exclusions"/>
         <bt:Url id="U.Health" DefaultValue="{{BASE_URL}}taskpane.html?view=saglik"/>
-        <bt:Url id="U.Soon.history" DefaultValue="{{BASE_URL}}taskpane.html?soon=history"/>
+        <bt:Url id="U.History" DefaultValue="{{BASE_URL}}taskpane.html?view=gecmis"/>
         <bt:Url id="U.Consistency" DefaultValue="{{BASE_URL}}taskpane.html?tool=tutarlilik"/>
         <bt:Url id="U.Report" DefaultValue="{{BASE_URL}}taskpane.html?tool=rapor"/>
         <bt:Url id="U.IndexBuild" DefaultValue="{{BASE_URL}}taskpane.html?tool=dizin"/>
@@ -1081,8 +1081,8 @@
         <bt:String id="S.auditMode.all" DefaultValue="Tüm geçişler"/>
         <bt:String id="S.auditMode.undated" DefaultValue="Tarihi olmayanlar"/>
         <bt:String id="S.auditMode" DefaultValue="Denetlenecek"/>
-        <bt:String id="Soon.resume" DefaultValue="Denetime devam et"/>
-        <bt:String id="Soon.bulk" DefaultValue="Toplu düzeltme önizlemesi"/>
+        <bt:String id="Resume" DefaultValue="Denetime devam et"/>
+        <bt:String id="Bulk" DefaultValue="Toplu düzeltme önizlemesi"/>
         <bt:String id="G.Review" DefaultValue="Denetim"/>
         <bt:String id="Search" DefaultValue="Şahıs ara"/>
         <bt:String id="Dia" DefaultValue="DİA maddesini aç"/>
@@ -1097,7 +1097,7 @@
         <bt:String id="Soon.identity" DefaultValue="Kimlik eşleşmelerini düzelt"/>
         <bt:String id="Soon.exclusions" DefaultValue="Belge istisnaları"/>
         <bt:String id="Health" DefaultValue="Belge sağlığı"/>
-        <bt:String id="Soon.history" DefaultValue="İşlem geçmişi"/>
+        <bt:String id="History" DefaultValue="İşlem geçmişi"/>
         <bt:String id="G.Document" DefaultValue="Belge"/>
         <bt:String id="Consistency" DefaultValue="Tutarlılık raporu"/>
         <bt:String id="Report" DefaultValue="Şahıs raporu"/>
@@ -1138,8 +1138,8 @@
         <bt:String id="Audit.Tip" DefaultValue="Belgedeki adları sırayla gösterir; onaylayıp ilerlersiniz."/>
         <bt:String id="S.scope.Tip" DefaultValue="İlk kullanım (varsayılan), bütün kullanımlar veya yalnız denetim. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="S.auditMode.Tip" DefaultValue="Tüm belgeyi denetle komutunun hangi geçişleri göstereceği. Seçili değer Vefeyât penceresinin üstünde yazar."/>
-        <bt:String id="Soon.resume.Tip" DefaultValue="Duraklatılmış denetimi kaldığı yerden sürdürür."/>
-        <bt:String id="Soon.bulk.Tip" DefaultValue="Yazım ve tarih önerilerini tek listede gösterir; yalnız seçtiklerinizi uygular."/>
+        <bt:String id="Resume.Tip" DefaultValue="Duraklatılmış belge denetimini kaldığı geçişten sürdürür."/>
+        <bt:String id="Bulk.Tip" DefaultValue="Yazım ve tarih önerilerini tek listede gösterir; yalnız seçtiklerinizi uygular."/>
         <bt:String id="Search.Tip" DefaultValue="Yerel katalogda ad arar; sonuçları DİA bağlantısıyla gösterir."/>
         <bt:String id="Dia.Tip" DefaultValue="Seçili şahsın DİA maddesinin bağlantısını gösterir."/>
         <bt:String id="SourceInfo.Tip" DefaultValue="Seçili Vefeyât tarihinin hangi katalog kaydından eklendiğini ve güncel olup olmadığını gösterir."/>
@@ -1152,7 +1152,7 @@
         <bt:String id="Soon.identity.Tip" DefaultValue="Belirsiz adlar için verdiğiniz onayları yönetir."/>
         <bt:String id="Soon.exclusions.Tip" DefaultValue="Şahıs değil olarak işaretlenen ifadeleri yönetir."/>
         <bt:String id="Health.Tip" DefaultValue="Vefeyât tarihlerini katalog ve önek ayarıyla karşılaştırır; yalnız seçtiklerinizi onarır."/>
-        <bt:String id="Soon.history.Tip" DefaultValue="Bu oturumdaki işlemleri gösterir."/>
+        <bt:String id="History.Tip" DefaultValue="Bu oturumdaki Vefeyât işlemlerini listeler; eklenen tarihlere gidebilirsiniz."/>
         <bt:String id="Consistency.Tip" DefaultValue="ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerleri gösterir; belgeyi değiştirmez."/>
         <bt:String id="Report.Tip" DefaultValue="Şahısları ilk geçiş sırasıyla ve kronolojik olarak yeni bir belgede listeler."/>
         <bt:String id="Index.Tip" DefaultValue="Kimliği kesin geçişlerden Word şahıslar dizini."/>

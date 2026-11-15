@@ -29,9 +29,10 @@ import {
 } from "./logic.js";
 import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
+import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, addHistory, applyOrder, bulkSuggestions, describeSuggestion, parseBookmark, parseHistory, resumeIndex, rowKey } from "./bulk.js";
 import { HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -373,7 +374,8 @@ async function addDate(force: boolean): Promise<void> {
     return;
   }
   await rememberChoice();
-  await insertDate(plan.text, dateTag(person), `Vefeyât: ${textName(person.shortName)}`);
+  const control = await insertDate(plan.text, dateTag(person), `Vefeyât: ${textName(person.shortName)}`);
+  logHistory("date", `${current.alias} ${plan.text}`, control);
   hideEarlier();
   setMessage(`Tarih eklendi: ${plan.text}`, "success");
   state.alias = null; // the caret moved; read the next selection afresh
@@ -401,6 +403,7 @@ async function respell(): Promise<void> {
     await writeConfirmations(addConfirmation(readConfirmations(), key, personKey(state.chosen)));
   }
   await replaceSelection(replacement);
+  logHistory("spelling", `${selection.text} → ${replacement}`);
   setMessage(`Yazım değiştirildi: ${replacement}`, "success");
   state.alias = null;
   await refresh();
@@ -504,11 +507,40 @@ async function startAudit(): Promise<void> {
   await gotoAudit(0);
 }
 
+async function resumeAudit(): Promise<void> {
+  const bookmark = parseBookmark(readAuditBookmark());
+  if (!bookmark) {
+    setMessage("Duraklatılmış bir denetim yok; baştan başlatılıyor.", "info");
+    await startAudit();
+    return;
+  }
+  await loadSettings();
+  if (!state.catalog) {
+    setMessage("Katalog yüklenmedi; denetim sürdürülemez.", "warning");
+    return;
+  }
+  const read = await readSegments();
+  state.index ??= new NameIndex(state.catalog.people);
+  state.segments = read.segments;
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
+  state.audit = auditRows(state.rows, state.settings);
+  const at = resumeIndex(state.audit, state.segments, bookmark);
+  if (at < 0) {
+    state.audit = null;
+    await writeAuditBookmark(null);
+    setMessage("Denetlenecek geçiş kalmadı.", "success");
+    renderAudit();
+    return;
+  }
+  await gotoAudit(at);
+}
+
 async function gotoAudit(at: number): Promise<void> {
   if (!state.audit) return;
   const row = state.audit[at];
   if (!row) return;
   state.auditAt = at;
+  void writeAuditBookmark(JSON.stringify({ at, key: rowKey(row, state.segments), total: state.audit.length }));
   const segment = state.segments[row.segment];
   const ok = segment ? await selectMention(segment, row.start, row.text) : false;
   if (!ok) setMessage("Bu geçiş metinde bulunamadı; metin değişmiş olabilir. Sonraki ile devam edin.", "warning");
@@ -584,6 +616,7 @@ async function createIndex(): Promise<void> {
   }
   const people = new Set(rows.map((r) => r.person?.source)).size;
   const result = await buildIndex(read.segments, rows);
+  logHistory("index", `${people} şahıs, ${result.marks} işaret`);
   setMessage(
     `Şahıslar dizini hazır: ${people} şahıs, ${result.marks} işaret.` + (result.missing ? ` ${result.missing} geçiş metinde bulunamadı.` : "") + " Dizin işaretleri gizli metindir; ¶ düğmesiyle görünür.",
     result.missing ? "warning" : "success",
@@ -672,7 +705,10 @@ async function repairHealth(): Promise<void> {
   let fixed = 0;
   for (const row of healthRows) {
     if (!healthChosen.has(row.id) || !repairable(row)) continue;
-    if (await writeDateControl(row.id, repairText(row, row.text))) fixed++;
+    if (await writeDateControl(row.id, repairText(row, row.text))) {
+      fixed++;
+      logHistory("repair", `${row.text.trim() || "(boş)"} → ${row.expected}`, row.id);
+    }
   }
   await checkHealth();
   setMessage(`${fixed} tarih onarıldı.`, "success");
@@ -705,8 +741,145 @@ async function showSource(): Promise<void> {
 
 async function repairSource(): Promise<void> {
   if (!sourceRow || !repairable(sourceRow)) return;
-  if (await writeDateControl(sourceRow.id, repairText(sourceRow, sourceRow.text))) setMessage("Tarih onarıldı.", "success");
+  if (await writeDateControl(sourceRow.id, repairText(sourceRow, sourceRow.text))) {
+    logHistory("repair", `${sourceRow.text.trim() || "(boş)"} → ${sourceRow.expected}`, sourceRow.id);
+    setMessage("Tarih onarıldı.", "success");
+  }
   await showSource();
+}
+
+// ---- İşlem geçmişi ----
+
+const HISTORY_KEY = "vefeyat.history";
+function loadHistory(): HistoryEntry[] {
+  try {
+    return parseHistory(window.sessionStorage.getItem(HISTORY_KEY));
+  } catch {
+    return [];
+  }
+}
+let history: HistoryEntry[] = loadHistory();
+
+function logHistory(kind: HistoryKind, text: string, control?: number): void {
+  history = addHistory(history, control === undefined ? { kind, text } : { kind, text, control });
+  try {
+    window.sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    /* private mode: kept in memory only */
+  }
+  if (!$("view-gecmis").hidden) renderHistory();
+}
+
+function renderHistory(): void {
+  $("history-summary").textContent = history.length
+    ? `Bu oturumda ${history.length} işlem. Tarih satırına tıklayınca tarih belgede seçilir.`
+    : "Bu oturumda henüz Vefeyât işlemi yapılmadı.";
+  const list = $("history-list");
+  list.replaceChildren();
+  for (const entry of history) {
+    const item = document.createElement("li");
+    const name = document.createElement("strong");
+    name.textContent = entry.text;
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = `${entry.time} · ${HISTORY_LABEL[entry.kind]}`;
+    item.append(name, meta);
+    if (entry.control !== undefined) {
+      const id = entry.control;
+      item.addEventListener("click", () =>
+        void run(async () => {
+          if (!(await selectDateControl(id))) setMessage("Bu tarih artık belgede yok.", "warning");
+        }),
+      );
+    }
+    list.append(item);
+  }
+}
+
+// ---- Toplu düzeltme önizlemesi ----
+
+let suggestions: Suggestion[] = [];
+const bulkChosen = new Set<string>();
+
+async function prepareBulk(): Promise<void> {
+  await loadSettings();
+  if (!state.catalog) {
+    $("bulk-summary").textContent = "Katalog yüklenmedi.";
+    return;
+  }
+  $("bulk-summary").textContent = "Öneriler hazırlanıyor…";
+  const read = await readSegments();
+  state.index ??= new NameIndex(state.catalog.people);
+  state.segments = read.segments;
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
+  suggestions = bulkSuggestions(state.rows, state.settings);
+  bulkChosen.clear();
+  for (const s of suggestions) if (s.preselected) bulkChosen.add(s.id);
+  renderBulk();
+}
+
+function renderBulk(): void {
+  const dates = suggestions.filter((s) => s.kind === "date").length;
+  const uncertain = state.rows.filter((r) => r.status === "near" || r.status === "choose").length;
+  $("bulk-summary").textContent = suggestions.length
+    ? `${dates} tarih, ${suggestions.length - dates} yazım önerisi. Yalnız işaretliler uygulanır.` +
+      (uncertain ? ` Kimliği belirsiz ${uncertain} geçiş listede yok; onları Tüm belgeyi denetle ile tek tek seçin.` : "")
+    : "Uygulanacak öneri yok." + (uncertain ? ` Kimliği belirsiz ${uncertain} geçiş için Tüm belgeyi denetle'yi kullanın.` : "");
+  const list = $("bulk-list");
+  list.replaceChildren();
+  for (const s of suggestions) {
+    const item = document.createElement("li");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = bulkChosen.has(s.id);
+    box.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (box.checked) bulkChosen.add(s.id);
+      else bulkChosen.delete(s.id);
+      $<HTMLButtonElement>("bulk-apply").disabled = bulkChosen.size === 0;
+    });
+    const name = document.createElement("strong");
+    name.textContent = describeSuggestion(s);
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = LOCATION[s.row.part];
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = s.kind === "date" ? `Tarih ekle · ${textName(s.person.shortName)}` : `Kaynak yazımı · ${textName(s.person.shortName)}${s.row.confirmed ? " · onaylı kimlik" : ""}`;
+    item.append(box, name, badge, meta);
+    item.addEventListener("click", () => void run(() => chooseRowQuiet(s.row)));
+    list.append(item);
+  }
+  $<HTMLButtonElement>("bulk-apply").disabled = bulkChosen.size === 0;
+}
+
+async function chooseRowQuiet(row: InventoryRow): Promise<void> {
+  const segment = state.segments[row.segment];
+  if (!segment || !(await selectMention(segment, row.start, row.text))) setMessage("Bu geçiş metinde bulunamadı; listeyi yenileyin.", "warning");
+}
+
+async function applyBulk(): Promise<void> {
+  const chosen = applyOrder(suggestions.filter((s) => bulkChosen.has(s.id)));
+  let done = 0;
+  let missed = 0;
+  for (const s of chosen) {
+    const segment = state.segments[s.row.segment];
+    if (!segment || !(await selectMention(segment, s.row.start, s.row.text))) {
+      missed++;
+      continue;
+    }
+    if (s.kind === "date") {
+      const control = await insertDate(s.value, dateTag(s.person), `Vefeyât: ${textName(s.person.shortName)}`);
+      logHistory("date", `${s.row.text} ${s.value}`, control);
+    } else {
+      await replaceSelection(s.value);
+      logHistory("spelling", `${s.row.text} → ${s.value}`);
+    }
+    done++;
+  }
+  logHistory("bulk", `${done} öneri uygulandı`);
+  await prepareBulk();
+  setMessage(`${done} öneri uygulandı.` + (missed ? ` ${missed} geçiş metinde bulunamadı.` : ""), missed ? "warning" : "success");
 }
 
 let cleanupArmed = false;
@@ -721,6 +894,7 @@ async function cleanup(): Promise<void> {
   cleanupArmed = false;
   button.textContent = "Temizle";
   const result = await finalizeDocument();
+  logHistory("cleanup", `${result.controls} tarih metne dönüştü`);
   setMessage(`Temizlendi: ${result.controls} tarih denetimi metne dönüştürüldü, ${result.settings} belge ayarı kaldırıldı.`, "success");
 }
 
@@ -731,6 +905,9 @@ async function launch(request: Launch): Promise<void> {
   if (request.view === "ara") $<HTMLInputElement>("search-query").focus();
   if (request.view === "dokum") await run(prepareInventory);
   if (request.view === "saglik") await run(checkHealth);
+  if (request.view === "toplu") await run(prepareBulk);
+  if (request.view === "gecmis") renderHistory();
+  if (request.action === "resume") await run(resumeAudit);
   if (request.view === "kaynak") await run(showSource);
   if (request.tool === "tutarlilik") await run(showConsistency);
   if (request.tool === "rapor") await run(createPersonReport);
@@ -764,6 +941,17 @@ function initialise(): void {
   $("reset-catalog").addEventListener("click", () => void resetCatalog());
   $("run-tutarlilik").addEventListener("click", () => void run(showConsistency));
   $("run-rapor").addEventListener("click", () => void run(createPersonReport));
+  $("bulk-refresh").addEventListener("click", () => void run(prepareBulk));
+  $("bulk-apply").addEventListener("click", () => void run(applyBulk));
+  $("history-clear").addEventListener("click", () => {
+    history = [];
+    try {
+      window.sessionStorage.removeItem(HISTORY_KEY);
+    } catch {
+      /* ignored */
+    }
+    renderHistory();
+  });
   $("health-refresh").addEventListener("click", () => void run(checkHealth));
   $("health-repair").addEventListener("click", () => void run(repairHealth));
   $("source-repair").addEventListener("click", () => void run(repairSource));
@@ -814,6 +1002,7 @@ function initialise(): void {
       if (state.audit && state.auditAt + 1 < state.audit.length) await gotoAudit(state.auditAt + 1);
       else {
         state.audit = null;
+        void writeAuditBookmark(null);
         renderAudit();
         setMessage("Denetim tamamlandı.", "success");
       }
@@ -822,6 +1011,7 @@ function initialise(): void {
   $("audit-stop").addEventListener("click", () => {
     state.audit = null;
     renderAudit();
+    setMessage("Denetim duraklatıldı. Kaldığınız yerden sürdürmek için Vefeyât → Denetime devam et.", "info");
   });
   $("search-form").addEventListener("submit", (event) => {
     event.preventDefault();

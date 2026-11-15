@@ -31,8 +31,8 @@ export async function readSelection(): Promise<SelectionText> {
 }
 
 /** Writes " <date>" right after the selection inside a hidden, tagged content control. */
-export async function insertDate(dateText: string, tag: string, title: string): Promise<void> {
-  await Word.run(async (context) => {
+export async function insertDate(dateText: string, tag: string, title: string): Promise<number> {
+  return Word.run(async (context) => {
     const selection = context.document.getSelection();
     const inserted = selection.getRange("End").insertText(` ${dateText}`, "After");
     const control = inserted.insertContentControl();
@@ -41,7 +41,9 @@ export async function insertDate(dateText: string, tag: string, title: string): 
     control.appearance = "Hidden";
     // Continue typing after the date, outside the control.
     control.getRange("After").select("Start");
+    control.load("id");
     await context.sync();
+    return control.id;
   });
 }
 
@@ -124,6 +126,18 @@ export async function findEarlier(spellings: readonly string[], select = false):
 }
 
 const CONFIRMATIONS_KEY = "vefeyat.confirmations";
+const AUDIT_KEY = "vefeyat.audit";
+
+/** Paused-audit bookmark saved in the document (raw JSON or null). */
+export function readAuditBookmark(): unknown {
+  return Office.context.document.settings.get(AUDIT_KEY);
+}
+
+export function writeAuditBookmark(value: string | null): Promise<void> {
+  if (value === null) Office.context.document.settings.remove(AUDIT_KEY);
+  else Office.context.document.settings.set(AUDIT_KEY, value);
+  return new Promise((resolve) => Office.context.document.settings.saveAsync(() => resolve()));
+}
 
 /** Identity confirmations saved in the document. */
 export function readConfirmations(): Record<string, string> {
@@ -285,7 +299,7 @@ export async function finalizeDocument(): Promise<{ controls: number; settings: 
   });
   const settings = Office.context.document.settings;
   let removed = 0;
-  for (const key of [CONFIRMATIONS_KEY, ...Object.values(SETTING_KEYS)]) {
+  for (const key of [CONFIRMATIONS_KEY, AUDIT_KEY, ...Object.values(SETTING_KEYS)]) {
     if (settings.get(key) !== null && settings.get(key) !== undefined) removed++;
     settings.remove(key);
   }

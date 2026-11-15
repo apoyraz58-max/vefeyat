@@ -96,8 +96,8 @@ groups = [
                      [("first", "Yalnız ilk kullanım"), ("all", "Bütün kullanımlar"), ("none", "Yalnız denetle")]),
         setting_menu("auditMode", "Denetlenecek", "Tüm belgeyi denetle komutunun hangi geçişleri göstereceği.", "auditmode",
                      [("all", "Tüm geçişler"), ("undated", "Tarihi olmayanlar")]),
-        soon("resume", "Denetime devam et", "Duraklatılmış denetimi kaldığı yerden sürdürür.", "resume"),
-        soon("bulk", "Toplu düzeltme önizlemesi", "Yazım ve tarih önerilerini tek listede gösterir; yalnız seçtiklerinizi uygular.", "bulk"),
+        button("Resume", S("Resume", "Denetime devam et"), L("Resume.Tip", "Duraklatılmış belge denetimini kaldığı geçişten sürdürür."), "resume", pane(U("U.Resume", "taskpane.html?view=devam"))),
+        button("Bulk", S("Bulk", "Toplu düzeltme önizlemesi"), L("Bulk.Tip", "Yazım ve tarih önerilerini tek listede gösterir; yalnız seçtiklerinizi uygular."), "bulk", pane(U("U.Bulk", "taskpane.html?view=toplu"))),
     ]),
     group("Source", "Şahıs ve kaynak", "search", [
         button("Search", S("Search", "Şahıs ara"), L("Search.Tip", "Yerel katalogda ad arar; sonuçları DİA bağlantısıyla gösterir."), "search", pane(U("U.Search", "taskpane.html?view=ara"))),
@@ -115,7 +115,7 @@ groups = [
             soon("exclusions", "Belge istisnaları", "Şahıs değil olarak işaretlenen ifadeleri yönetir.", "more", True),
         ]),
         button("Health", S("Health", "Belge sağlığı"), L("Health.Tip", "Vefeyât tarihlerini katalog ve önek ayarıyla karşılaştırır; yalnız seçtiklerinizi onarır."), "health", pane(U("U.Health", "taskpane.html?view=saglik"))),
-        soon("history", "İşlem geçmişi", "Bu oturumdaki işlemleri gösterir.", "history"),
+        button("History", S("History", "İşlem geçmişi"), L("History.Tip", "Bu oturumdaki Vefeyât işlemlerini listeler; eklenen tarihlere gidebilirsiniz."), "history", pane(U("U.History", "taskpane.html?view=gecmis"))),
     ]),
     group("Submit", "Teslim ve dizin", "tools", [
         button("Consistency", S("Consistency", "Tutarlılık raporu"), L("Consistency.Tip", "ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerleri gösterir; belgeyi değiştirmez."), "consistency", pane(U("U.Consistency", "taskpane.html?tool=tutarlilik"))),

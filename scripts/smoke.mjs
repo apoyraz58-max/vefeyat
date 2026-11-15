@@ -63,7 +63,7 @@ const FAKE_OFFICE = String.raw`
     }
     insertContentControl() {
       const range = this;
-      const control = { id: doc.controls.length + 1, tag: "", title: "", appearance: "", range, getRange: (loc) => (loc === "After" ? new R(range.e, range.e) : range),
+      const control = { load() { return this; }, id: doc.controls.length + 1, tag: "", title: "", appearance: "", range, getRange: (loc) => (loc === "After" ? new R(range.e, range.e) : range),
         get text() { return doc.text.slice(this.range.s, this.range.e); },
         insertText(t) { this.range = this.range.insertText(t, "Replace"); },
         select() { doc.sel = [this.range.s, this.range.e]; } };
@@ -260,12 +260,24 @@ try {
   const hits = await tab.$$eval("#search-results li strong", (n) => n.map((x) => x.textContent));
   check("Şahıs ara lists catalog matches", hits.length === 2 && hits[0].startsWith("Fahreddin er-Râzî"), hits.join(" | "));
   await tab.close();
-  tab = await open("?soon=history");
-  check("not-yet-ported command explains itself", (await tab.textContent("#view-title")) === "İşlem geçmişi" && (await tab.isVisible("#view-yakinda")));
+  tab = await open("?soon=compare");
+  check("not-yet-ported command explains itself", (await tab.textContent("#view-title")) === "Katalogla karşılaştır" && (await tab.isVisible("#view-yakinda")));
   await tab.close();
   tab = await open("?view=saglik");
   await tab.waitForFunction(() => !document.getElementById("health-summary").textContent.startsWith("Denetleniyor"));
   check("Belge sağlığı reports the document's dates", (await tab.isVisible("#view-saglik")) && (await tab.textContent("#health-summary")).length > 0, await tab.textContent("#health-summary"));
+  await tab.close();
+  // Toplu düzeltme inserts the first-mention date; history and health follow it.
+  tab = await open("?view=toplu", "Gazzâlî der ki.\rSonra Gazzâlî yine der.");
+  await tab.waitForFunction(() => !document.getElementById("bulk-summary").textContent.includes("hazırlanıyor"));
+  const bulkItems = await tab.locator("#bulk-list li").count();
+  await tab.click("#bulk-apply");
+  await tab.waitForFunction(() => window.__doc.text.includes("(ö. 505/1111)"));
+  check("Toplu düzeltme adds only the first-mention date", bulkItems === 1 && (await docText(tab)) === "Gazzâlî (ö. 505/1111) der ki.\rSonra Gazzâlî yine der.", JSON.stringify(await docText(tab)));
+  await tab.evaluate(() => { history.replaceState(null, "", "?view=gecmis"); });
+  await tab.reload();
+  await tab.waitForSelector("#view-gecmis:not([hidden])");
+  check("İşlem geçmişi lists the change after reopening", ((await tab.textContent("#history-list")) ?? "").includes("Gazzâlî (ö. 505/1111)"));
   await tab.close();
   tab = await open("?action=dia", "Gazzâlî der ki.", "Gazzâlî");
   check("DİA maddesini aç offers the article link", (await tab.getAttribute("#detail-link", "href")) === "https://islamansiklopedisi.org.tr/gazzali");
