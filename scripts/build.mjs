@@ -32,7 +32,7 @@ for (const entry of ["taskpane", "commands"]) {
     target: ["es2018"],
     minify: true,
     sourcemap: true,
-    define: { __VERSION__: JSON.stringify(pkg.version) },
+    define: { __VERSION__: JSON.stringify(process.env.GITHUB_RUN_NUMBER ? `${pkg.version.replace(/-dev$/, "")}.${process.env.GITHUB_RUN_NUMBER}` : pkg.version) },
     logLevel: "warning",
   });
 }
