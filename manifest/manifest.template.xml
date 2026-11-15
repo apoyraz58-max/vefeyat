@@ -279,11 +279,11 @@
                     <SourceLocation resid="U.Dia"/>
                   </Action>
                 </Control>
-                <Control xsi:type="Button" id="Vefeyat.Soon.source">
-                  <Label resid="Soon.source"/>
+                <Control xsi:type="Button" id="Vefeyat.SourceInfo">
+                  <Label resid="SourceInfo"/>
                   <Supertip>
-                    <Title resid="Soon.source"/>
-                    <Description resid="Soon.source.Tip"/>
+                    <Title resid="SourceInfo"/>
+                    <Description resid="SourceInfo.Tip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Ic.source.16"/>
@@ -292,7 +292,7 @@
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="U.Soon.source"/>
+                    <SourceLocation resid="U.SourceInfo"/>
                   </Action>
                 </Control>
               </Group>
@@ -429,11 +429,11 @@
                     </Item>
                   </Items>
                 </Control>
-                <Control xsi:type="Button" id="Vefeyat.Soon.health">
-                  <Label resid="Soon.health"/>
+                <Control xsi:type="Button" id="Vefeyat.Health">
+                  <Label resid="Health"/>
                   <Supertip>
-                    <Title resid="Soon.health"/>
-                    <Description resid="Soon.health.Tip"/>
+                    <Title resid="Health"/>
+                    <Description resid="Health.Tip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Ic.health.16"/>
@@ -442,7 +442,7 @@
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
-                    <SourceLocation resid="U.Soon.health"/>
+                    <SourceLocation resid="U.Health"/>
                   </Action>
                 </Control>
                 <Control xsi:type="Button" id="Vefeyat.Soon.history">
@@ -1043,7 +1043,7 @@
         <bt:Url id="U.Soon.bulk" DefaultValue="{{BASE_URL}}taskpane.html?soon=bulk"/>
         <bt:Url id="U.Search" DefaultValue="{{BASE_URL}}taskpane.html?view=ara"/>
         <bt:Url id="U.Dia" DefaultValue="{{BASE_URL}}taskpane.html?action=dia"/>
-        <bt:Url id="U.Soon.source" DefaultValue="{{BASE_URL}}taskpane.html?soon=source"/>
+        <bt:Url id="U.SourceInfo" DefaultValue="{{BASE_URL}}taskpane.html?view=kaynak"/>
         <bt:Url id="U.Inventory" DefaultValue="{{BASE_URL}}taskpane.html?view=dokum"/>
         <bt:Url id="U.Soon.refresh" DefaultValue="{{BASE_URL}}taskpane.html?soon=refresh"/>
         <bt:Url id="U.Soon.compare" DefaultValue="{{BASE_URL}}taskpane.html?soon=compare"/>
@@ -1051,7 +1051,7 @@
         <bt:Url id="U.Soon.coverage" DefaultValue="{{BASE_URL}}taskpane.html?soon=coverage"/>
         <bt:Url id="U.Soon.identity" DefaultValue="{{BASE_URL}}taskpane.html?soon=identity"/>
         <bt:Url id="U.Soon.exclusions" DefaultValue="{{BASE_URL}}taskpane.html?soon=exclusions"/>
-        <bt:Url id="U.Soon.health" DefaultValue="{{BASE_URL}}taskpane.html?soon=health"/>
+        <bt:Url id="U.Health" DefaultValue="{{BASE_URL}}taskpane.html?view=saglik"/>
         <bt:Url id="U.Soon.history" DefaultValue="{{BASE_URL}}taskpane.html?soon=history"/>
         <bt:Url id="U.Consistency" DefaultValue="{{BASE_URL}}taskpane.html?tool=tutarlilik"/>
         <bt:Url id="U.Report" DefaultValue="{{BASE_URL}}taskpane.html?tool=rapor"/>
@@ -1086,7 +1086,7 @@
         <bt:String id="G.Review" DefaultValue="Denetim"/>
         <bt:String id="Search" DefaultValue="Şahıs ara"/>
         <bt:String id="Dia" DefaultValue="DİA maddesini aç"/>
-        <bt:String id="Soon.source" DefaultValue="Tarihin kaynağı"/>
+        <bt:String id="SourceInfo" DefaultValue="Tarihin kaynağı"/>
         <bt:String id="G.Source" DefaultValue="Şahıs ve kaynak"/>
         <bt:String id="Inventory" DefaultValue="Şahıs dökümü"/>
         <bt:String id="More" DefaultValue="Diğer araçlar"/>
@@ -1096,7 +1096,7 @@
         <bt:String id="Soon.coverage" DefaultValue="Denetim kapsamını göster"/>
         <bt:String id="Soon.identity" DefaultValue="Kimlik eşleşmelerini düzelt"/>
         <bt:String id="Soon.exclusions" DefaultValue="Belge istisnaları"/>
-        <bt:String id="Soon.health" DefaultValue="Belge sağlığı"/>
+        <bt:String id="Health" DefaultValue="Belge sağlığı"/>
         <bt:String id="Soon.history" DefaultValue="İşlem geçmişi"/>
         <bt:String id="G.Document" DefaultValue="Belge"/>
         <bt:String id="Consistency" DefaultValue="Tutarlılık raporu"/>
@@ -1142,7 +1142,7 @@
         <bt:String id="Soon.bulk.Tip" DefaultValue="Yazım ve tarih önerilerini tek listede gösterir; yalnız seçtiklerinizi uygular."/>
         <bt:String id="Search.Tip" DefaultValue="Yerel katalogda ad arar; sonuçları DİA bağlantısıyla gösterir."/>
         <bt:String id="Dia.Tip" DefaultValue="Seçili şahsın DİA maddesinin bağlantısını gösterir."/>
-        <bt:String id="Soon.source.Tip" DefaultValue="Seçili tarihin hangi katalog kaydından eklendiğini gösterir."/>
+        <bt:String id="SourceInfo.Tip" DefaultValue="Seçili Vefeyât tarihinin hangi katalog kaydından eklendiğini ve güncel olup olmadığını gösterir."/>
         <bt:String id="Inventory.Tip" DefaultValue="Metindeki şahıs adlarını ve tarihleri listeler."/>
         <bt:String id="More.Tip" DefaultValue="Tarih ve katalog araçları, kimlik eşleşmeleri ve belge istisnaları."/>
         <bt:String id="Soon.refresh.Tip" DefaultValue="Toplu önerileri önizlemede gösterir; mevcut tarihleri yeniden yazmaz."/>
@@ -1151,7 +1151,7 @@
         <bt:String id="Soon.coverage.Tip" DefaultValue="Taranan ve taranmayan bölümleri raporlar."/>
         <bt:String id="Soon.identity.Tip" DefaultValue="Belirsiz adlar için verdiğiniz onayları yönetir."/>
         <bt:String id="Soon.exclusions.Tip" DefaultValue="Şahıs değil olarak işaretlenen ifadeleri yönetir."/>
-        <bt:String id="Soon.health.Tip" DefaultValue="Tarih alanlarını denetler; onay olmadan onarım yapmaz."/>
+        <bt:String id="Health.Tip" DefaultValue="Vefeyât tarihlerini katalog ve önek ayarıyla karşılaştırır; yalnız seçtiklerinizi onarır."/>
         <bt:String id="Soon.history.Tip" DefaultValue="Bu oturumdaki işlemleri gösterir."/>
         <bt:String id="Consistency.Tip" DefaultValue="ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerleri gösterir; belgeyi değiştirmez."/>
         <bt:String id="Report.Tip" DefaultValue="Şahısları ilk geçiş sırasıyla ve kronolojik olarak yeni bir belgede listeler."/>

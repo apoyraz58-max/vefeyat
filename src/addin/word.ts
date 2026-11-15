@@ -3,6 +3,7 @@
  * logic.ts; these functions only read or write the document.
  */
 import type { InventoryRow, Segment } from "./inventory.js";
+import { DATE_TAG_PREFIX, type DateControl } from "./health.js";
 import { INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
 import { type SettingName, type Settings, parseConfirmations, settingValue } from "./logic.js";
 
@@ -392,5 +393,78 @@ export async function buildIndex(segments: readonly Segment[], rows: readonly In
     index.updateResult();
     await context.sync();
     return { marks, missing: rows.length - marks };
+  });
+}
+
+// ---- Belge sağlığı ve Tarihin kaynağı ----
+
+/** Content-control lists of the body and (WordApi 1.5) the footnotes, loaded. */
+async function controlLists(context: Word.RequestContext): Promise<Array<{ part: "main" | "note"; list: Word.ContentControlCollection }>> {
+  const lists: Array<{ part: "main" | "note"; list: Word.ContentControlCollection }> = [{ part: "main", list: context.document.body.contentControls }];
+  if (Office.context.requirements.isSetSupported("WordApi", "1.5")) {
+    const notes = context.document.body.footnotes;
+    notes.load("items");
+    await context.sync();
+    for (const note of notes.items) lists.push({ part: "note", list: note.body.contentControls });
+  }
+  for (const { list } of lists) list.load("items/id,items/tag,items/text");
+  await context.sync();
+  return lists;
+}
+
+async function findControl(context: Word.RequestContext, id: number): Promise<Word.ContentControl | null> {
+  for (const { list } of await controlLists(context)) {
+    const control = list.items.find((c) => c.id === id);
+    if (control) return control;
+  }
+  return null;
+}
+
+/** Every Vefeyât date control, in reading order of body and footnotes. */
+export async function readDateControls(): Promise<DateControl[]> {
+  return Word.run(async (context) =>
+    (await controlLists(context)).flatMap(({ part, list }) =>
+      list.items.filter((c) => c.tag?.startsWith(DATE_TAG_PREFIX)).map((c) => ({ id: c.id, part, tag: c.tag, text: c.text })),
+    ),
+  );
+}
+
+/** Rewrites the text of one date control. Returns false when it is gone. */
+export async function writeDateControl(id: number, text: string): Promise<boolean> {
+  return Word.run(async (context) => {
+    const control = await findControl(context, id);
+    if (!control) return false;
+    control.cannotEdit = false;
+    control.insertText(text, "Replace");
+    await context.sync();
+    return true;
+  });
+}
+
+export async function selectDateControl(id: number): Promise<boolean> {
+  return Word.run(async (context) => {
+    const control = await findControl(context, id);
+    if (!control) return false;
+    control.select("Select");
+    await context.sync();
+    return true;
+  });
+}
+
+/** The Vefeyât date control the selection is in or contains, or null. */
+export async function selectedDateControl(): Promise<DateControl | null> {
+  return Word.run(async (context) => {
+    const selection = context.document.getSelection();
+    const parent = selection.parentContentControlOrNullObject;
+    parent.load("id,tag,text");
+    const inside = selection.contentControls;
+    inside.load("items/id,items/tag,items/text");
+    // A name selected right before its date: look just after the selection.
+    const after = selection.getRange("End").expandTo(selection.paragraphs.getFirst().getRange("End")).contentControls;
+    after.load("items/id,items/tag,items/text");
+    await context.sync();
+    const candidates = [...(parent.isNullObject ? [] : [parent]), ...inside.items, ...after.items.slice(0, 1)];
+    const control = candidates.find((c) => c.tag?.startsWith(DATE_TAG_PREFIX));
+    return control ? { id: control.id, part: "main", tag: control.tag, text: control.text } : null;
   });
 }

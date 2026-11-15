@@ -146,3 +146,4 @@ input[type="search"] {
 .audit { border-color: var(--accent); }
 .audit .actions { margin-top: 6px; }
 .report{margin-top:6px;font-size:12px}.report p{margin:2px 0;white-space:pre-wrap}.report .warning{color:#a4262c}.tools button{margin-top:4px;display:block}
+#health-list input{margin-right:6px}

@@ -102,7 +102,7 @@ groups = [
     group("Source", "Şahıs ve kaynak", "search", [
         button("Search", S("Search", "Şahıs ara"), L("Search.Tip", "Yerel katalogda ad arar; sonuçları DİA bağlantısıyla gösterir."), "search", pane(U("U.Search", "taskpane.html?view=ara"))),
         button("Dia", S("Dia", "DİA maddesini aç"), L("Dia.Tip", "Seçili şahsın DİA maddesinin bağlantısını gösterir."), "dia", pane(U("U.Dia", "taskpane.html?action=dia"))),
-        soon("source", "Tarihin kaynağı", "Seçili tarihin hangi katalog kaydından eklendiğini gösterir.", "source"),
+        button("SourceInfo", S("SourceInfo", "Tarihin kaynağı"), L("SourceInfo.Tip", "Seçili Vefeyât tarihinin hangi katalog kaydından eklendiğini ve güncel olup olmadığını gösterir."), "source", pane(U("U.SourceInfo", "taskpane.html?view=kaynak"))),
     ]),
     group("Document", "Belge", "inventory", [
         button("Inventory", S("Inventory", "Şahıs dökümü"), L("Inventory.Tip", "Metindeki şahıs adlarını ve tarihleri listeler."), "inventory", pane(U("U.Inventory", "taskpane.html?view=dokum"))),
@@ -114,7 +114,7 @@ groups = [
             soon("identity", "Kimlik eşleşmelerini düzelt", "Belirsiz adlar için verdiğiniz onayları yönetir.", "more", True),
             soon("exclusions", "Belge istisnaları", "Şahıs değil olarak işaretlenen ifadeleri yönetir.", "more", True),
         ]),
-        soon("health", "Belge sağlığı", "Tarih alanlarını denetler; onay olmadan onarım yapmaz.", "health"),
+        button("Health", S("Health", "Belge sağlığı"), L("Health.Tip", "Vefeyât tarihlerini katalog ve önek ayarıyla karşılaştırır; yalnız seçtiklerinizi onarır."), "health", pane(U("U.Health", "taskpane.html?view=saglik"))),
         soon("history", "İşlem geçmişi", "Bu oturumdaki işlemleri gösterir.", "history"),
     ]),
     group("Submit", "Teslim ve dizin", "tools", [

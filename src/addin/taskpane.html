@@ -88,6 +88,31 @@
       </section>
     </div>
 
+    <div id="view-saglik" class="view" data-title="Belge sağlığı" hidden>
+      <section>
+        <p id="health-summary" class="muted">Denetleniyor…</p>
+        <div class="actions">
+          <button id="health-refresh" type="button">Yeniden denetle</button>
+          <button id="health-repair" type="button" class="primary" disabled>Seçilenleri onar</button>
+        </div>
+        <ol id="health-list" class="inventory" aria-label="Vefeyât tarihleri"></ol>
+      </section>
+    </div>
+
+    <div id="view-kaynak" class="view" data-title="Tarihin kaynağı" hidden>
+      <section>
+        <p id="source-summary" class="muted">İmleci belgedeki bir Vefeyât tarihinin içine koyun.</p>
+        <dl id="source-details" class="details" hidden>
+          <dt>Şahıs</dt><dd id="source-person"></dd>
+          <dt>Belgedeki tarih</dt><dd id="source-text"></dd>
+          <dt>Katalogdaki tarih</dt><dd id="source-catalog"></dd>
+          <dt>Durum</dt><dd id="source-health"></dd>
+          <dt>Kaynak</dt><dd><a id="source-link" target="_blank" rel="noopener"></a></dd>
+        </dl>
+        <div class="actions"><button id="source-repair" type="button" class="primary" hidden>Bu tarihi onar</button></div>
+      </section>
+    </div>
+
     <div id="view-dokum" class="view" data-title="Şahıs dökümü" hidden>
       <section>
         <p id="inventory-summary" class="muted">Döküm hazırlanıyor…</p>

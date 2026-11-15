@@ -29,8 +29,9 @@ import {
 } from "./logic.js";
 import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
+import { HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -152,6 +153,7 @@ function describeCatalog(fileName: string, count: number, source: "user" | "embe
 
 function useCatalog(csv: string, fileName: string, source: "user" | "embedded", persisted: boolean): void {
   state.catalog = Catalog.fromCsv(csv);
+  tagIndex = null;
   state.index = null; // rebuilt on the next inventory
   state.catalogSource = source;
   describeCatalog(fileName, state.catalog.people.length, source, persisted);
@@ -184,6 +186,7 @@ async function restoreCatalog(): Promise<void> {
     }
   }
   state.catalog = null;
+  tagIndex = null;
   $("catalog-status").textContent = "Katalog yüklenemedi. Bilgisayarınızdaki DİA CSV dosyasını seçin.";
   $("no-catalog").hidden = false;
 }
@@ -596,6 +599,116 @@ async function deleteIndex(): Promise<void> {
   setMessage(count ? `${count} Vefeyât dizin alanı kaldırıldı.` : "Belgede Vefeyât dizini yok.", "success");
 }
 
+// ---- Belge sağlığı ve Tarihin kaynağı ----
+
+let tagIndex: TagIndex | null = null;
+let healthRows: HealthRow[] = [];
+const healthChosen = new Set<number>();
+
+function tags(): TagIndex | null {
+  if (!state.catalog) return null;
+  tagIndex ??= new TagIndex(state.catalog);
+  return tagIndex;
+}
+
+async function checkHealth(): Promise<void> {
+  const index = tags();
+  if (!index) {
+    setMessage("Katalog yüklenmedi.", "warning");
+    return;
+  }
+  await refreshSettings();
+  state.settings = readSettings();
+  healthRows = checkControls(await readDateControls(), index, state.settings.prefix);
+  healthChosen.clear();
+  for (const row of healthRows) if (row.health === "prefix" || row.health === "empty") healthChosen.add(row.id);
+  renderHealth();
+}
+
+function renderHealth(): void {
+  const problems = healthRows.filter((r) => r.health !== "ok");
+  $("health-summary").textContent =
+    healthRows.length === 0
+      ? "Belgede Vefeyât'ın eklediği tarih yok."
+      : `${healthRows.length} tarih denetlendi: ${healthRows.length - problems.length} sağlam, ${problems.length} sorunlu.` +
+        (problems.length ? " Onarılacakları işaretleyin; işaretsizlere dokunulmaz." : "");
+  const list = $("health-list");
+  list.replaceChildren();
+  for (const row of problems) {
+    const item = document.createElement("li");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.disabled = !repairable(row);
+    box.checked = healthChosen.has(row.id);
+    box.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (box.checked) healthChosen.add(row.id);
+      else healthChosen.delete(row.id);
+      $<HTMLButtonElement>("health-repair").disabled = healthChosen.size === 0;
+    });
+    const name = document.createElement("strong");
+    name.textContent = row.person ? textName(row.person.shortName) : "Bilinmeyen kayıt";
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = LOCATION[row.part];
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = `Belgede: ${row.text.trim() || "(boş)"}` + (row.expected ? ` → ${row.expected}` : "");
+    const status = document.createElement("span");
+    status.className = "meta warn";
+    status.textContent = HEALTH_LABEL[row.health];
+    item.append(box, name, badge, meta, status);
+    item.addEventListener("click", () =>
+      void run(async () => {
+        if (!(await selectDateControl(row.id))) setMessage("Bu tarih artık belgede yok; yeniden denetleyin.", "warning");
+      }),
+    );
+    list.append(item);
+  }
+  $<HTMLButtonElement>("health-repair").disabled = healthChosen.size === 0;
+}
+
+async function repairHealth(): Promise<void> {
+  let fixed = 0;
+  for (const row of healthRows) {
+    if (!healthChosen.has(row.id) || !repairable(row)) continue;
+    if (await writeDateControl(row.id, repairText(row, row.text))) fixed++;
+  }
+  await checkHealth();
+  setMessage(`${fixed} tarih onarıldı.`, "success");
+}
+
+let sourceRow: HealthRow | null = null;
+
+async function showSource(): Promise<void> {
+  const index = tags();
+  if (!index) return;
+  const control = await selectedDateControl();
+  sourceRow = control ? (checkControls([control], index, state.settings.prefix)[0] ?? null) : null;
+  $("source-details").hidden = sourceRow === null;
+  $("source-repair").hidden = !(sourceRow && repairable(sourceRow));
+  if (!sourceRow) {
+    $("source-summary").textContent = "İmleci belgedeki bir Vefeyât tarihinin içine (ya da tarihi olan adın üzerine) koyun.";
+    return;
+  }
+  const person = sourceRow.person;
+  $("source-summary").textContent = person ? "Bu tarih Vefeyât tarafından aşağıdaki katalog kaydından eklendi." : "Bu tarihin kaydı yüklü katalogda yok; katalog değişmiş olabilir.";
+  $("source-person").textContent = person ? `${textName(person.shortName)}${person.fullName ? ` (${textName(person.fullName)})` : ""}` : "—";
+  $("source-text").textContent = sourceRow.text.trim() || "(boş)";
+  $("source-catalog").textContent = person?.deathDate || "—";
+  $("source-health").textContent = HEALTH_LABEL[sourceRow.health];
+  const link = $<HTMLAnchorElement>("source-link");
+  link.textContent = person?.source || "—";
+  if (person?.source.startsWith("https://")) link.href = person.source;
+  else link.removeAttribute("href");
+}
+
+async function repairSource(): Promise<void> {
+  if (!sourceRow || !repairable(sourceRow)) return;
+  if (await writeDateControl(sourceRow.id, repairText(sourceRow, sourceRow.text))) setMessage("Tarih onarıldı.", "success");
+  await showSource();
+}
+
 let cleanupArmed = false;
 async function cleanup(): Promise<void> {
   const button = $<HTMLButtonElement>("run-temizlik");
@@ -617,6 +730,8 @@ async function launch(request: Launch): Promise<void> {
   if (request.tool) document.getElementById(`tool-${request.tool === "dizinkaldir" ? "dizin" : request.tool}`)?.classList.add("focus");
   if (request.view === "ara") $<HTMLInputElement>("search-query").focus();
   if (request.view === "dokum") await run(prepareInventory);
+  if (request.view === "saglik") await run(checkHealth);
+  if (request.view === "kaynak") await run(showSource);
   if (request.tool === "tutarlilik") await run(showConsistency);
   if (request.tool === "rapor") await run(createPersonReport);
   if (request.tool === "dizin") await run(createIndex);
@@ -649,6 +764,9 @@ function initialise(): void {
   $("reset-catalog").addEventListener("click", () => void resetCatalog());
   $("run-tutarlilik").addEventListener("click", () => void run(showConsistency));
   $("run-rapor").addEventListener("click", () => void run(createPersonReport));
+  $("health-refresh").addEventListener("click", () => void run(checkHealth));
+  $("health-repair").addEventListener("click", () => void run(repairHealth));
+  $("source-repair").addEventListener("click", () => void run(repairSource));
   $("run-dizin").addEventListener("click", () => void run(createIndex));
   $("run-dizinkaldir").addEventListener("click", () => void run(deleteIndex));
   $("run-temizlik").addEventListener("click", () => void run(cleanup));
@@ -675,7 +793,10 @@ function initialise(): void {
   let timer: number | undefined;
   onSelectionChanged(() => {
     window.clearTimeout(timer);
-    timer = window.setTimeout(() => void refresh(), 250);
+    timer = window.setTimeout(() => {
+      if (!$("view-kaynak").hidden) void run(showSource);
+      else void refresh();
+    }, 250);
   });
   $("inventory-refresh").addEventListener("click", () => void run(prepareInventory));
   $("inventory-act").addEventListener("click", () => void actOnRow());

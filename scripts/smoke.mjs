@@ -63,9 +63,17 @@ const FAKE_OFFICE = String.raw`
     }
     insertContentControl() {
       const range = this;
-      const control = { tag: "", title: "", appearance: "", range, getRange: (loc) => (loc === "After" ? new R(range.e, range.e) : range) };
+      const control = { id: doc.controls.length + 1, tag: "", title: "", appearance: "", range, getRange: (loc) => (loc === "After" ? new R(range.e, range.e) : range),
+        get text() { return doc.text.slice(this.range.s, this.range.e); },
+        insertText(t) { this.range = this.range.insertText(t, "Replace"); },
+        select() { doc.sel = [this.range.s, this.range.e]; } };
       doc.controls.push(control);
       return control;
+    }
+    get contentControls() { return { items: doc.controls.filter((c) => c.range.s >= this.s && c.range.e <= this.e && c.range.e > c.range.s), load() { return this; } }; }
+    get parentContentControlOrNullObject() {
+      const c = doc.controls.find((c) => c.range.s <= this.s && this.e <= c.range.e && c.range.e > c.range.s);
+      return c ? Object.assign(Object.create(c), { isNullObject: false, load() { return this; } }) : { isNullObject: true, load() { return this; } };
     }
     select(mode) { doc.sel = mode === "Start" ? [this.s, this.s] : [this.s, this.e]; }
     search(needle) {
@@ -97,7 +105,7 @@ const FAKE_OFFICE = String.raw`
         at += part.length + 1;
       }
       const paragraphs = { items, load() { return this; } };
-      return fn({ document: { getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs } }, sync: async () => {} });
+      return fn({ document: { getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
     },
   };
   window.Office = {
@@ -252,8 +260,12 @@ try {
   const hits = await tab.$$eval("#search-results li strong", (n) => n.map((x) => x.textContent));
   check("Şahıs ara lists catalog matches", hits.length === 2 && hits[0].startsWith("Fahreddin er-Râzî"), hits.join(" | "));
   await tab.close();
-  tab = await open("?soon=health");
-  check("not-yet-ported command explains itself", (await tab.textContent("#view-title")) === "Belge sağlığı" && (await tab.isVisible("#view-yakinda")));
+  tab = await open("?soon=history");
+  check("not-yet-ported command explains itself", (await tab.textContent("#view-title")) === "İşlem geçmişi" && (await tab.isVisible("#view-yakinda")));
+  await tab.close();
+  tab = await open("?view=saglik");
+  await tab.waitForFunction(() => !document.getElementById("health-summary").textContent.startsWith("Denetleniyor"));
+  check("Belge sağlığı reports the document's dates", (await tab.isVisible("#view-saglik")) && (await tab.textContent("#health-summary")).length > 0, await tab.textContent("#health-summary"));
   await tab.close();
   tab = await open("?action=dia", "Gazzâlî der ki.", "Gazzâlî");
   check("DİA maddesini aç offers the article link", (await tab.getAttribute("#detail-link", "href")) === "https://islamansiklopedisi.org.tr/gazzali");
