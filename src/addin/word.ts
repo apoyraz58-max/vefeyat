@@ -2,6 +2,7 @@
  * Thin Word layer (Office.js, WordApi 1.3). Every decision is made in
  * logic.ts; these functions only read or write the document.
  */
+import type { Segment } from "./inventory.js";
 import { type SettingName, type Settings, settingValue } from "./logic.js";
 
 export interface SelectionText {
@@ -124,4 +125,64 @@ export function writeSetting(name: SettingName, value: string): Promise<void> {
 
 export function onSelectionChanged(handler: () => void): void {
   Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, handler);
+}
+
+// ---- Whole-document reading for Şahıs dökümü and Belgeyi denetle ----
+
+/** Main-text paragraphs and, where WordApi 1.5 is available, footnotes. */
+export async function readSegments(): Promise<{ segments: Segment[]; footnotes: boolean }> {
+  return Word.run(async (context) => {
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("items/text");
+    await context.sync();
+    const segments: Segment[] = paragraphs.items.map((p, i) => ({ part: "main", anchor: i, order: 0, text: p.text }));
+    const footnotes = Office.context.requirements.isSetSupported("WordApi", "1.5");
+    if (footnotes) {
+      const notes = paragraphs.items.map((p) => {
+        const collection = p.getRange("Whole").footnotes;
+        collection.load("items/body/text");
+        return collection;
+      });
+      await context.sync();
+      notes.forEach((collection, anchor) => {
+        collection.items.forEach((note, i) => segments.push({ part: "note", anchor, order: i + 1, text: note.body.text }));
+      });
+    }
+    return { segments, footnotes };
+  });
+}
+
+function occurrenceBefore(text: string, literal: string, start: number): number {
+  let count = 0;
+  for (let at = text.indexOf(literal); at >= 0 && at < start; at = text.indexOf(literal, at + 1)) count++;
+  return count;
+}
+
+/** Selects one mention found by the inventory. Returns false when the text changed. */
+export async function selectMention(segment: Segment, start: number, literal: string): Promise<boolean> {
+  if (literal.length === 0 || literal.length > 250) return false;
+  return Word.run(async (context) => {
+    const paragraph = context.document.body.paragraphs;
+    paragraph.load("items");
+    await context.sync();
+    const host = paragraph.items[segment.anchor];
+    if (!host) return false;
+    let scope: Word.Body | Word.Range = host.getRange("Whole");
+    if (segment.part === "note") {
+      const notes = host.getRange("Whole").footnotes;
+      notes.load("items");
+      await context.sync();
+      const note = notes.items[segment.order - 1];
+      if (!note) return false;
+      scope = note.body;
+    }
+    const results = scope.search(searchText(literal), { matchCase: true, matchWholeWord: false });
+    results.load("items");
+    await context.sync();
+    const target = results.items[occurrenceBefore(segment.text, literal, start)];
+    if (!target) return false;
+    target.select("Select");
+    await context.sync();
+    return true;
+  });
 }

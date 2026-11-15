@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, orderByNameForm, parseLaunch, planDate, quickInsertBlocker, scopeRule, settingValue, settingsSummary } from "../src/addin/logic.js";
+import { DEFAULT_SETTINGS, auditRows, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, orderByNameForm, parseLaunch, planDate, quickInsertBlocker, scopeRule, settingValue, settingsSummary } from "../src/addin/logic.js";
 import { Catalog, nameOptions, personKey, sourceName, withEnding, type Person } from "../src/core/index.js";
 
 const DIA = "https://islamansiklopedisi.org.tr/";
@@ -124,7 +124,7 @@ describe("ribbon launch", () => {
     ["?action=insert", { view: "secili", action: "insert", tool: null }],
     ["?action=spelling", { view: "secili", action: "spelling", tool: null }],
     ["?view=dokum", { view: "dokum", action: null, tool: null }],
-    ["?view=denetim", { view: "dokum", action: null, tool: null }],
+    ["?view=denetim", { view: "secili", action: "audit", tool: null }],
     ["?tool=dizin", { view: "teslim", action: null, tool: "dizin" }],
     ["?view=katalog", { view: "katalog", action: null, tool: null }],
     ["?view=yardim", { view: "yardim", action: null, tool: null }],
@@ -170,5 +170,19 @@ describe("settings", () => {
     expect(orderByNameForm(options, "ask").map((o) => o.label)[0]).toBe("Seçili ada yakın yazım");
     expect(orderByNameForm(options, "full").map((o) => o.label)[0]).toBe("Tam / uzun ad");
     expect(orderByNameForm(options, "original").map((o) => o.value)[0]).toBe("الغزالي");
+  });
+});
+
+describe("audit rows", () => {
+  const rows = [
+    { person: {}, first: true, date: "(ö. 1)" },
+    { person: {}, first: false, date: "" },
+    { person: null, first: false, date: "" },
+  ];
+  it("first-use scope skips verified repeats", () => {
+    expect(auditRows(rows, DEFAULT_SETTINGS)).toEqual([rows[0], rows[2]]);
+  });
+  it("undated mode skips dated mentions", () => {
+    expect(auditRows(rows, { ...DEFAULT_SETTINGS, scope: "all", auditMode: "undated" })).toEqual([rows[1], rows[2]]);
   });
 });

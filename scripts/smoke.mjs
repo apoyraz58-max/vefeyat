@@ -67,6 +67,13 @@ const FAKE_OFFICE = String.raw`
       return control;
     }
     select(mode) { doc.sel = mode === "Start" ? [this.s, this.s] : [this.s, this.e]; }
+    search(needle) {
+      const items = [];
+      const n = needle.replace(/\^\^/g, "^");
+      const hay = doc.text.slice(this.s, this.e);
+      for (let i = hay.indexOf(n); i >= 0; i = hay.indexOf(n, i + 1)) items.push(new R(this.s + i, this.s + i + n.length));
+      return { items, load() { return this; } };
+    }
     compareLocationWith(o) {
       const value = this.e < o.s ? "Before" : this.e === o.s ? "AdjacentBefore" : this.s >= o.e ? "After" : "Overlaps";
       return { value };
@@ -80,7 +87,17 @@ const FAKE_OFFICE = String.raw`
     return { items, load() { return this; } };
   };
   window.Word = {
-    run: async (fn) => fn({ document: { getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search } }, sync: async () => {} }),
+    run: async (fn) => {
+      const items = [];
+      let at = 0;
+      for (const part of doc.text.split("\r")) {
+        const range = new R(at, at + part.length);
+        items.push({ text: part, getRange: () => range });
+        at += part.length + 1;
+      }
+      const paragraphs = { items, load() { return this; } };
+      return fn({ document: { getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs } }, sync: async () => {} });
+    },
   };
   window.Office = {
     HostType: { Word: "Word" },
@@ -88,6 +105,7 @@ const FAKE_OFFICE = String.raw`
     AsyncResultStatus: { Succeeded: "succeeded" },
     onReady: (cb) => setTimeout(() => cb({ host: "Word" }), 0),
     context: {
+      requirements: { isSetSupported: () => false },
       document: {
         settings: {
           get: (k) => doc.settings[k] ?? null,
@@ -236,6 +254,31 @@ try {
   tab = await open("?action=dia", "Gazzâlî der ki.", "Gazzâlî");
   check("DİA maddesini aç offers the article link", (await tab.getAttribute("#detail-link", "href")) === "https://islamansiklopedisi.org.tr/gazzali");
   await tab.close();
+  // Şahıs dökümü and Tüm belgeyi denetle on a whole document.
+  const book = "Gazali bu görüşü savunur.\rGazzâlî (ö. 505/1111) ise farklı düşünür. Râzî de katılır.\rSonra Gazzâlî'nin talebeleri gelir.";
+  tab = await open("?view=dokum", book);
+  await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length > 0);
+  const listed = await tab.$$eval("#inventory-list li strong", (n) => n.map((x) => x.textContent));
+  check("Şahıs dökümü lists every mention", listed.join("|") === "Gazali|Gazzâlî|Râzî|Gazzâlî'nin", listed.join("|"));
+  check("inventory summary", (await tab.textContent("#inventory-summary")).startsWith("4 geçiş · 1 kesin şahıs · 2 doğrulanacak"), await tab.textContent("#inventory-summary"));
+  await tab.click("#inventory-list li:nth-child(3)");
+  await tab.waitForTimeout(200);
+  check("clicking a row selects it in the document", (await tab.evaluate(() => window.__doc.text.slice(...window.__doc.sel))) === "Râzî");
+  await tab.click("#inventory-act");
+  await tab.waitForTimeout(400);
+  check("row action opens the selected-name window", (await tab.isVisible("#view-secili")) && (await tab.textContent("#selected-name")) === "Râzî");
+  await tab.close();
+  tab = await open("?view=denetim", book);
+  await tab.waitForTimeout(400);
+  check("audit visits mentions in order", (await tab.isVisible("#audit-bar")) && (await tab.textContent("#audit-position")).startsWith("Denetim: 1 / 3") && (await tab.textContent("#selected-name")) === "Gazali", await tab.textContent("#audit-position"));
+  await tab.click("#audit-next");
+  await tab.waitForTimeout(400);
+  check("audit moves to the next mention", (await tab.textContent("#selected-name")) === "Gazzâlî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 2 / 3"));
+  await tab.click("#audit-next");
+  await tab.waitForTimeout(400);
+  check("first-use audit skips the verified repeat", (await tab.textContent("#selected-name")) === "Râzî" && (await tab.textContent("#audit-next")) === "Bitir");
+  await tab.close();
+
   tab = await open("?view=yardim");
   check("Kılavuz opens the guide", await tab.isVisible("#view-yardim"));
   await tab.close();

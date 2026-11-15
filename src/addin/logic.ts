@@ -129,7 +129,7 @@ export type Tool = "tutarlilik" | "rapor" | "dizin" | "temizlik";
 
 export interface Launch {
   readonly view: View;
-  readonly action: "insert" | "spelling" | "dia" | null;
+  readonly action: "insert" | "spelling" | "dia" | "audit" | null;
   readonly tool: Tool | null;
   /** Key of a VBA command that is not ported yet (view "yakinda"). */
   readonly soon?: string;
@@ -172,7 +172,8 @@ export function parseLaunch(search: string): Launch {
   if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "temizlik") {
     return { view: "teslim", action: null, tool };
   }
-  if (view === "dokum" || view === "denetim") return { view: "dokum", action: null, tool: null };
+  if (view === "denetim") return { view: "secili", action: "audit", tool: null };
+  if (view === "dokum") return { view: "dokum", action: null, tool: null };
   if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara") return { view, action: null, tool: null };
   if (view === "ayarlar") return { view: "katalog", action: null, tool: null };
   return { view: "secili", action: null, tool: null };
@@ -252,4 +253,17 @@ export function orderByNameForm<T extends { label: string }>(options: readonly T
   if (form === "ask") return [...options];
   const wanted = FORM_LABELS[form];
   return [...options.filter((o) => o.label === wanted), ...options.filter((o) => o.label !== wanted)];
+}
+
+/**
+ * Which inventory rows "Tüm belgeyi denetle" visits (VBA `VfwPrepare`): with
+ * "Yalnız ilk kullanım", verified repeats are skipped; with "Tarihi
+ * olmayanlar", mentions that already carry a date are skipped.
+ */
+export function auditRows<T extends { person: unknown; first: boolean; date: string }>(rows: readonly T[], settings: Settings): T[] {
+  return rows.filter((row) => {
+    if (settings.scope === "first" && row.person !== null && !row.first) return false;
+    if (settings.auditMode === "undated" && row.date) return false;
+    return true;
+  });
 }

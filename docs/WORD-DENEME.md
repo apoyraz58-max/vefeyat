@@ -32,10 +32,10 @@ yeniden başlatın → **Ekle → Eklentilerim → Paylaşılan Klasör → Vefe
 
 | Grup | Komutlar |
 | --- | --- |
-| Ekle ve denetle | **Ölüm tarihi ekle**, Tüm belgeyi denetle*, **İsim yazımı** |
+| Ekle ve denetle | **Ölüm tarihi ekle**, **Tüm belgeyi denetle**, **İsim yazımı** |
 | Denetim | **Tarih ekleme ▾**, **Denetlenecek ▾**, Denetime devam et*, Toplu düzeltme önizlemesi* |
 | Şahıs ve kaynak | **Şahıs ara**, **DİA maddesini aç**, Tarihin kaynağı* |
-| Belge | Şahıs dökümü*, Diğer araçlar ▾*, Belge sağlığı*, İşlem geçmişi* |
+| Belge | **Şahıs dökümü**, Diğer araçlar ▾*, Belge sağlığı*, İşlem geçmişi* |
 | Teslim ve dizin | Tutarlılık raporu*, Şahıs raporu*, Şahıslar dizini ▾*, Teslim öncesi temizle* |
 | Tercihler | **Ad biçimi ▾**, **Kısaltma ▾**, Ayarlar ▾* |
 | Veri ve yardım | **Veri bilgisi**, **CSV seç**, **Kullanım kılavuzu** |

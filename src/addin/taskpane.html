@@ -19,6 +19,14 @@
     <p id="message" class="message" hidden role="status"></p>
 
     <div id="view-secili" class="view" data-title="Ölüm tarihi ve isim yazımı">
+      <section id="audit-bar" class="audit" hidden>
+        <span id="audit-position"></span>
+        <div class="actions">
+          <button id="audit-prev" type="button">◀ Önceki</button>
+          <button id="audit-next" type="button" class="primary">Sonraki ▶</button>
+          <button id="audit-stop" type="button" class="link">Denetimi bitir</button>
+        </div>
+      </section>
       <section id="no-catalog" class="notice" hidden>
         <p>Katalog yüklenemedi. Bilgisayarınızdaki DİA CSV dosyasını seçin.</p>
         <button id="choose-catalog-inline" type="button" class="primary">CSV seç</button>
@@ -82,11 +90,17 @@
 
     <div id="view-dokum" class="view" data-title="Şahıs dökümü" hidden>
       <section>
-        <p>Belgedeki bütün şahıs adlarını DİA karşılığı, mevcut tarih ve uyarılarla listeler; satır
-          seçip yazım değiştirme veya tarih ekleme yapılır. <strong>Belgeyi denetle</strong> adları
-          ilk geçişten başlayarak sırayla gösterip onay ister.</p>
-        <p class="soon">Bu bölüm Office.js sürümüne taşınıyor. Şimdilik VBA sürümündeki
-          <strong>Şahıs dökümü</strong> ve <strong>Tüm belgeyi denetle</strong> komutlarını kullanın.</p>
+        <p id="inventory-summary" class="muted">Döküm hazırlanıyor…</p>
+        <div class="actions">
+          <button id="inventory-refresh" type="button">Dökümü yenile</button>
+          <button id="inventory-act" type="button" class="primary" disabled>Seçili satırda işlem yap</button>
+        </div>
+        <ol id="inventory-list" class="inventory" aria-label="Belgedeki şahıs geçişleri"></ol>
+        <div id="inventory-pages" class="actions" hidden>
+          <button id="inventory-prev" type="button">Önceki sayfa</button>
+          <button id="inventory-next" type="button">Sonraki sayfa</button>
+          <span id="inventory-page" class="muted"></span>
+        </div>
       </section>
     </div>
 

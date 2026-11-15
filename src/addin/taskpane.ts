@@ -3,7 +3,7 @@
  * button asked for. Settings live in the ribbon's Tercihler menus; the pane
  * only displays them. Writes happen only on an explicit click.
  */
-import { Catalog, CatalogError, type Person, nameOptions, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
+import { Catalog, CatalogError, NameIndex, type Person, nameOptions, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
 import {
   DEFAULT_SETTINGS,
   type Launch,
@@ -11,6 +11,7 @@ import {
   type Settings,
   type View,
   SOON,
+  auditRows,
   candidateLabel,
   dateTag,
   earlierSpellings,
@@ -23,8 +24,9 @@ import {
   scopeRule,
   settingsSummary,
 } from "./logic.js";
+import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
-import { findEarlier, insertDate, onSelectionChanged, readSelection, readSettings, refreshSettings, replaceSelection } from "./word.js";
+import { findEarlier, insertDate, onSelectionChanged, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -36,6 +38,13 @@ interface State {
   chosen: Person | null;
   settings: Settings;
   busy: boolean;
+  index: NameIndex | null;
+  segments: Segment[];
+  rows: InventoryRow[];
+  page: number;
+  selectedRow: number | null;
+  audit: InventoryRow[] | null;
+  auditAt: number;
 }
 
 const state: State = {
@@ -46,7 +55,16 @@ const state: State = {
   chosen: null,
   settings: DEFAULT_SETTINGS,
   busy: false,
+  index: null,
+  segments: [],
+  rows: [],
+  page: 0,
+  selectedRow: null,
+  audit: null,
+  auditAt: 0,
 };
+
+const PAGE_SIZE = 250;
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const element = document.getElementById(id);
@@ -126,6 +144,7 @@ function describeCatalog(fileName: string, count: number, source: "user" | "embe
 
 function useCatalog(csv: string, fileName: string, source: "user" | "embedded", persisted: boolean): void {
   state.catalog = Catalog.fromCsv(csv);
+  state.index = null; // rebuilt on the next inventory
   state.catalogSource = source;
   describeCatalog(fileName, state.catalog.people.length, source, persisted);
 }
@@ -261,8 +280,8 @@ function hideEarlier(): void {
   $("earlier").hidden = true;
 }
 
-async function refresh(): Promise<void> {
-  if (state.busy) return;
+async function refresh(force = false): Promise<void> {
+  if (state.busy && !force) return;
   hideEarlier();
   try {
     await loadSettings();
@@ -356,11 +375,134 @@ async function respell(): Promise<void> {
   await refresh();
 }
 
+// ---- Şahıs dökümü ----
+
+const LOCATION = { main: "Metin", note: "Dipnot" } as const;
+
+async function prepareInventory(): Promise<void> {
+  if (!state.catalog) {
+    $("inventory-summary").textContent = "Katalog yüklenmedi; döküm hazırlanamaz.";
+    return;
+  }
+  $("inventory-summary").textContent = "Döküm hazırlanıyor…";
+  const read = await readSegments();
+  state.index ??= new NameIndex(state.catalog.people);
+  state.segments = read.segments;
+  state.rows = buildInventory(read.segments, state.catalog, state.index);
+  state.page = 0;
+  state.selectedRow = null;
+  const sum = summarize(state.rows);
+  $("inventory-summary").textContent =
+    `${sum.mentions} geçiş · ${sum.people} kesin şahıs · ${sum.uncertain} doğrulanacak · ${sum.firstWithoutDate} ilk geçişte tarih yok · ${sum.spelling} yazım uyarısı` +
+    (read.footnotes ? "" : " · Bu Word sürümünde dipnotlar okunamıyor");
+  renderInventory();
+}
+
+function renderInventory(): void {
+  const list = $("inventory-list");
+  list.replaceChildren();
+  const pageRows = state.rows.slice(state.page * PAGE_SIZE, (state.page + 1) * PAGE_SIZE);
+  for (const row of pageRows) {
+    const item = document.createElement("li");
+    item.setAttribute("role", "option");
+    item.setAttribute("aria-selected", String(state.selectedRow === row.id));
+    item.tabIndex = 0;
+    const name = document.createElement("strong");
+    name.textContent = row.text;
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = LOCATION[row.part];
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = `${catalogLabel(row)} · ${row.date || "tarih yok"}`;
+    const status = document.createElement("span");
+    status.className = row.status === "match" ? "meta" : "meta warn";
+    status.textContent = statusLabel(row);
+    item.append(name, badge, meta, status);
+    item.addEventListener("click", () => void run(() => chooseRow(row)));
+    item.addEventListener("dblclick", () => void actOnRow());
+    list.append(item);
+  }
+  const pages = Math.ceil(state.rows.length / PAGE_SIZE);
+  $("inventory-pages").hidden = pages <= 1;
+  $("inventory-page").textContent = pages > 1 ? `${state.page + 1} / ${pages}` : "";
+  $<HTMLButtonElement>("inventory-act").disabled = state.selectedRow === null;
+}
+
+async function chooseRow(row: InventoryRow): Promise<void> {
+  const segment = state.segments[row.segment];
+  if (!segment) return;
+  const ok = await selectMention(segment, row.start, row.text);
+  if (!ok) {
+    setMessage("Bu geçiş metinde bulunamadı; metin değişmiş olabilir. Dökümü yenileyin.", "warning");
+    return;
+  }
+  state.selectedRow = row.id;
+  renderInventory();
+}
+
+async function actOnRow(): Promise<void> {
+  if (state.selectedRow === null) return;
+  showView("secili");
+  state.alias = null;
+  await refresh();
+}
+
+// ---- Tüm belgeyi denetle ----
+
+async function startAudit(): Promise<void> {
+  await loadSettings();
+  if (!state.catalog) {
+    setMessage("Katalog yüklenmedi; denetim başlatılamaz.", "warning");
+    return;
+  }
+  setMessage("Belge taranıyor…", "info");
+  const read = await readSegments();
+  state.index ??= new NameIndex(state.catalog.people);
+  state.segments = read.segments;
+  state.rows = buildInventory(read.segments, state.catalog, state.index);
+  state.audit = auditRows(state.rows, state.settings);
+  state.auditAt = 0;
+  setMessage("", "info");
+  if (state.audit.length === 0) {
+    state.audit = null;
+    setMessage("Denetlenecek geçiş yok.", "success");
+    renderAudit();
+    return;
+  }
+  await gotoAudit(0);
+}
+
+async function gotoAudit(at: number): Promise<void> {
+  if (!state.audit) return;
+  const row = state.audit[at];
+  if (!row) return;
+  state.auditAt = at;
+  const segment = state.segments[row.segment];
+  const ok = segment ? await selectMention(segment, row.start, row.text) : false;
+  if (!ok) setMessage("Bu geçiş metinde bulunamadı; metin değişmiş olabilir. Sonraki ile devam edin.", "warning");
+  renderAudit();
+  state.alias = null;
+  await refresh(true); // runs inside a busy task
+}
+
+function renderAudit(): void {
+  const bar = $("audit-bar");
+  bar.hidden = state.audit === null;
+  if (!state.audit) return;
+  const row = state.audit[state.auditAt];
+  $("audit-position").textContent = `Denetim: ${state.auditAt + 1} / ${state.audit.length}` + (row ? ` · ${LOCATION[row.part]} · ${statusLabel(row)}` : "");
+  $<HTMLButtonElement>("audit-prev").disabled = state.auditAt === 0;
+  $<HTMLButtonElement>("audit-next").textContent = state.auditAt + 1 >= state.audit.length ? "Bitir" : "Sonraki ▶";
+}
+
 /** Carries out what the ribbon or context-menu button asked for. */
 async function launch(request: Launch): Promise<void> {
   showView(request.view);
   if (request.tool) document.getElementById(`tool-${request.tool}`)?.classList.add("focus");
   if (request.view === "ara") $<HTMLInputElement>("search-query").focus();
+  if (request.view === "dokum") await run(prepareInventory);
+  if (request.action === "audit") await run(startAudit);
   if (request.action === "dia") {
     const person = state.chosen;
     if (person && person.source.startsWith("https://islamansiklopedisi.org.tr/")) {
@@ -411,6 +553,31 @@ function initialise(): void {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => void refresh(), 250);
   });
+  $("inventory-refresh").addEventListener("click", () => void run(prepareInventory));
+  $("inventory-act").addEventListener("click", () => void actOnRow());
+  $("inventory-prev").addEventListener("click", () => {
+    if (state.page > 0) state.page--;
+    renderInventory();
+  });
+  $("inventory-next").addEventListener("click", () => {
+    if ((state.page + 1) * PAGE_SIZE < state.rows.length) state.page++;
+    renderInventory();
+  });
+  $("audit-prev").addEventListener("click", () => void run(() => gotoAudit(state.auditAt - 1)));
+  $("audit-next").addEventListener("click", () =>
+    void run(async () => {
+      if (state.audit && state.auditAt + 1 < state.audit.length) await gotoAudit(state.auditAt + 1);
+      else {
+        state.audit = null;
+        renderAudit();
+        setMessage("Denetim tamamlandı.", "success");
+      }
+    }),
+  );
+  $("audit-stop").addEventListener("click", () => {
+    state.audit = null;
+    renderAudit();
+  });
   $("search-form").addEventListener("submit", (event) => {
     event.preventDefault();
     runSearch();
@@ -419,7 +586,7 @@ function initialise(): void {
   if (request.soon) showSoon(request.soon);
   showView(request.view);
   void restoreCatalog()
-    .then(refresh)
+    .then(() => refresh())
     .then(() => launch(request));
 }
 
