@@ -61,6 +61,22 @@ const COMMON = new Set(
     "serh|hasiye|kavram|terim|kisi|sahis|yazar|arastirma|metin|deneme|konu|once|sonra|gore|icin|ile|ve|veya|yahut|ama|fakat|bu|su|bir|" +
     "iki|uc|her|olan|olarak|oldu|dedi|der|gibi|uzere|hakinda").split("|"),
 );
+/**
+ * Words that a part of a longer catalog name must not stand for on its own:
+ * places and peoples ("İbn Irâk" → "Irak", "Molla Arap" → "Arap"), titles
+ * ("Has Bey" → "Bey"), and ordinary words ("Hayâtî Ahmed Efendi" → "Hayatı",
+ * "Cûzcânî, Minhâc-ı Sirâc" → "Minhâc", "Ehlî-i Şîrâzî" → "Ehl-i").
+ * The full name still matches.
+ */
+const WEAK_PARTS = new Set(
+  ("irak|arap|arab|acem|turk|kurt|fars|rum|frenk|mogol|tatar|berberi|hint|hind|cin|misir|sam|bagdat|bagdad|mekke|medine|kudus|halep|basra|kufe|horasan|endulus|yemen|hicaz|anadolu|iran|turan|buhara|semerkant|nisabur|merv|herat|belh|kirman|isfahan|tebriz|konya|kahire|dimask|rey|tus|curcan|harezm|kirim|bosna|sirvan|gilan|taberistan|fergana|kasgar|hokand|hive|bursa|edirne|istanbul|sivas|kayseri|amasya|halic|cezire|musul|kerkuk|tus|nehavend|sistan|kabil|gazne|lahor|delhi|dekken|bengal|" +
+    "ingiliz|fransiz|alman|italyan|ispanyol|portekiz|rus|yunan|arnavut|bosnak|sirp|bulgar|macar|leh|ozbek|turkmen|kazak|kirgiz|uygur|azeri|cagatay|kipcak|oguz|sudanli|habes|zenci|kipti|yahudi|israilli|hiristiyan|nasrani|mecusi|alevi|kizilbas|surye|suriye|lubnan|urdun|filistin|sudan|libya|tunus|cezayir|fas|merakes|misr|ezher|ayasofya|asya|avrupa|afrika|amerika|hindistan|pakistan|afganistan|endonezya|malezya|mardin|diyarbakir|erzurum|trabzon|selcuk|kudus|sam|beyrut|kahire|iskenderiye|" +
+    "kureys|temim|kays|kinde|tayy|ezd|evs|hazrec|sakif|huzeyl|gatafan|hevazin|benihasim|hasimi|emeviler|abbasiler|eyyubi|merini|resuli|behmeni|abbadi|seybani|pehlevi|kolemen|memluk|tolunogullari|husayni|huseyni|naksi|bahai|suudi|vehhabi|zeydi|ismaili|haricy|" +
+    "muderris|fakih|alim|edip|edib|asker|silahdar|hekimbasi|hadim|kadi|nakibulesraf|musahip|defterdar|nisanci|reisulkuttab|kazasker|mutevelli|imamhatip|hattat|musikisinas|neyzen|tabip|tabib|hekim|cerrah|muneccim|mimar|ressam|nakkas|mucellit|katib|sair|ozan|asik|devlet|millet|ummet|seriyye|seriye|" +
+    "molla|efendi|bey|pasa|sultan|seyh|hoca|dede|baba|kadi|emir|mir|han|hatun|banu|aga|celebi|mevlana|sah|hace|hafiz|hakim|mufti|imam|mollasi|sehzade|vezir|beylerbeyi|kethuda|reis|nakib|hatip|vaiz|muezin|katip|kadiasker|seyhulislam|" +
+    "hayat|hayati|hayatin|has|cem|ehl|ehli|bil|minhac|nur|sir|can|gul|bahar|derd|dert|hal|kal|ask|asik|garip|garib|fakir|dervis|sufi|zahit|zahid|abit|abid|arif|salih|emin|kerim|rahim|aziz|celil|cemal|kemal|celal|hilal|hayal|sabit|baki|fani|kadim|cedid|kebir|sagir|kucuk|buyuk|yeni|eski|kara|ak|kizil|sari|ali|ulu|has|hassa|nesih|talik|sulus|divani|rika|mevlevi|bektasi|nakisbendi|kadiri|rifai|halveti|celveti|hanefi|safii|maliki|hanbeli|sunni|sii|abbasi|emevi|fatimi|selcuklu|osmanli|ilhanli|timurlu|safevi|babur").split("|").map(collapseLetters),
+);
+
 const NAME_LINKS = new Set("b|ibn|ibni|bin|bint|ebu|ebul|el|er|es|et|ez|en|ed".split("|"));
 
 export const isNoise = (key: string): boolean => NOISE.has(key);
@@ -157,6 +173,17 @@ export class NameIndex {
     counts.add(wordCount(value));
   }
 
+  /** A single word of a longer name that is a place, title or ordinary word. */
+  private weakPart(part: string, whole: string): boolean {
+    if (wordCount(whole) < 2) return false;
+    const plain = collapseLetters(nameKey(part));
+    // "Bursalı", "Tunuslu": a place adjective is not the person's name on its own; "-iyye" abstracts too.
+    if (plain.length > 5 && /(li|lu)$/.test(plain) && /[lL][ıiuü]$/u.test(part)) return true;
+    if (/iye$|iyye$/.test(plain)) return true;
+    // "Minhâc-ı Sirâc" → "Minhâc-ı": the izafet ending does not make it a name.
+    return WEAK_PARTS.has(collapseLetters(nameKey(part))) || WEAK_PARTS.has(collapseLetters(nameKey(part.replace(/[-‐][ıiuü]$/u, ""))));
+  }
+
   private indexRow(person: Person, i: number): void {
     const values = [person.shortName, person.fullName, person.originalName];
     values.forEach((value, j) => {
@@ -173,11 +200,12 @@ export class NameIndex {
         const alias = value.slice(token.start, token.start + token.length);
         // Short catalog names supply independent aliases; components of long
         // names do not, except joined forms such as "Kıvâmü's-sünne".
-        if ((j === 0 || compoundAlias(alias)) && independentAlias(alias, person.shortName)) this.add(alias, i);
+        if ((j === 0 || compoundAlias(alias)) && independentAlias(alias, person.shortName) && !this.weakPart(alias, value)) this.add(alias, i);
       }
       if (j === 0) {
-        for (const part of normalize(value).split(" ")) {
-          if (independentAlias(part, person.shortName)) this.add(part, i);
+        // An apostrophe inside a word does not split it: "Di‘bil" must not give "bil".
+        for (const part of normalize(value.replace(/(\p{L})['’‘ʻʼʿ](\p{L})/gu, "$1$2")).split(" ")) {
+          if (independentAlias(part, person.shortName) && !this.weakPart(part, value)) this.add(part, i);
         }
       }
     });
@@ -280,8 +308,11 @@ export function findMatches(text: string, index: NameIndex, strict = false, cita
       if (j > i && !joinable(gapBetween(text, tokens[j - 1] as Token, token), (tokens[j - 1] as Token).key)) break;
       let tokenKey = token.key;
       const raw = text.slice(token.start, finish);
+      // In strict mode a lower-case word ends the name ("Cem sultan"), links ("b.", "el-") aside.
+      if (strict && j > i && !isNameLink(token.key) && !initialUpper(raw)) break;
       let inflected = false;
-      if (hasSuffix(raw) && !index.has(collapseLetters(key + tokenKey))) {
+      // A Turkish ending after an apostrophe is never part of the name: "Minhac'ı" is not "Minhâcî".
+      if (hasSuffix(raw) && (strict || !index.has(collapseLetters(key + tokenKey)))) {
         tokenKey = nameKey(nameQuery(raw));
         inflected = true;
       }

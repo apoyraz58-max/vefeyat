@@ -13,6 +13,8 @@ import {
   alreadyHasDate,
   bibliographyFlags,
   isAdjectiveUse,
+  isTitleLike,
+  words,
   lowerCaseWords,
   citationSpans,
   containsSpan,
@@ -123,9 +125,13 @@ export function buildInventory(
       (u) => !known.some((k) => u.start < k.start + k.length && k.start < u.start + u.length),
     );
     const hits = [...known, ...unknown].sort((a, b) => a.start - b.start);
+    const title = segment.part === "main" && isTitleLike(segment.text);
     for (const hit of hits) {
       if (excluded.size > 0 && excluded.has(exclusionKey(hit.text))) continue;
       if (isAdjectiveUse(segment.text, hit.start, hit.length, hit.text, lowerWords)) continue;
+      // In a heading every word is capitalised: a one-word match that the
+      // document also writes in lower case is that word ("Hayatı ve Eserleri").
+      if (title && !/\s/.test(nameQuery(hit.text).trim()) && lowerWords.has(words(nameQuery(hit.text)).trim())) continue;
       const candidates = hit.key ? index.rank(hit.key, nameQuery(hit.text)) : [];
       let person = singleSafe(candidates, hit.text) ? (candidates[0] as Person) : null;
       let confirmed = false;

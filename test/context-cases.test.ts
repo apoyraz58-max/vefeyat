@@ -36,6 +36,20 @@ describe.runIf(have)("contextual detection", () => {
     "Lügavî anlamı farklıdır.",
     "Nahvî bir tahlil yapılmıştır.",
     "Hakîm bir kişi böyle davranmaz.",
+    "Irak'taki medreseler gelişmişti.",
+    "Arap dili ve edebiyatı önemlidir.",
+    "Bil ki bu yol zordur.",
+    "Minhac'ı şerh eden âlimler çoktur.",
+    "Ehl-i Sünnet bu konuda farklıdır.",
+    "Cem-i esmâ bu bağlamda ele alınır.",
+    "Muhaddis, Şâfiî fakihi.",
+    "Özbek hanı bu bölgeyi yönetti.",
+    "Suûdî ailesine mensup bir emîrdi.",
+    "Fars edebiyatında sebk-i Hindî'nin kurucusu sayılır.",
+    "İsmâilî filozof ve şair.",
+    "Kadı, edip ve şair.",
+    "Tunuslu bir âlim olarak tanınır.",
+    "İngiliz şarkiyatçısı bu eseri neşretti.",
   ])("group adjective: %s", (text) => {
     expect(found(text)).toEqual([]);
   });
@@ -55,6 +69,9 @@ describe.runIf(have)("contextual detection", () => {
     ["Gazzâlî devlet adamlarıyla yakın ilişki kurdu.", ["Gazzâlî"]],
     ["Süyûtî kitap yazmayı çok severdi.", ["Süyûtî"]],
     ["Teftâzânî görüşlerini Şerhu'l-Makāsıd'da açıklar.", ["Teftâzânî"]],
+    ["Cem Sultan'ın sürgün yılları uzun sürdü.", ["Cem Sultan'ın"]],
+    ["İmam Mâlik'in talebesi.", ["Mâlik'in"]],
+    ["Hayâtî Ahmed Efendi bu tekkede şeyhti.", ["Hayâtî Ahmed Efendi"]],
   ] as const)("person kept: %s", (text, names) => {
     expect(found(text)).toEqual(names);
   });
@@ -73,6 +90,16 @@ describe.runIf(have)("contextual detection", () => {
       { part: "main", anchor: 1, order: 0, text: "Usûlî gelenek burada belirleyicidir." },
     ];
     expect(buildInventory(segments, catalog, index)).toEqual([]);
+  });
+
+  it("headings: a one-word match the document writes in lower case is that word", () => {
+    const segments: Segment[] = [
+      { part: "main", anchor: 0, order: 0, text: "HAYATI VE ESERLERİ" },
+      { part: "main", anchor: 1, order: 0, text: "Gazzâlî'nin Hayatı ve Eserleri" },
+      { part: "main", anchor: 2, order: 0, text: "Gazzâlî'nin hayatı hakkında çok şey yazılmıştır." },
+      { part: "main", anchor: 3, order: 0, text: "Cem sultan sürgüne gitti." },
+    ];
+    expect(buildInventory(segments, catalog, index).map((r) => r.text)).toEqual(["Gazzâlî'nin", "Gazzâlî'nin"]);
   });
 
   it("footnote: citation left out, narrative read", () => {

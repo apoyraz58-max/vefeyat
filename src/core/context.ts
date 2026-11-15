@@ -285,7 +285,8 @@ export function needsContext(text: string, first: number, length: number, key: s
 
 /** Nouns that make a preceding nisba an adjective: "Nakşibendî tarikatı", "Abbâsî halifesi". */
 const GROUP_NOUNS =
-  "tarikat|dervis|seyh|sufi|mutasavvif|silsile|tekke|dergah|zaviye|asitane|ayin|mensup|mensub|mezhep|mezheb|ekol|firka|cemaat|zumre|topluluk|cevre|gelenek|geleneg|anlayis|dusunce|kelam|fikih|fikh|akide|akaid|itikad|inanc|alim|ulema|fakih|fukaha|kelamci|mutekellim|muellif|muhaddis|muctehid|halife|hanedan|devlet|sultan|emir|vezir|ordu|donem|devir|devri|saray|mimari|sanat|uslup|uslub|edebiyat|hareket|akim|egilim|yorum|okul|kol|mesrep|mesreb|adab|erkan|kultur|toplum|kesim|grup|taraftar|camia|muhit|nesil|kusak|vakif|medrese|cami|mescit|imparatorluk|beylik|aile|soy|boy|kabile|asiret|tarih|kaynak|metin|literatur|risale|eser"
+  ("filozof|doktrin|ogreti|dusunur|sair|han|hukumdar|aile|dai|fikir|fikr|cereyan|cizgi|dil|lehce|edebiyat|siir|uslub|sebk|tavir|cevre|emir|beg|bey|" +
+  "tarikat|dervis|seyh|sufi|mutasavvif|silsile|tekke|dergah|zaviye|asitane|ayin|mensup|mensub|mezhep|mezheb|ekol|firka|cemaat|zumre|topluluk|cevre|gelenek|geleneg|anlayis|dusunce|kelam|fikih|fikh|akide|akaid|itikad|inanc|alim|ulema|fakih|fukaha|kelamci|mutekellim|muellif|muhaddis|muctehid|halife|hanedan|devlet|sultan|emir|vezir|ordu|donem|devir|devri|saray|mimari|sanat|uslup|uslub|edebiyat|hareket|akim|egilim|yorum|okul|kol|mesrep|mesreb|adab|erkan|kultur|toplum|kesim|grup|taraftar|camia|muhit|nesil|kusak|vakif|medrese|cami|mescit|imparatorluk|beylik|aile|soy|boy|kabile|asiret|tarih|kaynak|metin|literatur|risale|eser")
     .split("|")
     .map(collapseLetters); // compared with words(), which collapses doubled letters
 
@@ -301,7 +302,14 @@ const key = (value: string): string => words(value).trim();
 const GROUP_NISBAS = new Set(
   ("Nakşibendî Kādirî Kâdirî Rifâî Mevlevî Bektaşî Halvetî Sühreverdî Çiştî Şâzelî Celvetî Bayramî Gülşenî Şa‘bânî Uşşâkī Sünbülî Cerrâhî Kübrevî Yesevî Ekberî Melâmî Kalenderî Haydarî Hurûfî Nûrbahşî " +
     "Sünnî Şiî Abbâsî Fâtımî Emevî Eyyûbî Selçukî Memlûkî Safevî Kaçar Osmanlı Gaznelî Karahanlı Tolunî Ihşîdî Hamdânî Büveyhî Muvahhidî Murâbıtî Ağlebî İdrîsî Rüstemî Zeydî İsmâilî Câferî Nizârî Karmatî Hâricî İbâzî Vehhâbî Selefî Mu‘tezilî Mutezilî " +
+    "Suûdî Suudî Özbek Sâmî Hint Moğol Tatar Kıpçak Oğuz Türkmen Kürt Arap Acem Fars " +
     "Hanefî Şâfiî Mâlikî Hanbelî Zâhirî Eş‘arî Mâtürîdî Sûfî Hindî Yemenî Endelüsî Mısrî Şâmî Irâkī Kureşî Arabî Türkî Fârisî Horasânî Mağribî")
+    .split(" ")
+    .map(key),
+);
+
+const OCCUPATIONS = new Set(
+  "Kadı Kādî Fakih Âlim Edip Edîb Şâir Muhaddis Müfessir Kâtib Hattat Tabip Hekim Müderris Vâiz İmam Şeyh Mutasavvıf Mütekellim Mukri Hâfız Müezzin Mimar Mûsikişinas"
     .split(" ")
     .map(key),
 );
@@ -326,15 +334,19 @@ function startsGroupNoun(word: string): boolean {
  */
 export function isGroupAdjective(text: string, first: number, length: number, literal: string): boolean {
   const bare = nameQuery(literal);
+  // Persian izafet term: "sebk-i Hindî", "tarz-ı Arabî" (also with an ending).
+  if (/\p{Ll}[-‐][iıuü]\s+$/u.test(text.slice(Math.max(0, first - 20), first))) return true;
   if (bare.length < literal.length) return false; // "Nakşibendî'nin": the person
   const after = text.slice(first + length);
   if (/^[-‐][iıuü]\s+\p{Ll}/u.test(after) || /[-‐][iıuü]$/.test(bare) && /^\s+\p{Ll}/u.test(after)) return true;
   if (/\s/.test(bare.trim())) return false; // "Bahâeddin Nakşibend": an explicit name
   if (!GROUP_NISBAS.has(key(bare))) return false;
   if (/^\s*\((ö|öl|v|d|m)\.|^\s*\(\d/.test(after)) return false;
-  const before = words(text.slice(Math.max(0, first - 40), first)).trim().split(" ");
+  // A title right before it ("Şeyh Şâzelî", "İmam Şâfiî"), not across a comma ("Muhaddis, Şâfiî fakihi").
+  const lead = text.slice(Math.max(0, first - 40), first);
+  const before = words(lead).trim().split(" ");
   const prior = before[before.length - 1] ?? "";
-  if (TITLES.has(prior)) return false;
+  if (TITLES.has(prior) && /\p{L}[.\s]*$/u.test(lead)) return false;
   const clause = after.slice(0, 160).split(/[,;:.()]/)[0] ?? "";
   const next = words(clause).trim().split(" ").filter(Boolean);
   // "X tarikatı", "X ve Y tarikatları", "X, Y ve Z şeyhleri"
@@ -379,6 +391,8 @@ export function isAdjectiveUse(text: string, first: number, length: number, lite
   if (bare.length < literal.length || /[\s‐-]/.test(bare.trim())) return false;
   if (!isSentenceInitial(text, first)) return false;
   const after = text.slice(first + length, first + length + 120);
+  // "Kadı, edip ve şair": a profession heading a list, no verb about a person.
+  if (OCCUPATIONS.has(key(bare)) && /^\s*(,|ve\s)/.test(after) && !isNarrative(words(after.slice(0, 80)))) return true;
   if (/^\s*\((ö|öl|v|d|m)\.|^\s*\(\d|^\s*[,;]/.test(after)) return false;
   const next = words(after.split(/[.;:!?()]/)[0] ?? "").trim().split(" ").filter(Boolean);
   const word = next[0];
@@ -420,4 +434,20 @@ export function excludeMention(text: string, first: number, length: number, key 
   if (isOrdinary(window, first - offset, length, key)) return true;
   if (isTerm(window, first - offset, length, key)) return true;
   return isSchool(window, first - offset, length, literal);
+}
+
+/**
+ * A heading-like line: short, without a closing period, and written in
+ * Title Case or capitals ("Hayatı ve Eserleri", "IRAK'TAKİ MEDRESELER").
+ * Capitals there say nothing about names.
+ */
+export function isTitleLike(text: string): boolean {
+  const value = text.trim();
+  if (value.length === 0 || value.length > 160 || /[.!?…]$/.test(value) && !/^\d+(\.\d+)*\.?\s/.test(value)) return false;
+  const tokens = value.split(/\s+/).filter((w) => /\p{L}{3,}/u.test(w));
+  if (tokens.length < 1) return false;
+  if (value === value.toLocaleUpperCase("tr") && /\p{Lu}{3}/u.test(value)) return true;
+  if (tokens.length < 2) return false;
+  const upper = tokens.filter((w) => /^[^\p{L}]*\p{Lu}/u.test(w)).length;
+  return upper / tokens.length >= 0.7;
 }
