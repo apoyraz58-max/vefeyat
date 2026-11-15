@@ -7,3 +7,4 @@ legacy/vba-*/*.frm  -text
 legacy/vba-*/*.frx  binary
 legacy/vba-*/*.ps1  -text
 legacy/vba-*/*.txt  -text
+data/catalog.csv -text
