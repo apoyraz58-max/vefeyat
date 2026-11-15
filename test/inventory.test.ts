@@ -100,3 +100,11 @@ describe("spellingMatches", () => {
     expect(spellingMatches(gazzali, "Gazali")).toBe(false);
   });
 });
+
+describe("document exclusions", () => {
+  it("a phrase marked Şahıs değil is skipped with its endings", async () => {
+    const { exclusionKey } = await import("../src/addin/logic.js");
+    const rows = buildInventory([main(0, "Gazzâlî der ki. Gazzâlî'nin talebeleri.")], catalog, undefined, {}, [exclusionKey("Gazzâlî")]);
+    expect(rows).toEqual([]);
+  });
+});

@@ -124,7 +124,7 @@ export function candidateLabel(person: Person): string {
   return person.deathDate ? `${name} ${person.deathDate}` : name;
 }
 
-export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "saglik" | "kaynak" | "gecmis" | "toplu" | "yakinda";
+export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "saglik" | "kaynak" | "gecmis" | "toplu" | "kimlik" | "istisna" | "kapsam" | "yakinda";
 export type Tool = "tutarlilik" | "rapor" | "dizin" | "dizinkaldir" | "temizlik";
 
 export interface Launch {
@@ -137,12 +137,6 @@ export interface Launch {
 
 /** VBA commands shown in the ribbon but not ported yet: title and what they do. */
 export const SOON: Readonly<Record<string, readonly [string, string]>> = {
-  refresh: ["Tarihleri güncelle", "Toplu önerileri önizlemede gösterir; mevcut tarihleri yeniden yazmaz."],
-  compare: ["Katalogla karşılaştır", "Belgedeki tarihleri güncel katalogla karşılaştırır."],
-  registry: ["Dinamik şahıs kayıtları", "Geçişleri kaynak kimliğine bağlar; katalog değişince öneri sunar."],
-  coverage: ["Denetim kapsamını göster", "Taranan ve taranmayan belge bölümlerini raporlar."],
-  identity: ["Kimlik eşleşmelerini düzelt", "Belirsiz adlar için verdiğiniz kimlik onaylarını yönetir."],
-  exclusions: ["Belge istisnaları", "\"Şahıs değil\" olarak işaretlediğiniz ifadeleri yönetir."],
   preferSpelling: ["Seçili yazımı tercih et", "Seçili yazımı bu şahıs için belgeye özgü tercih olarak kaydeder."],
   clearSpelling: ["Yazım tercihlerini temizle", "Belgeye özgü yazım tercihlerini siler."],
   exportPrefs: ["Tercihleri dışa aktar", "Ad biçimi ve yazım tercihlerini bir dosyaya kaydeder."],
@@ -169,7 +163,7 @@ export function parseLaunch(search: string): Launch {
   if (view === "denetim") return { view: "secili", action: "audit", tool: null };
   if (view === "devam") return { view: "secili", action: "resume", tool: null };
   if (view === "dokum") return { view: "dokum", action: null, tool: null };
-  if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara" || view === "saglik" || view === "kaynak" || view === "gecmis" || view === "toplu") return { view, action: null, tool: null };
+  if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara" || view === "saglik" || view === "kaynak" || view === "gecmis" || view === "toplu" || view === "kimlik" || view === "istisna" || view === "kapsam") return { view, action: null, tool: null };
   if (view === "ayarlar") return { view: "katalog", action: null, tool: null };
   return { view: "secili", action: null, tool: null };
 }
@@ -313,4 +307,38 @@ export function addConfirmation(map: Confirmations, key: string, person: string)
 export function confirmedPerson<T extends Person>(map: Confirmations, key: string, candidates: readonly T[]): T | null {
   const wanted = map[key];
   return wanted === undefined ? null : candidates.find((p) => personKey(p) === wanted) ?? null;
+}
+
+// ---- Belge istisnaları ("Şahıs değil") ----
+
+/** Key of an excluded phrase: the normalized name without its Turkish ending. */
+export function exclusionKey(literal: string): string {
+  return normalize(nameQuery(literal));
+}
+
+export function parseExclusions(stored: unknown): string[] {
+  if (typeof stored !== "string") return [];
+  try {
+    const value: unknown = JSON.parse(stored);
+    return Array.isArray(value) ? [...new Set(value.filter((v): v is string => typeof v === "string" && v.length > 0))].slice(0, CONFIRMATION_LIMIT) : [];
+  } catch {
+    return [];
+  }
+}
+
+// ---- Kimlik eşleşmeleri ----
+
+export interface ConfirmationView {
+  readonly key: string;
+  readonly before: string;
+  readonly literal: string;
+  readonly after: string;
+  readonly personKey: string;
+}
+
+export function listConfirmations(map: Confirmations): ConfirmationView[] {
+  return Object.entries(map).map(([key, person]) => {
+    const [before = "", literal = "", after = ""] = key.split("|");
+    return { key, before, literal, after, personKey: person };
+  }).sort((a, b) => a.literal.localeCompare(b.literal, "tr"));
 }

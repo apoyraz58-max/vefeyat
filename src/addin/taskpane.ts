@@ -14,6 +14,8 @@ import {
   auditRows,
   addConfirmation,
   confirmedPerson,
+  exclusionKey,
+  listConfirmations,
   mentionKey,
   candidateLabel,
   dateTag,
@@ -32,7 +34,7 @@ import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, sa
 import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, addHistory, applyOrder, bulkSuggestions, describeSuggestion, parseBookmark, parseHistory, resumeIndex, rowKey } from "./bulk.js";
 import { HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -321,6 +323,7 @@ async function refresh(force = false): Promise<void> {
     }
     renderCandidates();
     renderDetails();
+    renderExclusionToggle();
   } catch (error) {
     console.error(error);
   }
@@ -422,7 +425,7 @@ async function prepareInventory(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
   state.page = 0;
   state.selectedRow = null;
   const sum = summarize(state.rows);
@@ -494,7 +497,7 @@ async function startAudit(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
   state.audit = auditRows(state.rows, state.settings);
   state.auditAt = 0;
   setMessage("", "info");
@@ -522,7 +525,7 @@ async function resumeAudit(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
   state.audit = auditRows(state.rows, state.settings);
   const at = resumeIndex(state.audit, state.segments, bookmark);
   if (at < 0) {
@@ -593,7 +596,7 @@ async function createPersonReport(): Promise<void> {
   }
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
-  const rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
+  const rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
   await openNewDocument(toBase64(personReportDocx(documentName(), rows)));
   setMessage("Şahıs raporu yeni bir Word belgesi olarak açıldı.", "success");
 }
@@ -609,7 +612,7 @@ async function createIndex(): Promise<void> {
   }
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
-  const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations()));
+  const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions()));
   if (rows.length === 0) {
     setMessage("Dizine girecek kimliği kesin geçiş yok. Belirsiz adları Şahıs dökümünde onaylayın.", "info");
     return;
@@ -811,7 +814,7 @@ async function prepareBulk(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
   suggestions = bulkSuggestions(state.rows, state.settings);
   bulkChosen.clear();
   for (const s of suggestions) if (s.preselected) bulkChosen.add(s.id);
@@ -882,6 +885,115 @@ async function applyBulk(): Promise<void> {
   setMessage(`${done} öneri uygulandı.` + (missed ? ` ${missed} geçiş metinde bulunamadı.` : ""), missed ? "warning" : "success");
 }
 
+// ---- Belge istisnaları, kimlik eşleşmeleri, kapsam ----
+
+function renderExclusionToggle(): void {
+  const key = state.alias ? exclusionKey(state.alias) : "";
+  const excluded = key.length > 0 && readExclusions().includes(key);
+  $("excluded-note").hidden = !excluded;
+  const button = $<HTMLButtonElement>("not-person");
+  button.hidden = !state.alias;
+  button.textContent = excluded ? "İşareti kaldır (şahıs adı)" : "Şahıs değil olarak işaretle";
+}
+
+async function toggleExclusion(): Promise<void> {
+  if (!state.alias) return;
+  const key = exclusionKey(state.alias);
+  const list = readExclusions();
+  const excluded = list.includes(key);
+  await writeExclusions(excluded ? list.filter((k) => k !== key) : [...list, key]);
+  setMessage(excluded ? `"${state.alias}" yeniden şahıs adı olarak taranacak.` : `"${state.alias}" bu belgede şahıs adı sayılmayacak.`, "success");
+  renderExclusionToggle();
+}
+
+function renderExclusions(): void {
+  const list = readExclusions();
+  $("exclusion-summary").textContent = list.length
+    ? `${list.length} ifade bu belgede şahıs adı sayılmıyor. Kaldırdığınız ifade yeniden taranır.`
+    : "İstisna yok. Seçili ad penceresinde \"Şahıs değil olarak işaretle\" ile ekleyebilirsiniz.";
+  const out = $("exclusion-list");
+  out.replaceChildren();
+  for (const key of list) {
+    const item = document.createElement("li");
+    const name = document.createElement("strong");
+    name.textContent = key;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "link";
+    remove.textContent = "Kaldır";
+    remove.addEventListener("click", () =>
+      void run(async () => {
+        await writeExclusions(readExclusions().filter((k) => k !== key));
+        renderExclusions();
+      }),
+    );
+    item.append(name, remove);
+    out.append(item);
+  }
+}
+
+function renderIdentities(): void {
+  const views = listConfirmations(readConfirmations());
+  const people = new Map((state.catalog?.people ?? []).map((p) => [personKey(p), p] as const));
+  $("identity-summary").textContent = views.length
+    ? `${views.length} geçiş için kimliği siz seçtiniz. Yanlış olanı silerseniz o geçiş yeniden "seçim gerekli" olur.`
+    : "Kayıtlı kimlik onayı yok. Birden fazla adayı olan bir adda aday seçip tarih eklediğinizde burada görünür.";
+  $("identity-clear").hidden = views.length === 0;
+  const out = $("identity-list");
+  out.replaceChildren();
+  for (const view of views) {
+    const person = people.get(view.personKey);
+    const item = document.createElement("li");
+    const name = document.createElement("strong");
+    name.textContent = `${view.literal} → ${person ? textName(person.shortName) : "katalogda bulunamadı"}`;
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = `…${view.before} [${view.literal}] ${view.after}…` + (person?.deathDate ? ` · ${person.deathDate}` : "");
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "link";
+    remove.textContent = "Onayı sil";
+    remove.addEventListener("click", () =>
+      void run(async () => {
+        const map = { ...readConfirmations() };
+        delete map[view.key];
+        await writeConfirmations(map);
+        renderIdentities();
+      }),
+    );
+    item.append(name, meta, remove);
+    out.append(item);
+  }
+}
+
+async function showCoverage(): Promise<void> {
+  const c = await readCoverage();
+  const lines: Array<[string, string]> = [
+    ["Taranır", `Ana metin: ${c.paragraphs} paragraf (tablolar dahil).`],
+    c.footnotes === null ? ["Taranmaz", "Dipnotlar: bu Word sürümü dipnot okumayı desteklemiyor (WordApi 1.5)."] : ["Taranır", `Dipnotlar: ${c.footnotes}.`],
+    ["Taranmaz", c.endnotes === null ? "Sonnotlar: bu Word sürümünde okunamıyor." : `Sonnotlar: ${c.endnotes}.`],
+    ["Taranmaz", `Üst ve alt bilgiler: ${c.headers} dolu bölüm.`],
+    ["Taranmaz", c.comments === null ? "Açıklamalar: bu Word sürümünde okunamıyor." : `Açıklamalar: ${c.comments}.`],
+    ["Taranmaz", "Metin kutuları ve şekiller içindeki metin (Office.js bunlara erişemiyor)."],
+  ];
+  const out = $("coverage-list");
+  out.replaceChildren();
+  for (const [kind, text] of lines) {
+    const item = document.createElement("li");
+    const label = document.createElement("strong");
+    label.textContent = `${kind}: `;
+    item.append(label, text);
+    if (kind === "Taranmaz") item.className = "muted";
+    out.append(item);
+  }
+  const exclusions = readExclusions().length;
+  if (exclusions) {
+    const item = document.createElement("li");
+    item.textContent = `Atlanan: ${exclusions} ifade "Şahıs değil" olarak işaretli (Belge istisnaları).`;
+    out.append(item);
+  }
+}
+
 let cleanupArmed = false;
 async function cleanup(): Promise<void> {
   const button = $<HTMLButtonElement>("run-temizlik");
@@ -907,6 +1019,9 @@ async function launch(request: Launch): Promise<void> {
   if (request.view === "saglik") await run(checkHealth);
   if (request.view === "toplu") await run(prepareBulk);
   if (request.view === "gecmis") renderHistory();
+  if (request.view === "kimlik") renderIdentities();
+  if (request.view === "istisna") renderExclusions();
+  if (request.view === "kapsam") await run(showCoverage);
   if (request.action === "resume") await run(resumeAudit);
   if (request.view === "kaynak") await run(showSource);
   if (request.tool === "tutarlilik") await run(showConsistency);
@@ -941,6 +1056,13 @@ function initialise(): void {
   $("reset-catalog").addEventListener("click", () => void resetCatalog());
   $("run-tutarlilik").addEventListener("click", () => void run(showConsistency));
   $("run-rapor").addEventListener("click", () => void run(createPersonReport));
+  $("not-person").addEventListener("click", () => void run(toggleExclusion));
+  $("identity-clear").addEventListener("click", () =>
+    void run(async () => {
+      await writeConfirmations({});
+      renderIdentities();
+    }),
+  );
   $("bulk-refresh").addEventListener("click", () => void run(prepareBulk));
   $("bulk-apply").addEventListener("click", () => void run(applyBulk));
   $("history-clear").addEventListener("click", () => {

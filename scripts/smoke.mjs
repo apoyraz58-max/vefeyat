@@ -40,6 +40,7 @@ const base = `http://127.0.0.1:${server.address().port}/`;
 const FAKE_OFFICE = String.raw`
 (() => {
   const doc = (window.__doc = Object.assign({ text: "", sel: [0, 0], controls: [], settings: {} }, window.__docInit || {}));
+  try { Object.assign(doc.settings, JSON.parse(sessionStorage.getItem("__fakeSettings") || "{}")); } catch {}
   const shift = (at, by) => { doc.controls.forEach((c) => { if (c.range.s >= at) { c.range.s += by; c.range.e += by; } }); };
   class R {
     constructor(s, e) { this.s = s; this.e = e; }
@@ -105,7 +106,8 @@ const FAKE_OFFICE = String.raw`
         at += part.length + 1;
       }
       const paragraphs = { items, load() { return this; } };
-      return fn({ document: { getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
+      const sections = { items: [{ getHeader: () => ({ text: "", load() { return this; } }), getFooter: () => ({ text: "", load() { return this; } }) }], load() { return this; } };
+      return fn({ document: { sections, getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
     },
   };
   window.Office = {
@@ -119,7 +121,8 @@ const FAKE_OFFICE = String.raw`
         settings: {
           get: (k) => doc.settings[k] ?? null,
           set: (k, v) => { doc.settings[k] = v; },
-          saveAsync: (cb) => cb({ status: "succeeded" }),
+          remove: (k) => { delete doc.settings[k]; },
+          saveAsync: (cb) => { try { sessionStorage.setItem("__fakeSettings", JSON.stringify(doc.settings)); } catch {} cb({ status: "succeeded" }); },
           refreshAsync: (cb) => cb({ status: "succeeded" }),
         },
         addHandlerAsync: (_type, handler) => { window.__select = (s, e) => { doc.sel = [s, e]; handler(); }; },
@@ -260,8 +263,8 @@ try {
   const hits = await tab.$$eval("#search-results li strong", (n) => n.map((x) => x.textContent));
   check("Şahıs ara lists catalog matches", hits.length === 2 && hits[0].startsWith("Fahreddin er-Râzî"), hits.join(" | "));
   await tab.close();
-  tab = await open("?soon=compare");
-  check("not-yet-ported command explains itself", (await tab.textContent("#view-title")) === "Katalogla karşılaştır" && (await tab.isVisible("#view-yakinda")));
+  tab = await open("?soon=shading");
+  check("not-yet-ported command explains itself", (await tab.textContent("#view-title")) === "Alan gölgelerini gizle" && (await tab.isVisible("#view-yakinda")));
   await tab.close();
   tab = await open("?view=saglik");
   await tab.waitForFunction(() => !document.getElementById("health-summary").textContent.startsWith("Denetleniyor"));
@@ -278,6 +281,20 @@ try {
   await tab.reload();
   await tab.waitForSelector("#view-gecmis:not([hidden])");
   check("İşlem geçmişi lists the change after reopening", ((await tab.textContent("#history-list")) ?? "").includes("Gazzâlî (ö. 505/1111)"));
+  await tab.close();
+  // Şahıs değil: the phrase leaves the inventory and appears in Belge istisnaları.
+  tab = await open("", "Gazzâlî der ki.", "Gazzâlî");
+  await tab.waitForSelector("#not-person:not([hidden])");
+  await tab.click("#not-person");
+  await tab.waitForSelector("#excluded-note:not([hidden])");
+  await tab.evaluate(() => history.replaceState(null, "", "?view=istisna"));
+  await tab.reload();
+  await tab.waitForSelector("#view-istisna:not([hidden])");
+  check("Şahıs değil is stored as a document exclusion", ((await tab.textContent("#exclusion-list")) ?? "").includes("gazzali"), await tab.textContent("#exclusion-list"));
+  await tab.evaluate(() => history.replaceState(null, "", "?view=kapsam"));
+  await tab.reload();
+  await tab.waitForFunction(() => !document.getElementById("coverage-list").textContent.includes("Okunuyor"));
+  check("Denetim kapsamı reports scanned parts", ((await tab.textContent("#coverage-list")) ?? "").includes("Ana metin: 1 paragraf"), await tab.textContent("#coverage-list"));
   await tab.close();
   tab = await open("?action=dia", "Gazzâlî der ki.", "Gazzâlî");
   check("DİA maddesini aç offers the article link", (await tab.getAttribute("#detail-link", "href")) === "https://islamansiklopedisi.org.tr/gazzali");

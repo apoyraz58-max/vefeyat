@@ -23,7 +23,7 @@ import {
   startsWithDate,
   textName,
 } from "../core/index.js";
-import { type Confirmations, confirmedPerson, mentionKey } from "./logic.js";
+import { type Confirmations, confirmedPerson, exclusionKey, mentionKey } from "./logic.js";
 
 /** A paragraph of the main text or of a footnote, in reading order. */
 export interface Segment {
@@ -90,7 +90,9 @@ export function buildInventory(
   catalog: Catalog,
   index = new NameIndex(catalog.people),
   confirmations: Confirmations = {},
+  exclusions: readonly string[] = [],
 ): InventoryRow[] {
+  const excluded = new Set(exclusions);
   const ordered = segments
     .map((segment, i) => ({ segment, i }))
     .sort((a, b) => a.segment.anchor - b.segment.anchor || a.segment.order - b.segment.order);
@@ -103,6 +105,7 @@ export function buildInventory(
     );
     const hits = [...known, ...unknown].sort((a, b) => a.start - b.start);
     for (const hit of hits) {
+      if (excluded.size > 0 && excluded.has(exclusionKey(hit.text))) continue;
       const candidates = hit.key ? index.rank(hit.key, nameQuery(hit.text)) : [];
       let person = singleSafe(candidates, hit.text) ? (candidates[0] as Person) : null;
       let confirmed = false;

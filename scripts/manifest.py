@@ -107,12 +107,12 @@ groups = [
     group("Document", "Belge", "inventory", [
         button("Inventory", S("Inventory", "Şahıs dökümü"), L("Inventory.Tip", "Metindeki şahıs adlarını ve tarihleri listeler."), "inventory", pane(U("U.Inventory", "taskpane.html?view=dokum"))),
         menu("More", S("More", "Diğer araçlar"), L("More.Tip", "Tarih ve katalog araçları, kimlik eşleşmeleri ve belge istisnaları."), "more", [
-            soon("refresh", "Tarihleri güncelle", "Toplu önerileri önizlemede gösterir; mevcut tarihleri yeniden yazmaz.", "more", True),
-            soon("compare", "Katalogla karşılaştır", "Belgedeki tarihleri güncel katalogla karşılaştırır.", "more", True),
-            soon("registry", "Dinamik şahıs kayıtları", "Geçişleri kaynak kimliğine bağlar.", "more", True),
-            soon("coverage", "Denetim kapsamını göster", "Taranan ve taranmayan bölümleri raporlar.", "more", True),
-            soon("identity", "Kimlik eşleşmelerini düzelt", "Belirsiz adlar için verdiğiniz onayları yönetir.", "more", True),
-            soon("exclusions", "Belge istisnaları", "Şahıs değil olarak işaretlenen ifadeleri yönetir.", "more", True),
+            item("Refresh", S("Refresh", "Tarihleri güncelle"), L("Refresh.Tip", "Tarih ve yazım önerilerini toplu önizlemede gösterir; mevcut tarihleri kendiliğinden yeniden yazmaz."), "more", pane(U("U.Refresh", "taskpane.html?view=toplu"))),
+            item("Compare", S("Compare", "Katalogla karşılaştır"), L("Compare.Tip", "Belgedeki Vefeyât tarihlerini güncel katalogla karşılaştırır (Belge sağlığı)."), "more", pane(U("U.Compare", "taskpane.html?view=saglik"))),
+            item("Registry", S("Registry", "Dinamik şahıs kayıtları"), L("Registry.Tip", "Geçişlerin bağlı olduğu katalog kimliklerini gösterir ve düzeltir."), "more", pane(U("U.Registry", "taskpane.html?view=kimlik"))),
+            item("Coverage", S("Coverage", "Denetim kapsamını göster"), L("Coverage.Tip", "Taranan ve taranmayan belge bölümlerini raporlar."), "more", pane(U("U.Coverage", "taskpane.html?view=kapsam"))),
+            item("Identity", S("Identity", "Kimlik eşleşmelerini düzelt"), L("Identity.Tip", "Belirsiz adlar için verdiğiniz kimlik onaylarını listeler; yanlış olanı silebilirsiniz."), "more", pane(U("U.Identity", "taskpane.html?view=kimlik"))),
+            item("Exclusions", S("Exclusions", "Belge istisnaları"), L("Exclusions.Tip", "Şahıs değil olarak işaretlenen ifadeleri yönetir."), "more", pane(U("U.Exclusions", "taskpane.html?view=istisna"))),
         ]),
         button("Health", S("Health", "Belge sağlığı"), L("Health.Tip", "Vefeyât tarihlerini katalog ve önek ayarıyla karşılaştırır; yalnız seçtiklerinizi onarır."), "health", pane(U("U.Health", "taskpane.html?view=saglik"))),
         button("History", S("History", "İşlem geçmişi"), L("History.Tip", "Bu oturumdaki Vefeyât işlemlerini listeler; eklenen tarihlere gidebilirsiniz."), "history", pane(U("U.History", "taskpane.html?view=gecmis"))),

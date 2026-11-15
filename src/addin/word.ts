@@ -5,7 +5,7 @@
 import type { InventoryRow, Segment } from "./inventory.js";
 import { DATE_TAG_PREFIX, type DateControl } from "./health.js";
 import { INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
-import { type SettingName, type Settings, parseConfirmations, settingValue } from "./logic.js";
+import { type SettingName, type Settings, parseConfirmations, parseExclusions, settingValue } from "./logic.js";
 
 export interface SelectionText {
   /** Selected text as Word returns it. */
@@ -127,6 +127,27 @@ export async function findEarlier(spellings: readonly string[], select = false):
 
 const CONFIRMATIONS_KEY = "vefeyat.confirmations";
 const AUDIT_KEY = "vefeyat.audit";
+const EXCLUSIONS_KEY = "vefeyat.exclusions";
+
+function saveSettings(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    Office.context.document.settings.saveAsync((result) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) resolve();
+      else reject(new Error(result.error.message));
+    });
+  });
+}
+
+/** "Şahıs değil" phrases of this document (exclusion keys). */
+export function readExclusions(): string[] {
+  return parseExclusions(Office.context.document.settings.get(EXCLUSIONS_KEY));
+}
+
+export function writeExclusions(list: readonly string[]): Promise<void> {
+  if (list.length === 0) Office.context.document.settings.remove(EXCLUSIONS_KEY);
+  else Office.context.document.settings.set(EXCLUSIONS_KEY, JSON.stringify(list));
+  return saveSettings();
+}
 
 /** Paused-audit bookmark saved in the document (raw JSON or null). */
 export function readAuditBookmark(): unknown {
@@ -299,7 +320,7 @@ export async function finalizeDocument(): Promise<{ controls: number; settings: 
   });
   const settings = Office.context.document.settings;
   let removed = 0;
-  for (const key of [CONFIRMATIONS_KEY, AUDIT_KEY, ...Object.values(SETTING_KEYS)]) {
+  for (const key of [CONFIRMATIONS_KEY, AUDIT_KEY, EXCLUSIONS_KEY, ...Object.values(SETTING_KEYS)]) {
     if (settings.get(key) !== null && settings.get(key) !== undefined) removed++;
     settings.remove(key);
   }
@@ -480,5 +501,45 @@ export async function selectedDateControl(): Promise<DateControl | null> {
     const candidates = [...(parent.isNullObject ? [] : [parent]), ...inside.items, ...after.items.slice(0, 1)];
     const control = candidates.find((c) => c.tag?.startsWith(DATE_TAG_PREFIX));
     return control ? { id: control.id, part: "main", tag: control.tag, text: control.text } : null;
+  });
+}
+
+// ---- Denetim kapsamı ----
+
+export interface Coverage {
+  readonly paragraphs: number;
+  readonly footnotes: number | null;
+  readonly endnotes: number | null;
+  readonly headers: number;
+  readonly comments: number | null;
+}
+
+/** What Vefeyât scans (body, footnotes) and what it does not (endnotes, headers, comments). */
+export async function readCoverage(): Promise<Coverage> {
+  return Word.run(async (context) => {
+    const body = context.document.body;
+    const paragraphs = body.paragraphs;
+    paragraphs.load("items");
+    const sections = context.document.sections;
+    sections.load("items");
+    const v15 = Office.context.requirements.isSetSupported("WordApi", "1.5");
+    const v14 = Office.context.requirements.isSetSupported("WordApi", "1.4");
+    const footnotes = v15 ? body.footnotes : null;
+    const endnotes = v15 ? body.endnotes : null;
+    footnotes?.load("items");
+    endnotes?.load("items");
+    const comments = v14 ? body.getComments() : null;
+    comments?.load("items");
+    await context.sync();
+    const parts = sections.items.flatMap((s) => (["Primary", "FirstPage", "EvenPages"] as const).flatMap((k) => [s.getHeader(k), s.getFooter(k)]));
+    for (const part of parts) part.load("text");
+    await context.sync();
+    return {
+      paragraphs: paragraphs.items.length,
+      footnotes: footnotes ? footnotes.items.length : null,
+      endnotes: endnotes ? endnotes.items.length : null,
+      headers: parts.filter((p) => p.text.trim().length > 0).length,
+      comments: comments ? comments.items.length : null,
+    };
   });
 }

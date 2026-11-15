@@ -36,6 +36,8 @@
         <h2 id="selection-heading">Seçili ad</h2>
         <p id="selected-name" class="selected">Metinde bir şahıs adı seçin.</p>
         <div id="candidates" role="radiogroup" aria-label="Katalogdaki adaylar"></div>
+        <p id="excluded-note" class="muted" hidden>Bu ifade bu belgede "Şahıs değil" olarak işaretli; dökümde ve denetimde atlanır.</p>
+        <button id="not-person" type="button" class="link" hidden>Şahıs değil olarak işaretle</button>
       </section>
 
       <section id="details" hidden aria-labelledby="details-heading">
@@ -104,6 +106,27 @@
         <p id="history-summary" class="muted"></p>
         <ol id="history-list" class="inventory" aria-label="İşlem geçmişi"></ol>
         <div class="actions"><button id="history-clear" type="button" class="link">Geçmişi temizle</button></div>
+      </section>
+    </div>
+
+    <div id="view-kimlik" class="view" data-title="Kimlik eşleşmeleri" hidden>
+      <section>
+        <p id="identity-summary" class="muted"></p>
+        <ol id="identity-list" class="inventory" aria-label="Kimlik onayları"></ol>
+        <div class="actions"><button id="identity-clear" type="button" class="link" hidden>Tüm onayları sil</button></div>
+      </section>
+    </div>
+
+    <div id="view-istisna" class="view" data-title="Belge istisnaları" hidden>
+      <section>
+        <p id="exclusion-summary" class="muted"></p>
+        <ol id="exclusion-list" class="inventory" aria-label="Şahıs değil olarak işaretlenen ifadeler"></ol>
+      </section>
+    </div>
+
+    <div id="view-kapsam" class="view" data-title="Denetim kapsamı" hidden>
+      <section>
+        <ul id="coverage-list" class="tools"><li class="muted">Okunuyor…</li></ul>
       </section>
     </div>
 

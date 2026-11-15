@@ -331,11 +331,11 @@
                     <bt:Image size="80" resid="Ic.more.80"/>
                   </Icon>
                   <Items>
-                    <Item id="Vefeyat.Soon.refresh">
-                      <Label resid="Soon.refresh"/>
+                    <Item id="Vefeyat.Refresh">
+                      <Label resid="Refresh"/>
                       <Supertip>
-                        <Title resid="Soon.refresh"/>
-                        <Description resid="Soon.refresh.Tip"/>
+                        <Title resid="Refresh"/>
+                        <Description resid="Refresh.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.more.16"/>
@@ -344,14 +344,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.refresh"/>
+                        <SourceLocation resid="U.Refresh"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.compare">
-                      <Label resid="Soon.compare"/>
+                    <Item id="Vefeyat.Compare">
+                      <Label resid="Compare"/>
                       <Supertip>
-                        <Title resid="Soon.compare"/>
-                        <Description resid="Soon.compare.Tip"/>
+                        <Title resid="Compare"/>
+                        <Description resid="Compare.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.more.16"/>
@@ -360,14 +360,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.compare"/>
+                        <SourceLocation resid="U.Compare"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.registry">
-                      <Label resid="Soon.registry"/>
+                    <Item id="Vefeyat.Registry">
+                      <Label resid="Registry"/>
                       <Supertip>
-                        <Title resid="Soon.registry"/>
-                        <Description resid="Soon.registry.Tip"/>
+                        <Title resid="Registry"/>
+                        <Description resid="Registry.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.more.16"/>
@@ -376,14 +376,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.registry"/>
+                        <SourceLocation resid="U.Registry"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.coverage">
-                      <Label resid="Soon.coverage"/>
+                    <Item id="Vefeyat.Coverage">
+                      <Label resid="Coverage"/>
                       <Supertip>
-                        <Title resid="Soon.coverage"/>
-                        <Description resid="Soon.coverage.Tip"/>
+                        <Title resid="Coverage"/>
+                        <Description resid="Coverage.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.more.16"/>
@@ -392,14 +392,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.coverage"/>
+                        <SourceLocation resid="U.Coverage"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.identity">
-                      <Label resid="Soon.identity"/>
+                    <Item id="Vefeyat.Identity">
+                      <Label resid="Identity"/>
                       <Supertip>
-                        <Title resid="Soon.identity"/>
-                        <Description resid="Soon.identity.Tip"/>
+                        <Title resid="Identity"/>
+                        <Description resid="Identity.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.more.16"/>
@@ -408,14 +408,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.identity"/>
+                        <SourceLocation resid="U.Identity"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.exclusions">
-                      <Label resid="Soon.exclusions"/>
+                    <Item id="Vefeyat.Exclusions">
+                      <Label resid="Exclusions"/>
                       <Supertip>
-                        <Title resid="Soon.exclusions"/>
-                        <Description resid="Soon.exclusions.Tip"/>
+                        <Title resid="Exclusions"/>
+                        <Description resid="Exclusions.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.more.16"/>
@@ -424,7 +424,7 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.exclusions"/>
+                        <SourceLocation resid="U.Exclusions"/>
                       </Action>
                     </Item>
                   </Items>
@@ -1045,12 +1045,12 @@
         <bt:Url id="U.Dia" DefaultValue="{{BASE_URL}}taskpane.html?action=dia"/>
         <bt:Url id="U.SourceInfo" DefaultValue="{{BASE_URL}}taskpane.html?view=kaynak"/>
         <bt:Url id="U.Inventory" DefaultValue="{{BASE_URL}}taskpane.html?view=dokum"/>
-        <bt:Url id="U.Soon.refresh" DefaultValue="{{BASE_URL}}taskpane.html?soon=refresh"/>
-        <bt:Url id="U.Soon.compare" DefaultValue="{{BASE_URL}}taskpane.html?soon=compare"/>
-        <bt:Url id="U.Soon.registry" DefaultValue="{{BASE_URL}}taskpane.html?soon=registry"/>
-        <bt:Url id="U.Soon.coverage" DefaultValue="{{BASE_URL}}taskpane.html?soon=coverage"/>
-        <bt:Url id="U.Soon.identity" DefaultValue="{{BASE_URL}}taskpane.html?soon=identity"/>
-        <bt:Url id="U.Soon.exclusions" DefaultValue="{{BASE_URL}}taskpane.html?soon=exclusions"/>
+        <bt:Url id="U.Refresh" DefaultValue="{{BASE_URL}}taskpane.html?view=toplu"/>
+        <bt:Url id="U.Compare" DefaultValue="{{BASE_URL}}taskpane.html?view=saglik"/>
+        <bt:Url id="U.Registry" DefaultValue="{{BASE_URL}}taskpane.html?view=kimlik"/>
+        <bt:Url id="U.Coverage" DefaultValue="{{BASE_URL}}taskpane.html?view=kapsam"/>
+        <bt:Url id="U.Identity" DefaultValue="{{BASE_URL}}taskpane.html?view=kimlik"/>
+        <bt:Url id="U.Exclusions" DefaultValue="{{BASE_URL}}taskpane.html?view=istisna"/>
         <bt:Url id="U.Health" DefaultValue="{{BASE_URL}}taskpane.html?view=saglik"/>
         <bt:Url id="U.History" DefaultValue="{{BASE_URL}}taskpane.html?view=gecmis"/>
         <bt:Url id="U.Consistency" DefaultValue="{{BASE_URL}}taskpane.html?tool=tutarlilik"/>
@@ -1090,12 +1090,12 @@
         <bt:String id="G.Source" DefaultValue="Şahıs ve kaynak"/>
         <bt:String id="Inventory" DefaultValue="Şahıs dökümü"/>
         <bt:String id="More" DefaultValue="Diğer araçlar"/>
-        <bt:String id="Soon.refresh" DefaultValue="Tarihleri güncelle"/>
-        <bt:String id="Soon.compare" DefaultValue="Katalogla karşılaştır"/>
-        <bt:String id="Soon.registry" DefaultValue="Dinamik şahıs kayıtları"/>
-        <bt:String id="Soon.coverage" DefaultValue="Denetim kapsamını göster"/>
-        <bt:String id="Soon.identity" DefaultValue="Kimlik eşleşmelerini düzelt"/>
-        <bt:String id="Soon.exclusions" DefaultValue="Belge istisnaları"/>
+        <bt:String id="Refresh" DefaultValue="Tarihleri güncelle"/>
+        <bt:String id="Compare" DefaultValue="Katalogla karşılaştır"/>
+        <bt:String id="Registry" DefaultValue="Dinamik şahıs kayıtları"/>
+        <bt:String id="Coverage" DefaultValue="Denetim kapsamını göster"/>
+        <bt:String id="Identity" DefaultValue="Kimlik eşleşmelerini düzelt"/>
+        <bt:String id="Exclusions" DefaultValue="Belge istisnaları"/>
         <bt:String id="Health" DefaultValue="Belge sağlığı"/>
         <bt:String id="History" DefaultValue="İşlem geçmişi"/>
         <bt:String id="G.Document" DefaultValue="Belge"/>
@@ -1145,12 +1145,12 @@
         <bt:String id="SourceInfo.Tip" DefaultValue="Seçili Vefeyât tarihinin hangi katalog kaydından eklendiğini ve güncel olup olmadığını gösterir."/>
         <bt:String id="Inventory.Tip" DefaultValue="Metindeki şahıs adlarını ve tarihleri listeler."/>
         <bt:String id="More.Tip" DefaultValue="Tarih ve katalog araçları, kimlik eşleşmeleri ve belge istisnaları."/>
-        <bt:String id="Soon.refresh.Tip" DefaultValue="Toplu önerileri önizlemede gösterir; mevcut tarihleri yeniden yazmaz."/>
-        <bt:String id="Soon.compare.Tip" DefaultValue="Belgedeki tarihleri güncel katalogla karşılaştırır."/>
-        <bt:String id="Soon.registry.Tip" DefaultValue="Geçişleri kaynak kimliğine bağlar."/>
-        <bt:String id="Soon.coverage.Tip" DefaultValue="Taranan ve taranmayan bölümleri raporlar."/>
-        <bt:String id="Soon.identity.Tip" DefaultValue="Belirsiz adlar için verdiğiniz onayları yönetir."/>
-        <bt:String id="Soon.exclusions.Tip" DefaultValue="Şahıs değil olarak işaretlenen ifadeleri yönetir."/>
+        <bt:String id="Refresh.Tip" DefaultValue="Tarih ve yazım önerilerini toplu önizlemede gösterir; mevcut tarihleri kendiliğinden yeniden yazmaz."/>
+        <bt:String id="Compare.Tip" DefaultValue="Belgedeki Vefeyât tarihlerini güncel katalogla karşılaştırır (Belge sağlığı)."/>
+        <bt:String id="Registry.Tip" DefaultValue="Geçişlerin bağlı olduğu katalog kimliklerini gösterir ve düzeltir."/>
+        <bt:String id="Coverage.Tip" DefaultValue="Taranan ve taranmayan belge bölümlerini raporlar."/>
+        <bt:String id="Identity.Tip" DefaultValue="Belirsiz adlar için verdiğiniz kimlik onaylarını listeler; yanlış olanı silebilirsiniz."/>
+        <bt:String id="Exclusions.Tip" DefaultValue="Şahıs değil olarak işaretlenen ifadeleri yönetir."/>
         <bt:String id="Health.Tip" DefaultValue="Vefeyât tarihlerini katalog ve önek ayarıyla karşılaştırır; yalnız seçtiklerinizi onarır."/>
         <bt:String id="History.Tip" DefaultValue="Bu oturumdaki Vefeyât işlemlerini listeler; eklenen tarihlere gidebilirsiniz."/>
         <bt:String id="Consistency.Tip" DefaultValue="ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerleri gösterir; belgeyi değiştirmez."/>
