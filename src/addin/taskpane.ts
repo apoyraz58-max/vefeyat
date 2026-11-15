@@ -573,6 +573,13 @@ async function respell(): Promise<void> {
 
 // ---- Şahıs dökümü ----
 
+/** "3 dipnot, 1 sonnot": what was read, so a missing note shows at once. */
+function noteCounts(segments: readonly Segment[]): string {
+  const foot = segments.filter((s) => placeOf(s) === "Dipnot").length;
+  const end = segments.filter((s) => placeOf(s) === "Sonnot").length;
+  return `${foot} dipnot, ${end} sonnot`;
+}
+
 const placeOfRow = (row: { segment: number }) => placeOf(state.segments[row.segment]);
 
 async function prepareInventory(): Promise<void> {
@@ -591,7 +598,7 @@ async function prepareInventory(): Promise<void> {
   const sum = summarize(state.rows);
   $("inventory-summary").textContent =
     `${sum.mentions} geçiş · ${sum.people} kesin şahıs · ${sum.uncertain} doğrulanacak · ${sum.firstWithoutDate} ilk geçişte tarih yok · ${sum.spelling} yazım uyarısı` +
-    (read.footnotes ? "" : " · Bu Word sürümünde dipnot ve sonnotlar okunamıyor");
+    (read.footnotes ? ` · okunan: ${noteCounts(read.segments)}` : " · Bu Word sürümünde dipnot ve sonnotlar okunamıyor");
   renderInventory();
 }
 
