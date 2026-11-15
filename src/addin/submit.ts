@@ -244,7 +244,19 @@ export function isVefeyatIndexField(code: string): boolean {
   return /^\s*(XE|INDEX)\b/i.test(code) && /\\f\s+"?v"?(\s|$)/i.test(code);
 }
 
-/** Mentions that get an XE field: every certain or confirmed mention. */
+/**
+ * Mentions that get an XE field: certain or confirmed mentions, one per
+ * person and paragraph (or footnote). The index lists a page once however
+ * often the name occurs on it, so further marks in the same paragraph only
+ * cost time; a paragraph running over a page break is the rare exception.
+ */
 export function indexRows(rows: readonly InventoryRow[]): InventoryRow[] {
-  return rows.filter((r) => r.person !== null);
+  const seen = new Set<string>();
+  return rows.filter((r) => {
+    if (r.person === null) return false;
+    const key = `${r.segment}|${personKey(r.person)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }

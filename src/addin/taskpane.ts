@@ -333,9 +333,16 @@ class Cancelled extends Error {}
 
 /** Progress callback for long Word operations: updates the bar, honours İptal. */
 function progress(label: string): (done: number, total: number) => void {
+  const started = Date.now();
   return (done, total) => {
     if (cancelRequested) throw new Cancelled();
-    $("busy-text").textContent = `${label}… ${done.toLocaleString("tr-TR")} / ${total.toLocaleString("tr-TR")}`;
+    let eta = "";
+    const elapsed = (Date.now() - started) / 1000;
+    if (done > 0 && done < total && elapsed > 5) {
+      const left = Math.round((elapsed / done) * (total - done));
+      eta = left >= 60 ? ` · kalan ~${Math.round(left / 60)} dk` : ` · kalan ~${left} sn`;
+    }
+    $("busy-text").textContent = `${label}… ${done.toLocaleString("tr-TR")} / ${total.toLocaleString("tr-TR")}${eta}`;
   };
 }
 
@@ -658,17 +665,27 @@ async function createIndex(): Promise<void> {
     throw new StepError("Belge okunamadı", error);
   });
   state.index ??= new NameIndex(state.catalog.people);
-  const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings()));
+  const withNotes = $<HTMLInputElement>("index-notes").checked;
+  const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings())).filter(
+    (r) => withNotes || r.part === "main",
+  );
   if (rows.length === 0) {
     setMessage("Dizine girecek kimliği kesin geçiş yok. Belirsiz adları Şahıs dökümünde onaylayın.", "info");
     return;
   }
   const people = new Set(rows.map((r) => r.person?.source)).size;
   setMessage("", "info");
+  const started = Date.now();
   const result = await buildIndex(read.segments, rows, progress("Dizin işaretleri ekleniyor"));
-  logHistory("index", `${people} şahıs, ${result.marks} işaret`);
+  const minutes = Math.round((Date.now() - started) / 6000) / 10;
+  logHistory("index", `${people} şahıs, ${result.marks} işaret, ${minutes} dk`);
+  // Tells whether a faster, read-only page lookup could be used on this Word (next version).
+  const pages = Office.context.requirements.isSetSupported("WordApiDesktop", "1.2") ? " [sayfa API: var]" : " [sayfa API: yok]";
   setMessage(
-    `Şahıslar dizini hazır: ${people} şahıs, ${result.marks} işaret.` + (result.missing ? ` ${result.missing} geçiş metinde bulunamadı.` : "") + " Dizin işaretleri gizli metindir; ¶ düğmesiyle görünür.",
+    `Şahıslar dizini hazır: ${people} şahıs, ${result.marks} işaret, ${minutes} dk.` +
+      (result.missing ? ` ${result.missing} geçiş metinde bulunamadı.` : "") +
+      " Dizin işaretleri gizli metindir; ¶ düğmesiyle görünür." +
+      pages,
     result.missing ? "warning" : "success",
   );
 }

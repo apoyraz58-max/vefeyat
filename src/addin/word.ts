@@ -233,6 +233,11 @@ export function onSelectionChanged(handler: () => void): void {
 /** Main-text paragraphs and, where WordApi 1.5 is available, footnotes. */
 /** Word requests queued per sync in long operations. */
 const CHUNK = 200;
+/** Marks per sync: each one makes Word re-lay out the page, so keep batches small. */
+const MARK_CHUNK = 40;
+
+/** Lets Word repaint and take keystrokes between batches. */
+const breathe = () => new Promise<void>((resolve) => setTimeout(resolve, 60));
 
 export type Progress = (done: number, total: number) => void;
 
@@ -554,7 +559,7 @@ async function insertMarks(segments: readonly Segment[], rows: readonly Inventor
     const chunks: InventoryRow[][] = [];
     for (const row of ordered) {
       const last = chunks[chunks.length - 1];
-      if (last && (last.length < CHUNK || (last[last.length - 1] as InventoryRow).segment === row.segment)) last.push(row);
+      if (last && (last.length < MARK_CHUNK || (last[last.length - 1] as InventoryRow).segment === row.segment)) last.push(row);
       else chunks.push([row]);
     }
     let marks = 0;
@@ -582,6 +587,7 @@ async function insertMarks(segments: readonly Segment[], rows: readonly Inventor
       cache.clear(); // ranges of this chunk are done with
       done += chunk.length;
       progress(done, ordered.length);
+      await breathe();
     }
     return marks;
   });

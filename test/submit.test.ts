@@ -86,3 +86,15 @@ describe("Şahıslar dizini", () => {
     expect(isVefeyatIndexField(` TOC \\f "v"`)).toBe(false);
   });
 });
+
+describe("indexRows", () => {
+  it("one mark per person and paragraph", async () => {
+    const { indexRows } = await import("../src/addin/submit.js");
+    const rows = buildInventory([main(0, "Gazzâlî der. Gazzâlî yine der. Cüveynî de."), main(1, "Gazzâlî sonra.")], catalog);
+    expect(indexRows(rows).map((r) => [r.segment, r.text])).toEqual([
+      [0, "Gazzâlî"],
+      [0, "Cüveynî"],
+      [1, "Gazzâlî"],
+    ]);
+  });
+});
