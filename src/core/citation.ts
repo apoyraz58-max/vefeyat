@@ -6,7 +6,7 @@
  */
 import { hasSuffix, hasTitleSignal, hasWord, isBoundary, isDigit, words, authorComma } from "./context.js";
 import { initialUpper, isBreak, isCommonWord, isNameLink, tokenize, wordCount } from "./scan.js";
-import { nameKey } from "./normalize.js";
+import { nameKey, normalize } from "./normalize.js";
 import { vbLower, vbTrim } from "./text.js";
 import { charAt, inStr, left, mid, upper } from "./vb.js";
 
@@ -227,6 +227,8 @@ function workLead(value: string): boolean {
   let lead = ["el-", "et-", "er-", "es-", "ez-", "en-", "ed-"].includes(vbLower(left(clean, 3)));
   if (initialUpper(clean)) lead = true;
   if (quoteClose(clean, 1) > 1) lead = true;
+  // Ibid markers stand for the title: "a.g.e.", "age", "a.y.", "aynı eser", "ibid".
+  if (/^(a\.\s?g\.\s?[emy]\.?|ag[emy]|a\.\s?y\.|ay\.|aynı (eser|yer|makale)|ibid\.?|op\.\s?cit\.?|loc\.\s?cit\.?)(?![a-zçğıöşüâîû])/i.test(clean)) lead = true;
   return lead;
 }
 
@@ -345,6 +347,27 @@ function authorYearEnd(tail: string): number {
 }
 
 /**
+ * Parenthetical author–year: "(Gazzâlî, 1993: 45)", "(Gazzâlî 1993, s. 45)",
+ * "(bk. Gazzâlî, 1993; Râzî, 1997)". The name must open the parenthesis or
+ * follow ";" or a see-marker inside it. Returns a 0-based [start, end) span or null.
+ */
+function parenthesisAuthorYear(text: string, hit: NameHit): Span | null {
+  const before = text.slice(0, hit[0]);
+  const open = before.lastIndexOf("(");
+  if (open < 0 || before.lastIndexOf(")") > open) return null;
+  const lead = normalize(before.slice(open + 1)).split(" ").filter(Boolean);
+  const markers = new Set(["bk", "bkz", "krs", "kars", "ayrica", "ornegin", "mesela", "cf", "see", "vd"]);
+  const semicolon = before.lastIndexOf(";");
+  const afterSeparator = semicolon > open ? normalize(before.slice(semicolon + 1)) : "";
+  if (semicolon > open ? afterSeparator.split(" ").some((w) => w && !markers.has(w)) : lead.some((w) => !markers.has(w))) return null;
+  const closing = text.indexOf(")", hit[0] + hit[1]);
+  if (closing < 0 || closing - hit[0] > 200) return null;
+  const tail = text.slice(hit[0] + hit[1], closing);
+  if (!/^\s*,?\s*(1[0-9]{3}|20[0-9]{2}|t\.\s?y\.)[a-z]?\b/.test(tail)) return null;
+  return [open, closing + 1];
+}
+
+/**
  * `VfxClassify`: citation spans in a text given its name hits (sorted by
  * start). Also finds author–title citations of names absent from the catalog.
  */
@@ -357,7 +380,7 @@ export function citationSpans(text: string, names: readonly NameHit[]): Span[] {
     if (index >= unitList.length) break;
     const unit = unitList[index] as Span;
     if (containsSpan(result, hit[0], hit[1])) continue;
-    let span = probe(text, unit, hit, names);
+    let span = probe(text, unit, hit, names) ?? parenthesisAuthorYear(text, hit);
     if (!span) {
       const authorYear = authorYearEnd(mid(text, hit[0] + hit[1] + 1, 100));
       if (authorYear > 0) span = [hit[0], hit[0] + hit[1] + authorYear];

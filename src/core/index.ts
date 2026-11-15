@@ -11,5 +11,6 @@ export * from "./dates.js";
 export * from "./alias.js";
 export * from "./spelling.js";
 export * from "./context.js";
+export * from "./bibliography.js";
 export * from "./scan.js";
 export * from "./citation.js";

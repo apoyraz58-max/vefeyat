@@ -70,6 +70,12 @@ bu durumda penceredeki düğmeyi kullanın.
 - "Daha önce geçti" denetimi dipnotları WordApi 1.5 olan Word'de arar.
   Katalogdaki yazılışları ve seçili yazılışı arar; bunların dışında bir
   transkripsiyonla yazılmış önceki geçişi bulamaz.
+- Bağlam: mezhep, tarikat ve hanedan sıfatları ("Nakşibendî tarikatı",
+  "Sünnî ve Şiî müellifler", "Abbâsî halifesi") şahıs sayılmaz. Atıflar
+  ("bk. Gazzâlî, el-Mustasfâ, I, 45", "(Gazzâlî, 1993: 45)") hem metinde hem
+  dipnotta atlanır; dipnotun geri kalanı okunur. "Kaynakça/Bibliyografya"
+  başlığından sonraki bölüm ("Ekler", "Dizin" gibi bir başlığa kadar) ve
+  kaynakça girdisi biçimindeki paragraflar taranmaz.
 - Sonnotlar, üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz
   (Diğer araçlar → Denetim kapsamını göster).
 - **VBA belgeleri:** VBA sürümünün eklediği tarihler Word alanıdır

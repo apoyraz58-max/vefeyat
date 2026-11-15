@@ -11,6 +11,7 @@ import {
   NameIndex,
   type Person,
   alreadyHasDate,
+  bibliographyFlags,
   citationSpans,
   containsSpan,
   findMatches,
@@ -79,10 +80,20 @@ export function spellingMatches(person: Person, literal: string): boolean {
  * computed from all catalog spellings and strict matches inside them dropped.
  */
 export function notePeopleOrMatches(segment: Pick<Segment, "part" | "text">, index: NameIndex): Match[] {
-  if (segment.part !== "note") return findMatches(segment.text, index, true, true);
+  // Citation islands ("Gazzâlî, el-Mustasfâ, I, 45", "(Gazzâlî, 1993: 45)")
+  // are left out in both parts; the rest of the paragraph or footnote is read.
   const names = findMatches(segment.text, index, false).map((h): NameHit => [h.start, h.length, h.text]);
-  const spans = citationSpans(segment.text, names);
-  return findMatches(segment.text, index, true, false).filter((hit) => !containsSpan(spans, hit.start, hit.length));
+  let spans = citationSpans(segment.text, names);
+  if (segment.part === "main") {
+    // Main text narrates more than it cites: only islands with a locator
+    // (page, volume, year) count, and "Gazzâlî (1993: 45) vurgular" keeps
+    // its subject.
+    spans = spans.filter(([a, b]) => {
+      const island = segment.text.slice(a, b);
+      return /\d/.test(island) && !/^[^,(]+\(\s*\d{4}/.test(island);
+    });
+  }
+  return findMatches(segment.text, index, true, segment.part !== "note").filter((hit) => !containsSpan(spans, hit.start, hit.length));
 }
 
 export function buildInventory(
@@ -99,7 +110,11 @@ export function buildInventory(
     .sort((a, b) => a.segment.anchor - b.segment.anchor || a.segment.order - b.segment.order);
   const rows: InventoryRow[] = [];
   const seen = new Set<string>();
+  const mains = ordered.filter((o) => o.segment.part === "main");
+  const flags = bibliographyFlags(mains.map((o) => o.segment.text));
+  const bibliography = new Set(mains.filter((_, k) => flags[k]).map((o) => o.segment.anchor));
   for (const { segment, i } of ordered) {
+    if (bibliography.has(segment.anchor)) continue;
     const known = notePeopleOrMatches(segment, index);
     const unknown = findUnknownPeople(segment.text, index).filter(
       (u) => !known.some((k) => u.start < k.start + k.length && k.start < u.start + u.length),

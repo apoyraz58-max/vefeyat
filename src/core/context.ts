@@ -242,6 +242,9 @@ export function isSchool(window: string, localFirst: number, length: number, lit
   const before = rTrim(words(left(window, localFirst)));
   const after = words(mid(window, localFirst + length + 1));
   if (["imam", "fakih", "alim", "muhadis"].some((item) => endsWithWord(before, item))) return false;
+  // "Eş'arî (ö. 324/935)", "Ebü'l-Hasan el-Eş'arî": the scholar himself.
+  if (/^\s*\((ö|öl|v)\.\s*\d/.test(mid(window, localFirst + length + 1))) return false;
+  if (/^(el|al)[-‐]/i.test(literal) || /\b(el|al)[-‐]$/i.test(left(window, localFirst))) return false;
   if (vbTrim(before).length > 0) {
     const prior = vbTrim(before).split(" ");
     let index = prior.length - 1;
@@ -250,6 +253,8 @@ export function isSchool(window: string, localFirst: number, length: number, lit
   }
   if (root === "safi" && hasSuffix(literal)) return false;
   if ((root === "safi" || root === "esari" || root === "maturidi") && isPersonPredicate(after)) return false;
+  // "Şâfiî, Hanefî fakihlerinden farklı olarak … reddeder": the scholar as subject.
+  if ((root === "safi" || root === "esari" || root === "maturidi") && /^\s*,/.test(mid(window, localFirst + length + 1)) && isNarrative(words(window))) return false;
   // Direct person predicates win over a more distant school reference.
   const next = firstWord(after);
   if (next !== "gore" && isNarrative(` ${next} `)) return false;
@@ -278,12 +283,57 @@ export function needsContext(text: string, first: number, length: number, key: s
   return authorComma(mid(text, first + length + 1, 160)) > 0;
 }
 
+/** Nouns that make a preceding nisba an adjective: "Nakşibendî tarikatı", "Abbâsî halifesi". */
+const GROUP_NOUNS =
+  "tarikat|dervis|seyh|sufi|mutasavvif|silsile|tekke|dergah|zaviye|asitane|ayin|mensup|mensub|mezhep|mezheb|ekol|firka|cemaat|zumre|topluluk|cevre|gelenek|geleneg|anlayis|dusunce|kelam|fikih|fikh|akide|akaid|itikad|inanc|alim|ulema|fakih|fukaha|kelamci|mutekellim|muellif|muhaddis|muctehid|halife|hanedan|devlet|sultan|emir|vezir|ordu|donem|devir|devri|saray|mimari|sanat|uslup|uslub|edebiyat|hareket|akim|egilim|yorum|okul|kol|mesrep|mesreb|adab|erkan|kultur|toplum|kesim|grup|taraftar|camia|muhit|nesil|kusak|vakif|medrese|cami|mescit|imparatorluk|beylik|aile|soy|boy|kabile|asiret|tarih|kaynak|metin|literatur|risale|eser"
+    .split("|")
+    .map(collapseLetters); // compared with words(), which collapses doubled letters
+
+const TITLES = new Set("imam|seyh|hz|hazret|hazreti|mevlana|hace|haci|molla|baba|dede|sultan|emir|kadi|hafiz|alim|fakih|muhaddis|sair|mutasavvif|ebu|ibn|ibni".split("|").map(collapseLetters));
+
+function startsGroupNoun(word: string): boolean {
+  return GROUP_NOUNS.some((stem) => word.startsWith(stem));
+}
+
+/**
+ * A one-word nisba used as an adjective of a group, order, dynasty or school:
+ * "Nakşibendî tarikatı", "Kādirî ve Rifâî tarikatları", "Abbâsî halifesi",
+ * "Sünnî ve Şiî müellifler"; also an izafet like "Ehl-i hadîs". A title
+ * before it ("Şeyh", "İmam") or a death date after it keeps the person.
+ */
+export function isGroupAdjective(text: string, first: number, length: number, literal: string): boolean {
+  const bare = nameQuery(literal);
+  if (bare.length < literal.length) return false; // "Nakşibendî'nin": the person
+  const after = text.slice(first + length);
+  if (/^[-‐][iıuü]\s+\p{Ll}/u.test(after) || /[-‐][iıuü]$/.test(bare) && /^\s+\p{Ll}/u.test(after)) return true;
+  if (/\s/.test(bare.trim())) return false; // "Bahâeddin Nakşibend": an explicit name
+  const key = nameKey(bare);
+  if (!/[iy]$/.test(key)) return false;
+  if (/^\s*\((ö|öl|v|d|m)\.|^\s*\(\d/.test(after)) return false;
+  const before = words(text.slice(Math.max(0, first - 40), first)).trim().split(" ");
+  const prior = before[before.length - 1] ?? "";
+  if (TITLES.has(prior)) return false;
+  const clause = after.slice(0, 160).split(/[,;:.()]/)[0] ?? "";
+  const next = words(clause).trim().split(" ").filter(Boolean);
+  // "X tarikatı", "X ve Y tarikatları", "X, Y ve Z şeyhleri"
+  for (let i = 0; i < Math.min(next.length, 7); i++) {
+    const word = next[i] as string;
+    if (startsGroupNoun(word)) return true;
+    if (word === "ve" || word === "ile" || word === "veya") continue;
+    // Another nisba in the list ("Rifâî"); stop at anything else.
+    if (/[iy]$/.test(word) && word.length >= 2) continue;
+    break;
+  }
+  return false;
+}
+
 /**
  * `VfcExclude`: whether a matched catalog spelling at 0-based `first` should
  * not count as a person mention.
  */
 export function excludeMention(text: string, first: number, length: number, key = "", citationCheck = true): boolean {
   if (key.length === 0) key = nameKey(nameQuery(mid(text, first + 1, length)));
+  if (isGroupAdjective(text, first, length, mid(text, first + 1, length))) return true;
   if (!needsContext(text, first, length, key)) return false;
   const { window, offset } = contextWindow(text, first, length);
   const literal = mid(text, first + 1, length);
