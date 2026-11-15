@@ -267,3 +267,55 @@ export function auditRows<T extends { person: unknown; first: boolean; date: str
     return true;
   });
 }
+
+// ---- Identity confirmations (VBA: Vdi, contextual identity) ----
+
+/** Most confirmations kept per document (VBA allowed 200 contextual + registry). */
+export const CONFIRMATION_LIMIT = 2000;
+
+/**
+ * Key of one mention: the literal name with the normalized words just before
+ * and after it in the same paragraph. Edits elsewhere keep it; rewriting the
+ * sentence around the name invalidates it, as in the VBA signature.
+ */
+export function mentionKey(literal: string, before: string, after: string): string {
+  // A date written right after the name (often by this add-in) is not context.
+  const trimmed = after.replace(/^[ \u00a0]+/, "");
+  if (startsWithDate(trimmed)) {
+    const closing = trimmed.indexOf(")");
+    if (closing >= 0 && closing < 80) after = trimmed.slice(closing + 1);
+  }
+  const head = normalize(before).split(" ").filter(Boolean).slice(-6).join(" ");
+  const tail = normalize(after).split(" ").filter(Boolean).slice(0, 6).join(" ");
+  return `${head}|${literal}|${tail}`;
+}
+
+export type Confirmations = Readonly<Record<string, string>>;
+
+/** Parses the stored confirmations (JSON object mention key -> person key). */
+export function parseConfirmations(stored: unknown): Record<string, string> {
+  if (typeof stored !== "string") return {};
+  try {
+    const value: unknown = JSON.parse(stored);
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === "string"));
+  } catch {
+    return {};
+  }
+}
+
+/** Adds one confirmation; the oldest are dropped beyond the limit. */
+export function addConfirmation(map: Confirmations, key: string, person: string): Record<string, string> {
+  const next: Record<string, string> = { ...map };
+  delete next[key];
+  next[key] = person;
+  const keys = Object.keys(next);
+  for (const old of keys.slice(0, Math.max(0, keys.length - CONFIRMATION_LIMIT))) delete next[old];
+  return next;
+}
+
+/** The confirmed candidate for a mention, if it is still among the candidates. */
+export function confirmedPerson<T extends Person>(map: Confirmations, key: string, candidates: readonly T[]): T | null {
+  const wanted = map[key];
+  return wanted === undefined ? null : candidates.find((p) => personKey(p) === wanted) ?? null;
+}

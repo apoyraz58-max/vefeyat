@@ -22,6 +22,7 @@ import {
   startsWithDate,
   textName,
 } from "../core/index.js";
+import { type Confirmations, confirmedPerson, mentionKey } from "./logic.js";
 
 /** A paragraph of the main text or of a footnote, in reading order. */
 export interface Segment {
@@ -52,6 +53,8 @@ export interface InventoryRow {
   readonly status: Status;
   /** First certain mention of this person in reading order. */
   readonly first: boolean;
+  /** Identity taken from a confirmation saved in the document. */
+  readonly confirmed: boolean;
 }
 
 /** Date text right after a name: "(ö. 505/1111)" etc., or "". */
@@ -81,7 +84,12 @@ export function notePeopleOrMatches(segment: Pick<Segment, "part" | "text">, ind
   return findMatches(segment.text, index, true, false).filter((hit) => !containsSpan(spans, hit.start, hit.length));
 }
 
-export function buildInventory(segments: readonly Segment[], catalog: Catalog, index = new NameIndex(catalog.people)): InventoryRow[] {
+export function buildInventory(
+  segments: readonly Segment[],
+  catalog: Catalog,
+  index = new NameIndex(catalog.people),
+  confirmations: Confirmations = {},
+): InventoryRow[] {
   const ordered = segments
     .map((segment, i) => ({ segment, i }))
     .sort((a, b) => a.segment.anchor - b.segment.anchor || a.segment.order - b.segment.order);
@@ -91,7 +99,13 @@ export function buildInventory(segments: readonly Segment[], catalog: Catalog, i
     const hits = notePeopleOrMatches(segment, index);
     for (const hit of hits) {
       const candidates = index.rank(hit.key, nameQuery(hit.text));
-      const person = singleSafe(candidates, hit.text) ? (candidates[0] as Person) : null;
+      let person = singleSafe(candidates, hit.text) ? (candidates[0] as Person) : null;
+      let confirmed = false;
+      if (!person) {
+        const key = mentionKey(hit.text, segment.text.slice(0, hit.start), segment.text.slice(hit.start + hit.length));
+        person = confirmedPerson(confirmations, key, candidates);
+        confirmed = person !== null;
+      }
       const after = segment.text.slice(hit.start + hit.length);
       let date = followingDate(after);
       if (!date && person && alreadyHasDate(after, person.deathDate)) date = person.deathDate;
@@ -106,7 +120,7 @@ export function buildInventory(segments: readonly Segment[], catalog: Catalog, i
         first = !seen.has(key);
         seen.add(key);
       }
-      rows.push({ id: rows.length, segment: i, part: segment.part, start: hit.start, length: hit.length, text: hit.text, candidates, person, date, status, first });
+      rows.push({ id: rows.length, segment: i, part: segment.part, start: hit.start, length: hit.length, text: hit.text, candidates, person, date, status, first, confirmed });
     }
   }
   return rows;
@@ -130,6 +144,7 @@ export function statusLabel(row: InventoryRow): string {
     unknown: "Katalogda yok",
   };
   let text = base[row.status];
+  if (row.confirmed) text += " · onaylı kimlik";
   if (row.person && !isValidDate(row.person.deathDate)) text += " · Kaynakta tarih yok";
   else if (row.person && row.first && !row.date) text += " · İlk geçişte tarih yok";
   return text;

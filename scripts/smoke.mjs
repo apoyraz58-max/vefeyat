@@ -47,7 +47,8 @@ const FAKE_OFFICE = String.raw`
     get text() { return doc.text.slice(this.s, this.e); }
     get paragraphs() {
       const end = doc.text.indexOf("\r", this.e);
-      return { getLast: () => new R(this.s, end < 0 ? doc.text.length : end) };
+      const start = doc.text.lastIndexOf("\r", this.s - 1) + 1;
+      return { getLast: () => new R(this.s, end < 0 ? doc.text.length : end), getFirst: () => new R(start, this.e) };
     }
     getRange(loc) {
       if (loc === "End" || loc === "After") return new R(this.e, this.e);
@@ -254,6 +255,18 @@ try {
   tab = await open("?action=dia", "Gazzâlî der ki.", "Gazzâlî");
   check("DİA maddesini aç offers the article link", (await tab.getAttribute("#detail-link", "href")) === "https://islamansiklopedisi.org.tr/gazzali");
   await tab.close();
+  // Identity confirmations are remembered in the document.
+  tab = await open("", "Giriş paragrafı.\rBu konuda Râzî de katılır.", "Râzî");
+  await tab.check("#candidate-1");
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  check("chosen homonym gets its date", (await docText(tab)).includes("Râzî (ö. 313/925) de"), await docText(tab));
+  check("choice saved in the document", (await tab.evaluate(() => window.__doc.settings["vefeyat.confirmations"] || "")).includes("Ebû Bekir er-Râzî"));
+  await select(tab, "Giriş");
+  await select(tab, "Râzî");
+  check("confirmed choice is preselected next time", (await tab.isChecked("#candidate-1")) && (await tab.textContent("#candidates")).includes("bu geçiş için onayladınız"));
+  await tab.close();
+
   // Şahıs dökümü and Tüm belgeyi denetle on a whole document.
   const book = "Gazali bu görüşü savunur.\rGazzâlî (ö. 505/1111) ise farklı düşünür. Râzî de katılır.\rSonra Gazzâlî'nin talebeleri gelir.";
   tab = await open("?view=dokum", book);

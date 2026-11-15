@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildInventory, catalogLabel, followingDate, spellingMatches, statusLabel, summarize, type Segment } from "../src/addin/inventory.js";
-import { Catalog, type Person } from "../src/core/index.js";
+import { mentionKey } from "../src/addin/logic.js";
+import { Catalog, type Person, personKey } from "../src/core/index.js";
 
 const DIA = "https://islamansiklopedisi.org.tr/";
 const p = (shortName: string, fullName: string, deathDate: string, slug: string): Person => ({
@@ -79,6 +80,17 @@ describe("buildInventory", () => {
     const only = buildInventory([main(0, "Gazzâlî der ki.")], catalog);
     expect(statusLabel(only[0]!)).toBe("Kaynak yazımıyla uyumlu · İlk geçişte tarih yok");
     expect(summarize(only).firstWithoutDate).toBe(1);
+  });
+});
+
+describe("confirmations in the inventory", () => {
+  it("a confirmed homonym counts as a certain person", () => {
+    const text = "Bu konuda Râzî de katılır.";
+    const ebuBekir = catalog.people[2]!;
+    const key = mentionKey("Râzî", "Bu konuda ", " de katılır.");
+    const rows = buildInventory([main(0, text)], catalog, undefined, { [key]: personKey(ebuBekir) });
+    expect(rows[0]).toMatchObject({ person: ebuBekir, confirmed: true, first: true });
+    expect(statusLabel(rows[0]!)).toContain("onaylı kimlik");
   });
 });
 

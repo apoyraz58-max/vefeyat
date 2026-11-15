@@ -3,13 +3,15 @@
  * logic.ts; these functions only read or write the document.
  */
 import type { Segment } from "./inventory.js";
-import { type SettingName, type Settings, settingValue } from "./logic.js";
+import { type SettingName, type Settings, parseConfirmations, settingValue } from "./logic.js";
 
 export interface SelectionText {
   /** Selected text as Word returns it. */
   readonly text: string;
   /** Rest of the paragraph after the selection. */
   readonly following: string;
+  /** Paragraph text before the selection. */
+  readonly preceding: string;
 }
 
 export async function readSelection(): Promise<SelectionText> {
@@ -19,8 +21,10 @@ export async function readSelection(): Promise<SelectionText> {
     const paragraphEnd = selection.paragraphs.getLast().getRange("End");
     const following = selection.getRange("End").expandTo(paragraphEnd);
     following.load("text");
+    const preceding = selection.paragraphs.getFirst().getRange("Start").expandTo(selection.getRange("Start"));
+    preceding.load("text");
     await context.sync();
-    return { text: selection.text, following: following.text };
+    return { text: selection.text, following: following.text, preceding: preceding.text };
   });
 }
 
@@ -80,11 +84,57 @@ export async function findEarlier(spellings: readonly string[], select = false):
     }
     await context.sync();
     const earlier = checks.find((check) => BEFORE.has(check.relation.value));
-    if (earlier && select) {
-      earlier.range.select("Select");
-      await context.sync();
+    if (earlier) {
+      if (select) {
+        earlier.range.select("Select");
+        await context.sync();
+      }
+      return true;
     }
-    return earlier !== undefined;
+    // Footnotes (WordApi 1.5): a note whose reference precedes the selection.
+    if (!Office.context.requirements.isSetSupported("WordApi", "1.5")) return false;
+    const notes = context.document.body.footnotes;
+    notes.load("items/body/text");
+    await context.sync();
+    const lowered = spellings.map((value) => value.toLocaleLowerCase("tr"));
+    const containing = notes.items.filter((note) => {
+      const text = note.body.text.toLocaleLowerCase("tr");
+      return lowered.some((value) => text.includes(value));
+    });
+    const relations = containing.map((note) => ({ note, relation: note.reference.compareLocationWith(selection) }));
+    await context.sync();
+    const before = relations.find((item) => BEFORE.has(item.relation.value));
+    if (!before) return false;
+    if (select) {
+      for (const value of spellings) {
+        const found = before.note.body.search(searchText(value), { matchCase: false, matchWholeWord: false });
+        found.load("items");
+        await context.sync();
+        if (found.items[0]) {
+          found.items[0].select("Select");
+          await context.sync();
+          break;
+        }
+      }
+    }
+    return true;
+  });
+}
+
+const CONFIRMATIONS_KEY = "vefeyat.confirmations";
+
+/** Identity confirmations saved in the document. */
+export function readConfirmations(): Record<string, string> {
+  return parseConfirmations(Office.context.document.settings.get(CONFIRMATIONS_KEY));
+}
+
+export function writeConfirmations(map: Record<string, string>): Promise<void> {
+  Office.context.document.settings.set(CONFIRMATIONS_KEY, JSON.stringify(map));
+  return new Promise((resolve, reject) => {
+    Office.context.document.settings.saveAsync((result) => {
+      if (result.status === Office.AsyncResultStatus.Succeeded) resolve();
+      else reject(new Error(result.error.message));
+    });
   });
 }
 

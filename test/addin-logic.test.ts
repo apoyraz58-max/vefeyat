@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, auditRows, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, orderByNameForm, parseLaunch, planDate, quickInsertBlocker, scopeRule, settingValue, settingsSummary } from "../src/addin/logic.js";
+import { DEFAULT_SETTINGS, addConfirmation, auditRows, candidateLabel, confirmedPerson, mentionKey, parseConfirmations, dateTag, earlierSpellings, lookup, matchHint, orderByNameForm, parseLaunch, planDate, quickInsertBlocker, scopeRule, settingValue, settingsSummary } from "../src/addin/logic.js";
 import { Catalog, nameOptions, personKey, sourceName, withEnding, type Person } from "../src/core/index.js";
 
 const DIA = "https://islamansiklopedisi.org.tr/";
@@ -184,5 +184,24 @@ describe("audit rows", () => {
   });
   it("undated mode skips dated mentions", () => {
     expect(auditRows(rows, { ...DEFAULT_SETTINGS, scope: "all", auditMode: "undated" })).toEqual([rows[1], rows[2]]);
+  });
+});
+
+describe("identity confirmations", () => {
+  it("mention key uses nearby normalized words", () => {
+    expect(mentionKey("Râzî", "Bu konuda İmam ", " de der ki")).toBe("bu konuda imam|Râzî|de der ki");
+    expect(mentionKey("Râzî", "uzun bir giriş cümlesi var. Bu konuda İmam ", " de")).toBe("giris cumlesi var bu konuda imam|Râzî|de");
+    // The date inserted after the name does not change the key.
+    expect(mentionKey("Râzî", "Bu konuda İmam ", " (ö. 313/925) de der ki")).toBe(mentionKey("Râzî", "Bu konuda İmam ", " de der ki"));
+  });
+  it("round trip, limit and lookup", () => {
+    let map = addConfirmation({}, "a|Râzî|b", "P1");
+    map = addConfirmation(map, "c|Râzî|d", "P2");
+    expect(parseConfirmations(JSON.stringify(map))).toEqual(map);
+    expect(parseConfirmations("bozuk")).toEqual({});
+    const fahreddin = lookup(catalog, "Râzî").candidates[0]!;
+    map = addConfirmation(map, "x|Râzî|y", personKey(fahreddin));
+    expect(confirmedPerson(map, "x|Râzî|y", lookup(catalog, "Râzî").candidates)).toEqual(fahreddin);
+    expect(confirmedPerson(map, "a|Râzî|b", lookup(catalog, "Râzî").candidates)).toBeNull();
   });
 });

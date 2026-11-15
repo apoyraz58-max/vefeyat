@@ -12,6 +12,9 @@ import {
   type View,
   SOON,
   auditRows,
+  addConfirmation,
+  confirmedPerson,
+  mentionKey,
   candidateLabel,
   dateTag,
   earlierSpellings,
@@ -26,7 +29,7 @@ import {
 } from "./logic.js";
 import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
-import { findEarlier, insertDate, onSelectionChanged, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention } from "./word.js";
+import { findEarlier, insertDate, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -45,6 +48,8 @@ interface State {
   selectedRow: number | null;
   audit: InventoryRow[] | null;
   auditAt: number;
+  mention: string | null;
+  confirmed: boolean;
 }
 
 const state: State = {
@@ -62,6 +67,8 @@ const state: State = {
   selectedRow: null,
   audit: null,
   auditAt: 0,
+  mention: null,
+  confirmed: false,
 };
 
 const PAGE_SIZE = 250;
@@ -235,7 +242,8 @@ function renderCandidates(): void {
     const title = document.createElement("strong");
     title.textContent = candidateLabel(person);
     text.append(title);
-    const note = matchHint(found.scores.get(personKey(person)) ?? 0);
+    const confirmedHere = state.confirmed && state.chosen !== null && personKey(state.chosen) === personKey(person);
+    const note = confirmedHere ? "bu geçiş için onayladınız" : matchHint(found.scores.get(personKey(person)) ?? 0);
     if (note) {
       const hint = document.createElement("span");
       hint.className = "hint";
@@ -295,10 +303,16 @@ async function refresh(force = false): Promise<void> {
     state.alias = alias;
     state.found = null;
     state.chosen = null;
+    state.confirmed = false;
+    state.mention = alias ? mentionKey(alias, selection.preceding, selection.following) : null;
     $("selected-name").textContent = alias ?? "Metinde bir şahıs adı seçin.";
     if (alias && state.catalog) {
       state.found = lookup(state.catalog, alias);
       state.chosen = state.found.automatic;
+      if (!state.chosen && state.mention) {
+        state.chosen = confirmedPerson(readConfirmations(), state.mention, state.found.candidates);
+        state.confirmed = state.chosen !== null;
+      }
     }
     renderCandidates();
     renderDetails();
@@ -354,10 +368,17 @@ async function addDate(force: boolean): Promise<void> {
     setMessage("", "info");
     return;
   }
+  await rememberChoice();
   await insertDate(plan.text, dateTag(person), `Vefeyât: ${textName(person.shortName)}`);
   hideEarlier();
   setMessage(`Tarih eklendi: ${plan.text}`, "success");
   state.alias = null; // the caret moved; read the next selection afresh
+}
+
+/** Remembers the user's choice for an ambiguous mention in the document. */
+async function rememberChoice(): Promise<void> {
+  if (!state.chosen || !state.mention || !state.found || state.found.automatic) return;
+  await writeConfirmations(addConfirmation(readConfirmations(), state.mention, personKey(state.chosen)));
 }
 
 async function respell(): Promise<void> {
@@ -369,6 +390,12 @@ async function respell(): Promise<void> {
     return;
   }
   const replacement = withEnding(selection.text, spelling);
+  if (state.chosen && state.found && !state.found.automatic && state.mention) {
+    // The sentence keeps its words; only the name changes, so key the new spelling.
+    const [before, , after] = state.mention.split("|");
+    const key = `${before ?? ""}|${replacement}|${after ?? ""}`;
+    await writeConfirmations(addConfirmation(readConfirmations(), key, personKey(state.chosen)));
+  }
   await replaceSelection(replacement);
   setMessage(`Yazım değiştirildi: ${replacement}`, "success");
   state.alias = null;
@@ -388,7 +415,7 @@ async function prepareInventory(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index);
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
   state.page = 0;
   state.selectedRow = null;
   const sum = summarize(state.rows);
@@ -460,7 +487,7 @@ async function startAudit(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index);
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
   state.audit = auditRows(state.rows, state.settings);
   state.auditAt = 0;
   setMessage("", "info");
