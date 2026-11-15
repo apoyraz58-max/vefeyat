@@ -103,7 +103,8 @@ export function initialUpper(value: string): boolean {
   for (const ch of value) {
     if (upper(ch) !== vbLower(ch)) return ch === upper(ch);
     const code = ch.charCodeAt(0);
-    if ((code >= 0x590 && code <= 0x1fff) || code >= 0x2e80) return true;
+    // Scripts without case (Arabic, CJK …) count as capitalised; emoji and symbols do not.
+    if (((code >= 0x590 && code <= 0x1fff) || code >= 0x2e80) && /\p{L}/u.test(ch)) return true;
   }
   return false;
 }

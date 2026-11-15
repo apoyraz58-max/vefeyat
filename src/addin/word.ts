@@ -2,10 +2,10 @@
  * Thin Word layer (Office.js, WordApi 1.3). Every decision is made in
  * logic.ts; these functions only read or write the document.
  */
-import type { Person } from "../core/index.js";
+import type { NameIndex, Person } from "../core/index.js";
 import type { InventoryRow, Segment } from "./inventory.js";
 import { parseSpellings } from "./prefs.js";
-import { DATE_TAG_PREFIX, type DateControl } from "./health.js";
+import { DATE_TAG_PREFIX, type DateControl, type LegacyResolution, isLegacyDateField, legacyPerson } from "./health.js";
 import { type IndexLine, staticIndex, INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
 import { type SettingName, type Settings, parseConfirmations, parseExclusions, settingValue } from "./logic.js";
 
@@ -445,6 +445,12 @@ async function freezeIndex(context: Word.RequestContext): Promise<boolean> {
   if (indexes.length === 0) return false;
   for (const field of indexes) field.updateResult();
   await context.sync();
+  // Newer Word turns a field into its result text in place, columns and styles kept.
+  if (Office.context.requirements.isSetSupported("WordApiDesktop", "1.4")) {
+    for (const field of indexes) field.unlink();
+    await context.sync();
+    return true;
+  }
   const results = indexes.map((field) => {
     const paragraphs = field.result.paragraphs;
     paragraphs.load("items/text,items/style");
@@ -939,4 +945,97 @@ export async function buildPageIndex(
     throw new StepError("Sayfalar okundu, ama dizin sayfası yazılamadı", error);
   }
   return { people: lines.filter((l) => l.kind === "entry").length, hits: hits.length, missing: rows.length - hits.length };
+}
+
+// ---- VBA belgeleri (ADDIN Vefeyat.Date) → içerik denetimleri ----
+
+async function legacyFields(context: Word.RequestContext): Promise<Word.Field[]> {
+  const bodies: Word.Body[] = [context.document.body];
+  if (Office.context.requirements.isSetSupported("WordApi", "1.5")) {
+    const notes = context.document.body.footnotes;
+    notes.load("items");
+    await context.sync();
+    for (const note of notes.items) bodies.push(note.body);
+  }
+  const found: Word.Field[] = [];
+  for (let from = 0; from < bodies.length; from += CHUNK) {
+    const lists = bodies.slice(from, from + CHUNK).map((b) => {
+      const fields = b.fields;
+      fields.load("items/code");
+      return fields;
+    });
+    await context.sync();
+    for (const list of lists) for (const field of list.items) if (isLegacyDateField(field.code)) found.push(field);
+  }
+  return found;
+}
+
+/** Number of dates the VBA add-in wrote into this document (Word fields). */
+export async function countLegacyDates(): Promise<number> {
+  if (!Office.context.requirements.isSetSupported("WordApi", "1.4")) return 0;
+  return Word.run(async (context) => (await legacyFields(context)).length);
+}
+
+/**
+ * Replaces each VBA date field with the same text inside a Vefeyât date
+ * control, bound to the person whose name stands right before it. A field
+ * whose name cannot be found is left untouched.
+ */
+export async function convertLegacyDates(
+  index: NameIndex,
+  tagFor: (person: Person | null) => string,
+  progress: Progress = () => {},
+): Promise<{ converted: number; unresolved: number; skipped: number }> {
+  return Word.run(async (context) => {
+    const fields = await legacyFields(context);
+    const items = fields.map((field) => {
+      const paragraph = field.result.paragraphs.getFirst();
+      paragraph.load("text");
+      field.result.load("text");
+      return { field, paragraph };
+    });
+    await context.sync();
+    // Several dates in one paragraph: the k-th field has the k-th occurrence of its text.
+    const seen = new Map<string, number>();
+    const plans = items.map(({ field, paragraph }) => {
+      const dateText = field.result.text;
+      const key = `${paragraph.text}\u0000${dateText}`;
+      const k = seen.get(key) ?? 0;
+      seen.set(key, k + 1);
+      let at = -1;
+      for (let n = 0; n <= k; n++) at = paragraph.text.indexOf(dateText, at + 1);
+      const resolution = at > 0 && dateText.trim().length > 0 ? legacyPerson(paragraph.text.slice(0, at), dateText, index) : null;
+      return { field, paragraph, dateText, before: at > 0 ? paragraph.text.slice(0, at) : "", resolution };
+    });
+    const usable = plans.filter((p) => p.resolution);
+    let converted = 0;
+    let unresolved = 0;
+    for (let from = 0; from < usable.length; from += 40) {
+      const chunk = usable.slice(from, from + 40);
+      // New date first, then the old field: a name that cannot be found loses nothing.
+      const searches = chunk.map((plan) => {
+        const literal = (plan.resolution as LegacyResolution).literal;
+        const results = plan.paragraph.search(searchText(literal), { matchCase: true, matchWholeWord: false });
+        results.load("items");
+        return { plan, results, nth: occurrenceBefore(plan.before, literal, (plan.resolution as LegacyResolution).start) };
+      });
+      await context.sync();
+      for (const { plan, results, nth } of searches) {
+        const target = results.items[nth];
+        if (!target) continue; // field kept as it is; reported as skipped
+        const inserted = target.insertText(plan.dateText, "After");
+        const control = inserted.insertContentControl();
+        const person = (plan.resolution as LegacyResolution).person;
+        control.tag = tagFor(person);
+        control.title = person ? `Vefeyât: ${person.shortName}` : "Vefeyât: kimliği belirsiz";
+        control.appearance = "Hidden";
+        plan.field.delete();
+        converted++;
+        if (!person) unresolved++;
+      }
+      await context.sync();
+      progress(Math.min(from + 40, usable.length), usable.length);
+    }
+    return { converted, unresolved, skipped: plans.length - converted };
+  });
 }

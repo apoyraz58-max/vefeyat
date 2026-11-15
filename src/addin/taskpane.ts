@@ -33,9 +33,9 @@ import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLa
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
 import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, addHistory, applyOrder, bulkSuggestions, describeSuggestion, parseBookmark, parseHistory, resumeIndex, rowKey } from "./bulk.js";
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
-import { HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
+import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -782,6 +782,11 @@ async function checkHealth(): Promise<void> {
   await refreshSettings();
   state.settings = readSettings();
   healthRows = checkControls(await readDateControls(), index, state.settings.prefix);
+  const legacy = await countLegacyDates().catch(() => 0);
+  $("legacy").hidden = legacy === 0;
+  $("legacy-text").textContent =
+    `Belgede VBA sürümünün eklediği ${legacy} tarih var (Word alanı). Bunlar yeni sürümde denetlenemez ve teslim temizliğinde kalır. ` +
+    "Dönüştürünce aynı tarih metni, adın arkasında Vefeyât tarihi olarak kalır; adı bulunamayan alana dokunulmaz.";
   healthChosen.clear();
   for (const row of healthRows) if (row.health === "prefix" || row.health === "empty") healthChosen.add(row.id);
   renderHealth();
@@ -828,6 +833,23 @@ function renderHealth(): void {
     list.append(item);
   }
   $<HTMLButtonElement>("health-repair").disabled = healthChosen.size === 0;
+}
+
+async function convertLegacy(): Promise<void> {
+  if (!state.catalog) {
+    setMessage("Katalog yüklenmedi.", "warning");
+    return;
+  }
+  state.index ??= new NameIndex(state.catalog.people);
+  const result = await convertLegacyDates(state.index, (person) => (person ? dateTag(person) : `${DATE_TAG_PREFIX}00000000`), progress("VBA tarihleri dönüştürülüyor"));
+  logHistory("repair", `${result.converted} VBA tarihi dönüştürüldü`);
+  await checkHealth();
+  setMessage(
+    `${result.converted} VBA tarihi dönüştürüldü.` +
+      (result.unresolved ? ` ${result.unresolved} tanesinin kişisi belirlenemedi; listede "Katalogda kaydı yok" olarak görünür.` : "") +
+      (result.skipped ? ` ${result.skipped} alanın önündeki ad bulunamadı; olduğu gibi bırakıldı.` : ""),
+    result.skipped ? "warning" : "success",
+  );
 }
 
 async function repairHealth(): Promise<void> {
@@ -1332,6 +1354,7 @@ function initialise(): void {
     }
     renderHistory();
   });
+  $("legacy-convert").addEventListener("click", () => void run(convertLegacy, "VBA tarihleri dönüştürülüyor"));
   $("health-refresh").addEventListener("click", () => void run(checkHealth, "Tarihler denetleniyor"));
   $("health-repair").addEventListener("click", () => void run(repairHealth));
   $("source-repair").addEventListener("click", () => void run(repairSource));

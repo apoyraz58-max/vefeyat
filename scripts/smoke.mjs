@@ -39,9 +39,12 @@ const base = `http://127.0.0.1:${server.address().port}/`;
 
 const FAKE_OFFICE = String.raw`
 (() => {
-  const doc = (window.__doc = Object.assign({ text: "", sel: [0, 0], controls: [], settings: {} }, window.__docInit || {}));
+  const doc = (window.__doc = Object.assign({ text: "", sel: [0, 0], controls: [], settings: {}, fields: [], api: [] }, window.__docInit || {}));
   try { Object.assign(doc.settings, JSON.parse(sessionStorage.getItem("__fakeSettings") || "{}")); } catch {}
-  const shift = (at, by) => { doc.controls.forEach((c) => { if (c.range.s >= at) { c.range.s += by; c.range.e += by; } }); };
+  const shift = (at, by) => {
+    doc.controls.forEach((c) => { if (c.range.s >= at) { c.range.s += by; c.range.e += by; } });
+    doc.fields.forEach((f) => { if (f.s >= at) { f.s += by; f.e += by; } });
+  };
   class R {
     constructor(s, e) { this.s = s; this.e = e; }
     load() { return this; }
@@ -107,7 +110,11 @@ const FAKE_OFFICE = String.raw`
       }
       const paragraphs = { items, load() { return this; } };
       const sections = { items: [{ getHeader: () => ({ text: "", load() { return this; } }), getFooter: () => ({ text: "", load() { return this; } }) }], load() { return this; } };
-      return fn({ document: { sections, getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
+      const fields = { get items() {
+        return doc.fields.filter((f) => !f.gone).map((f) => ({ code: f.code, get result() { return new R(f.s, f.e); },
+          delete() { doc.text = doc.text.slice(0, f.s) + doc.text.slice(f.e); const by = f.e - f.s, at = f.s; f.gone = true; shift(at + 1, -by); } }));
+      }, load() { return this; } };
+      return fn({ document: { sections, getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs, fields, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
     },
   };
   window.Office = {
@@ -116,7 +123,7 @@ const FAKE_OFFICE = String.raw`
     AsyncResultStatus: { Succeeded: "succeeded" },
     onReady: (cb) => setTimeout(() => cb({ host: "Word" }), 0),
     context: {
-      requirements: { isSetSupported: () => false },
+      requirements: { isSetSupported: (name, version) => doc.api.includes(name + " " + version) },
       document: {
         settings: {
           get: (k) => doc.settings[k] ?? null,
@@ -152,6 +159,8 @@ try {
       text,
       sel: needle && at >= 0 ? [at, at + needle.length] : [0, 0],
       settings: options.settings ?? {},
+      fields: options.fields ?? [],
+      api: options.api ?? [],
     });
     await tab.goto(`${base}${options.page ?? "taskpane.html"}${query}`);
     await tab.waitForTimeout(600);
@@ -273,6 +282,18 @@ try {
   tab = await open("?view=saglik");
   await tab.waitForFunction(() => !document.getElementById("health-summary").textContent.startsWith("Denetleniyor"));
   check("Belge sağlığı reports the document's dates", (await tab.isVisible("#view-saglik")) && (await tab.textContent("#health-summary")).length > 0, await tab.textContent("#health-summary"));
+  await tab.close();
+  // A document from the VBA add-in: its ADDIN date field becomes a Vefeyât date.
+  {
+    const text = "Bu konuda Gazzâlî (ö. 505/1111) der ki.";
+    const at = text.indexOf(" (ö.");
+    tab = await open("?view=saglik", text, "", { fields: [{ code: " ADDIN Vefeyat.Date.D0123.P1 ", s: at, e: at + " (ö. 505/1111)".length }], api: ["WordApi 1.4"] });
+    await tab.waitForSelector("#legacy:not([hidden])");
+    await tab.click("#legacy-convert");
+    await tab.waitForFunction(() => window.__doc.fields.every((f) => f.gone));
+    const result = await tab.evaluate(() => ({ text: window.__doc.text, tags: window.__doc.controls.map((c) => c.tag + "=" + window.__doc.text.slice(c.range.s, c.range.e)) }));
+    check("VBA dates are converted to Vefeyât dates", result.text === text && result.tags.length === 1 && result.tags[0].endsWith("= (ö. 505/1111)") && result.tags[0].startsWith("vefeyat:date:"), JSON.stringify(result));
+  }
   await tab.close();
   // Toplu düzeltme inserts the first-mention date; history and health follow it.
   tab = await open("?view=toplu", "Gazzâlî der ki.\rSonra Gazzâlî yine der.");

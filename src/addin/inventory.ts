@@ -22,6 +22,7 @@ import {
   findUnknownPeople,
   isValidDate,
   nameQuery,
+  naturalOrder,
   normalize,
   personKey,
   singleSafe,
@@ -170,11 +171,37 @@ export function buildInventory(
       // In a heading every word is capitalised: a one-word match that the
       // document also writes in lower case is that word ("Hayatı ve Eserleri").
       if (title && !/\s/.test(nameQuery(hit.text).trim()) && lowerWords.has(words(nameQuery(hit.text)).trim())) continue;
-      const candidates = hit.key ? index.rank(hit.key, nameQuery(hit.text)) : [];
+      let candidates = hit.key ? index.rank(hit.key, nameQuery(hit.text)) : [];
       const after = segment.text.slice(hit.start + hit.length);
       let person: Person | null = null;
       let resolved: Draft["resolved"] = null;
-      if (singleSafe(candidates, hit.text) || (candidates.length === 1 && wordsContained(candidates[0] as Person, hit.text))) {
+      let start = hit.start;
+      let literal = hit.text;
+      // "F. er-Râzî": an initial before the name picks the bearer whose other name starts with it.
+      const initial = /(^|[\s(])(\p{Lu})\.\s?$/u.exec(segment.text.slice(Math.max(0, hit.start - 4), hit.start));
+      if (initial && candidates.length > 1) {
+        const letter = normalize(initial[2] as string);
+        const head = normalize(nameQuery(hit.text)).split(" ").filter((w) => !LINK_WORDS.has(w))[0] ?? "";
+        // The word the initial stands for comes right before the written name: "Fahreddin er-Râzî".
+        const fits = candidates.filter((c) =>
+          [c.shortName, naturalOrder(c.shortName), c.fullName].some((name) => {
+            // Words of a künye ("Ebü’l-Fazl") are not abbreviated to an initial.
+            const raw = normalize(name).split(" ").filter(Boolean);
+            const list = raw.filter((w, k) => !LINK_WORDS.has(w) && w !== "l" && !["ebu", "ebi", "ebul", "ummu", "l"].includes(raw[k - 1] ?? ""));
+            const at = list.indexOf(head);
+            return at > 0 && (list[at - 1] as string).startsWith(letter);
+          }),
+        );
+        if (fits.length === 1) {
+          const at = segment.text.lastIndexOf(initial[2] as string, hit.start);
+          start = at;
+          literal = segment.text.slice(at, hit.start + hit.length);
+          candidates = fits;
+          person = fits[0] as Person;
+          resolved = "catalog";
+        }
+      }
+      if (!person && (singleSafe(candidates, hit.text) || (candidates.length === 1 && wordsContained(candidates[0] as Person, hit.text)))) {
         person = candidates[0] as Person;
         resolved = "catalog";
       }
@@ -191,7 +218,7 @@ export function buildInventory(
           resolved = "date";
         }
       }
-      drafts.push({ segment: i, part: segment.part, start: hit.start, length: hit.length, text: hit.text, candidates, person, resolved, after });
+      drafts.push({ segment: i, part: segment.part, start, length: hit.start + hit.length - start, text: literal, candidates, person, resolved, after });
     }
   }
   // Document context: among a mention's candidates, the only one the document

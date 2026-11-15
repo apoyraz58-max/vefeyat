@@ -85,10 +85,11 @@ bu durumda penceredeki düğmeyi kullanın.
 - Sonnotlar, üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz
   (Diğer araçlar → Denetim kapsamını göster).
 - **VBA belgeleri:** VBA sürümünün eklediği tarihler Word alanıdır
-  (`ADDIN Vefeyat.Date`). Yeni sürüm bunları metin olarak görür; Belge sağlığı,
-  Tarihin kaynağı ve Teslim öncesi temizle bunları tanımaz. VBA ile başlanmış
-  bir belgeyi teslimden önce VBA'daki Teslim öncesi temizle ile bir kez
-  temizleyin ya da VBA eklentisini o belge bitene kadar tutun.
+  (`ADDIN Vefeyat.Date`). Belge sağlığı bunları sayar ve **VBA tarihlerini
+  dönüştür** ile aynı metni taşıyan Vefeyât tarihlerine çevirir; kişi, tarihin
+  önündeki addan (eş adlılarda tarihten) bulunur, önündeki ad bulunamayan
+  alana dokunulmaz. VBA'nın belge değişkenleri Office.js'ten silinemez;
+  görünmezdirler ve teslim kopyasına zarar vermezler.
 - Şahıs raporu yeni belge açar; Word Online'da açılır pencere engelleyicisi
   buna izin vermeyebilir.
 

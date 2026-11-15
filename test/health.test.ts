@@ -39,3 +39,22 @@ describe("checkControls", () => {
     expect(repairText(rows[0]!, " (v. 505/1111)")).toBe(" (ö. 505/1111)");
   });
 });
+
+describe("VBA dates", async () => {
+  const { isLegacyDateField, legacyPerson } = await import("../src/addin/health.js");
+  const { NameIndex } = await import("../src/core/index.js");
+  const ebuBekir: Person = { shortName: "Ebû Bekir er-Râzî", fullName: "", originalName: "", deathDate: "(ö. 313/925)", description: "", source: "x/razi-ebu-bekir" };
+  const fahreddin: Person = { shortName: "Fahreddin er-Râzî", fullName: "", originalName: "", deathDate: "(ö. 606/1210)", description: "", source: "x/fahreddin" };
+  const index = new NameIndex([gazzali, ebuBekir, fahreddin]);
+  it("field codes", () => {
+    expect(isLegacyDateField(" ADDIN Vefeyat.Date.D0123456789ABCDEF.P1 ")).toBe(true);
+    expect(isLegacyDateField(" ADDIN ZOTERO_ITEM CSL_CITATION ")).toBe(false);
+    expect(isLegacyDateField(" ADDIN Vefeyat.Date.D01.P1 extra ")).toBe(false);
+  });
+  it("the name right before the date, homonyms by the date", () => {
+    expect(legacyPerson("Bu konuda Gazzâlî", " (ö. 505/1111)", index)).toMatchObject({ person: gazzali, literal: "Gazzâlî", start: 10 });
+    expect(legacyPerson("Sonra Râzî", " (ö. 313/925)", index)?.person).toBe(ebuBekir);
+    expect(legacyPerson("Sonra Râzî", " (ö. 1/1)", index)?.person).toBeNull();
+    expect(legacyPerson("Gazzâlî bunu söyler ve", " (ö. 505/1111)", index)).toBeNull();
+  });
+});
