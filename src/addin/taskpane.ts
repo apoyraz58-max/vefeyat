@@ -35,7 +35,7 @@ import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, ad
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
 import { HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -330,7 +330,7 @@ async function run(task: () => Promise<void>): Promise<void> {
   try {
     await task();
   } catch (error) {
-    const office = error as { code?: string; debugInfo?: { errorLocation?: string; statement?: string } };
+    const office = ((error as { cause?: unknown }).cause ?? error) as { code?: string; debugInfo?: { errorLocation?: string; statement?: string } };
     const detail = [office.code, office.debugInfo?.errorLocation].filter(Boolean).join(" · ");
     console.error(error);
     setMessage(`Word işlemi tamamlanamadı: ${String(error)}${detail ? ` (${detail})` : ""} [Vefeyât ${__VERSION__}]`, "error");
@@ -607,7 +607,10 @@ async function createIndex(): Promise<void> {
     setMessage("Katalog yüklenmedi.", "warning");
     return;
   }
-  const read = await readSegments();
+  setMessage("Belge okunuyor…", "info");
+  const read = await readSegments().catch((error: unknown) => {
+    throw new StepError("Belge okunamadı", error);
+  });
   state.index ??= new NameIndex(state.catalog.people);
   const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings()));
   if (rows.length === 0) {

@@ -2,6 +2,7 @@
  * Thin Word layer (Office.js, WordApi 1.3). Every decision is made in
  * logic.ts; these functions only read or write the document.
  */
+import type { Person } from "../core/index.js";
 import type { InventoryRow, Segment } from "./inventory.js";
 import { parseSpellings } from "./prefs.js";
 import { DATE_TAG_PREFIX, type DateControl } from "./health.js";
@@ -475,26 +476,43 @@ export async function removeIndex(): Promise<{ marks: number; index: boolean }> 
   });
 }
 
-/**
- * Şahıslar dizini: replaces Vefeyât's index marks with one XE field before
- * every certain mention and puts the INDEX field at the end of the document
- * (or where the previous index stood). Returns the number of marks.
- */
-export async function buildIndex(segments: readonly Segment[], rows: readonly InventoryRow[], progress: Progress = () => {}): Promise<{ marks: number; missing: number }> {
-  return Word.run(async (context) => {
-    // Where the old index was, so the new one goes back there.
+/** Error of one step of a long operation, named for the message. */
+export class StepError extends Error {
+  constructor(
+    readonly step: string,
+    readonly cause: unknown,
+  ) {
+    super(`${step}: ${String(cause)}`);
+  }
+}
+
+const PLACE_TAG = "vefeyat:index-place";
+
+/** Step 1: removes the old index and its marks; leaves a placeholder where it stood. */
+async function clearOldIndex(): Promise<void> {
+  await Word.run(async (context) => {
     const blocks = context.document.body.contentControls.getByTag(INDEX_TAG);
     blocks.load("items");
-    const oldIndex = context.document.body.fields;
-    oldIndex.load("items/code");
+    const fields = context.document.body.fields;
+    fields.load("items/code");
     await context.sync();
-    const previous = blocks.items[0] ?? oldIndex.items.find((f) => /^\s*INDEX\b/i.test(f.code) && isVefeyatIndexField(f.code));
-    const where = previous ? ("result" in previous ? previous.result : previous.getRange("Whole")) : null;
-    const anchor = where ? where.paragraphs.getFirst().insertParagraph("", "Before") : null;
+    const previous = blocks.items[0] ?? fields.items.find((f) => /^\s*INDEX\b/i.test(f.code) && isVefeyatIndexField(f.code));
+    if (previous) {
+      const where = "result" in previous ? previous.result : previous.getRange("Whole");
+      const place = where.paragraphs.getFirst().insertParagraph("", "Before").insertContentControl();
+      place.tag = PLACE_TAG;
+      place.appearance = "Hidden";
+    }
+    await context.sync();
     await deleteIndexBlock(context);
     const removed = await deleteIndexFields(context);
     if (removed.indexes > 0 && blocks.items.length === 0) await deleteOldHeadings(context);
+  });
+}
 
+/** Step 2: an XE mark before every certain mention, in chunks; a failing chunk is retried one by one. */
+async function insertMarks(segments: readonly Segment[], rows: readonly InventoryRow[], progress: Progress): Promise<number> {
+  return Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
     paragraphs.load("items");
     await context.sync();
@@ -510,53 +528,114 @@ export async function buildIndex(segments: readonly Segment[], rows: readonly In
       }
       await context.sync();
     }
-    // From the end of the document backwards: a mark inserted before a name
-    // never shifts the mentions still to be found before it.
+    const find = (row: InventoryRow) => {
+      const segment = segments[row.segment];
+      if (!segment || row.text.length > 250 || !row.person) return null;
+      const host = paragraphs.items[segment.anchor];
+      if (!host) return null;
+      const scope: Word.Body | Word.Range | undefined =
+        segment.part === "note" ? noteLists.get(segment.anchor)?.items[segment.order - 1]?.body : host.getRange("Whole");
+      if (!scope) return null;
+      const results = scope.search(searchText(row.text), { matchCase: true, matchWholeWord: false });
+      results.load("items");
+      return { row, results, nth: occurrenceBefore(segment.text, row.text, row.start) };
+    };
+    // From the end backwards: a mark never shifts the mentions still to be found before it.
     const ordered = [...rows].reverse();
     let marks = 0;
     for (let from = 0; from < ordered.length; from += CHUNK) {
-      const searches: Array<{ row: InventoryRow; results: Word.RangeCollection; nth: number }> = [];
-      for (const row of ordered.slice(from, from + CHUNK)) {
-        const segment = segments[row.segment];
-        if (!segment || row.text.length > 250) continue;
-        const host = paragraphs.items[segment.anchor];
-        if (!host) continue;
-        const scope: Word.Body | Word.Range | undefined =
-          segment.part === "note" ? noteLists.get(segment.anchor)?.items[segment.order - 1]?.body : host.getRange("Whole");
-        if (!scope) continue;
-        const results = scope.search(searchText(row.text), { matchCase: true, matchWholeWord: false });
-        results.load("items");
-        searches.push({ row, results, nth: occurrenceBefore(segment.text, row.text, row.start) });
-      }
+      const chunk = ordered.slice(from, from + CHUNK);
+      const searches = chunk.map(find).filter((x) => x !== null);
       await context.sync();
-      for (const { row, results, nth } of searches) {
-        const target = results.items[nth];
-        if (!target || !row.person) continue;
-        target.insertField("Before", "XE", xeCode(row.person));
-        marks++;
+      const targets = searches.map(({ row, results, nth }) => ({ row, target: results.items[nth] })).filter((t) => t.target);
+      try {
+        for (const { row, target } of targets) (target as Word.Range).insertField("Before", "XE", xeCode(row.person as Person));
+        await context.sync();
+        marks += targets.length;
+      } catch {
+        // One mark Word refuses (e.g. inside a field or a protected area) must not stop the rest.
+        for (const { row, target } of targets) {
+          try {
+            (target as Word.Range).insertField("Before", "XE", xeCode(row.person as Person));
+            await context.sync();
+            marks++;
+          } catch {
+            /* skipped; counted as missing */
+          }
+        }
       }
-      await context.sync();
       progress(Math.min(from + CHUNK, ordered.length), ordered.length);
     }
-
-    // The block: heading and INDEX field in one tagged control.
-    let first: Word.Paragraph;
-    first = anchor ?? context.document.body.insertParagraph("", "End");
-    first.insertText(INDEX_HEADING, "Replace");
-    first.styleBuiltIn = "Heading1";
-    const holder = first.insertParagraph("", "After");
-    holder.styleBuiltIn = "Normal";
-    const control = first.getRange("Whole").expandTo(holder.getRange("Whole")).insertContentControl();
-    control.tag = INDEX_TAG;
-    control.title = "Vefeyât: şahıslar dizini";
-    control.appearance = "BoundingBox";
-    control.insertBreak("Page", "Start"); // inside the block: removing it leaves no blank page
-    const index = holder.getRange("Start").insertField("Start", "Index", INDEX_CODE);
-    await context.sync();
-    index.updateResult();
-    await context.sync();
-    return { marks, missing: rows.length - marks };
+    return marks;
   });
+}
+
+/**
+ * Step 3: heading and INDEX field. Tries the tagged block with its page
+ * break inside; if Word refuses, without the inner page break; last, plain
+ * paragraphs without a block.
+ */
+async function insertIndexBlock(): Promise<void> {
+  const attempt = (mode: "block" | "block-outer-break" | "plain") =>
+    Word.run(async (context) => {
+      const places = context.document.body.contentControls.getByTag(PLACE_TAG);
+      places.load("items");
+      await context.sync();
+      const place = places.items[0];
+      const body = context.document.body;
+      if (!place && mode !== "block") body.insertBreak("Page", "End");
+      const first = place ? place.getRange("Whole").paragraphs.getFirst() : body.insertParagraph("", "End");
+      if (place) place.delete(true);
+      first.insertText(INDEX_HEADING, "Replace");
+      first.styleBuiltIn = "Heading1";
+      const holder = first.insertParagraph("", "After");
+      holder.styleBuiltIn = "Normal";
+      if (mode !== "plain") {
+        const control = first.getRange("Whole").expandTo(holder.getRange("Whole")).insertContentControl();
+        control.tag = INDEX_TAG;
+        control.title = "Vefeyât: şahıslar dizini";
+        control.appearance = "BoundingBox";
+        if (mode === "block") control.insertBreak("Page", "Start");
+      }
+      const index = holder.getRange("Start").insertField("Start", "Index", INDEX_CODE);
+      await context.sync();
+      index.updateResult();
+      await context.sync();
+    });
+  try {
+    await attempt("block");
+  } catch {
+    try {
+      await attempt("block-outer-break");
+    } catch {
+      await attempt("plain");
+    }
+  }
+}
+
+/**
+ * Şahıslar dizini: replaces Vefeyât's index marks with one XE field before
+ * every certain mention and puts the index at the end of the document (or
+ * where the previous index stood). Each step reports its own failure.
+ */
+export async function buildIndex(segments: readonly Segment[], rows: readonly InventoryRow[], progress: Progress = () => {}): Promise<{ marks: number; missing: number }> {
+  try {
+    await clearOldIndex();
+  } catch (error) {
+    throw new StepError("Eski dizin kaldırılamadı", error);
+  }
+  let marks: number;
+  try {
+    marks = await insertMarks(segments, rows, progress);
+  } catch (error) {
+    throw new StepError("Dizin işaretleri eklenemedi", error);
+  }
+  try {
+    await insertIndexBlock();
+  } catch (error) {
+    throw new StepError(`${marks} dizin işareti eklendi, ama dizin sayfası oluşturulamadı`, error);
+  }
+  return { marks, missing: rows.length - marks };
 }
 
 // ---- Belge sağlığı ve Tarihin kaynağı ----
