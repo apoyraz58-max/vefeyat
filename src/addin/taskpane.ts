@@ -323,19 +323,66 @@ async function refresh(force = false): Promise<void> {
   }
 }
 
-async function run(task: () => Promise<void>): Promise<void> {
-  if (state.busy) return;
+let busyLabel = "";
+let busyStarted = 0;
+let busyTimer = 0;
+let cancelRequested = false;
+
+/** Thrown from a progress callback when the user pressed İptal. */
+class Cancelled extends Error {}
+
+/** Progress callback for long Word operations: updates the bar, honours İptal. */
+function progress(label: string): (done: number, total: number) => void {
+  return (done, total) => {
+    if (cancelRequested) throw new Cancelled();
+    $("busy-text").textContent = `${label}… ${done.toLocaleString("tr-TR")} / ${total.toLocaleString("tr-TR")}`;
+  };
+}
+
+function showBusy(label: string): void {
+  busyLabel = label;
+  busyStarted = Date.now();
+  cancelRequested = false;
+  $("busy").hidden = false;
+  $("busy-text").textContent = `${label}…`;
+  $("busy-time").textContent = "";
+  window.clearInterval(busyTimer);
+  busyTimer = window.setInterval(() => {
+    const seconds = Math.round((Date.now() - busyStarted) / 1000);
+    $("busy-time").textContent = seconds >= 60 ? `${Math.floor(seconds / 60)} dk ${seconds % 60} sn` : `${seconds} sn`;
+  }, 1000);
+}
+
+function hideBusy(): void {
+  window.clearInterval(busyTimer);
+  $("busy").hidden = true;
+}
+
+async function run(task: () => Promise<void>, label = ""): Promise<void> {
+  if (state.busy) {
+    // Never ignore a click silently: say what is still running.
+    setMessage(`${busyLabel || "Önceki işlem"} sürüyor. Bitmesini bekleyin ya da İptal'e basın.`, "warning");
+    $("busy").hidden = !busyLabel;
+    return;
+  }
   state.busy = true;
+  if (label) showBusy(label);
   renderDetails();
   try {
     await task();
   } catch (error) {
+    if (error instanceof Cancelled || (error as { cause?: unknown }).cause instanceof Cancelled) {
+      setMessage("İptal edildi. Yarım kalan işin izlerini ilgili komutla temizleyebilirsiniz (ör. Dizini tamamen kaldır).", "warning");
+      return;
+    }
     const office = ((error as { cause?: unknown }).cause ?? error) as { code?: string; debugInfo?: { errorLocation?: string; statement?: string } };
     const detail = [office.code, office.debugInfo?.errorLocation].filter(Boolean).join(" · ");
     console.error(error);
     setMessage(`Word işlemi tamamlanamadı: ${String(error)}${detail ? ` (${detail})` : ""} [Vefeyât ${__VERSION__}]`, "error");
   } finally {
     state.busy = false;
+    busyLabel = "";
+    hideBusy();
     renderDetails();
   }
 }
@@ -607,8 +654,7 @@ async function createIndex(): Promise<void> {
     setMessage("Katalog yüklenmedi.", "warning");
     return;
   }
-  setMessage("Belge okunuyor…", "info");
-  const read = await readSegments().catch((error: unknown) => {
+  const read = await readSegments(progress("Belge okunuyor (dipnotlar)")).catch((error: unknown) => {
     throw new StepError("Belge okunamadı", error);
   });
   state.index ??= new NameIndex(state.catalog.people);
@@ -618,8 +664,8 @@ async function createIndex(): Promise<void> {
     return;
   }
   const people = new Set(rows.map((r) => r.person?.source)).size;
-  setMessage(`Dizin işaretleri ekleniyor… 0 / ${rows.length}`, "info");
-  const result = await buildIndex(read.segments, rows, (done, total) => setMessage(`Dizin işaretleri ekleniyor… ${done} / ${total}`, "info"));
+  setMessage("", "info");
+  const result = await buildIndex(read.segments, rows, progress("Dizin işaretleri ekleniyor"));
   logHistory("index", `${people} şahıs, ${result.marks} işaret`);
   setMessage(
     `Şahıslar dizini hazır: ${people} şahıs, ${result.marks} işaret.` + (result.missing ? ` ${result.missing} geçiş metinde bulunamadı.` : "") + " Dizin işaretleri gizli metindir; ¶ düğmesiyle görünür.",
@@ -1145,9 +1191,9 @@ async function launch(request: Launch): Promise<void> {
   showView(request.view);
   if (request.tool) document.getElementById(`tool-${request.tool === "dizinkaldir" || request.tool === "dizinsil" ? "dizin" : request.tool}`)?.classList.add("focus");
   if (request.view === "ara") $<HTMLInputElement>("search-query").focus();
-  if (request.view === "dokum") await run(prepareInventory);
-  if (request.view === "saglik") await run(checkHealth);
-  if (request.view === "toplu") await run(prepareBulk);
+  if (request.view === "dokum") await run(prepareInventory, "Şahıs dökümü hazırlanıyor");
+  if (request.view === "saglik") await run(checkHealth, "Tarihler denetleniyor");
+  if (request.view === "toplu") await run(prepareBulk, "Öneriler hazırlanıyor");
   if (request.view === "gecmis") renderHistory();
   if (request.view === "kimlik") renderIdentities();
   if (request.view === "tercihler") renderSpellings();
@@ -1156,14 +1202,14 @@ async function launch(request: Launch): Promise<void> {
   if (request.action === "shading") await run(toggleFrames);
   if (request.view === "istisna") renderExclusions();
   if (request.view === "kapsam") await run(showCoverage);
-  if (request.action === "resume") await run(resumeAudit);
+  if (request.action === "resume") await run(resumeAudit, "Belge taranıyor");
   if (request.view === "kaynak") await run(showSource);
-  if (request.tool === "tutarlilik") await run(showConsistency);
-  if (request.tool === "rapor") await run(createPersonReport);
-  if (request.tool === "dizin") await run(createIndex);
-  if (request.tool === "dizinkaldir") await run(deleteIndexMarks);
-  if (request.tool === "dizinsil") await run(deleteIndex);
-  if (request.action === "audit") await run(startAudit);
+  if (request.tool === "tutarlilik") await run(showConsistency, "Tutarlılık raporu");
+  if (request.tool === "rapor") await run(createPersonReport, "Şahıs raporu hazırlanıyor");
+  if (request.tool === "dizin") await run(createIndex, "Şahıslar dizini oluşturuluyor");
+  if (request.tool === "dizinkaldir") await run(deleteIndexMarks, "Dizin işaretleri kaldırılıyor");
+  if (request.tool === "dizinsil") await run(deleteIndex, "Dizin kaldırılıyor");
+  if (request.action === "audit") await run(startAudit, "Belge taranıyor");
   if (request.action === "dia") {
     const person = state.chosen;
     if (person && person.source.startsWith("https://islamansiklopedisi.org.tr/")) {
@@ -1189,8 +1235,8 @@ function initialise(): void {
   $("choose-catalog").addEventListener("click", () => file.click());
   $("choose-catalog-inline").addEventListener("click", () => file.click());
   $("reset-catalog").addEventListener("click", () => void resetCatalog());
-  $("run-tutarlilik").addEventListener("click", () => void run(showConsistency));
-  $("run-rapor").addEventListener("click", () => void run(createPersonReport));
+  $("run-tutarlilik").addEventListener("click", () => void run(showConsistency, "Tutarlılık raporu"));
+  $("run-rapor").addEventListener("click", () => void run(createPersonReport, "Şahıs raporu hazırlanıyor"));
   $("spellings-clear").addEventListener("click", () => void run(clearSpellings));
   $("prefs-download").addEventListener("click", downloadPrefs);
   $("prefs-copy").addEventListener("click", () => void copyPrefs());
@@ -1213,8 +1259,8 @@ function initialise(): void {
       renderIdentities();
     }),
   );
-  $("bulk-refresh").addEventListener("click", () => void run(prepareBulk));
-  $("bulk-apply").addEventListener("click", () => void run(applyBulk));
+  $("bulk-refresh").addEventListener("click", () => void run(prepareBulk, "Öneriler hazırlanıyor"));
+  $("bulk-apply").addEventListener("click", () => void run(applyBulk, "Öneriler uygulanıyor"));
   $("history-clear").addEventListener("click", () => {
     history = [];
     try {
@@ -1224,13 +1270,17 @@ function initialise(): void {
     }
     renderHistory();
   });
-  $("health-refresh").addEventListener("click", () => void run(checkHealth));
+  $("health-refresh").addEventListener("click", () => void run(checkHealth, "Tarihler denetleniyor"));
   $("health-repair").addEventListener("click", () => void run(repairHealth));
   $("source-repair").addEventListener("click", () => void run(repairSource));
-  $("run-dizin").addEventListener("click", () => void run(createIndex));
-  $("run-dizinkaldir").addEventListener("click", () => void run(deleteIndexMarks));
-  $("run-dizinsil").addEventListener("click", () => void run(deleteIndex));
-  $("run-temizlik").addEventListener("click", () => void run(cleanup));
+  $("busy-cancel").addEventListener("click", () => {
+    cancelRequested = true;
+    $("busy-text").textContent = "İptal ediliyor (Word'ün elindeki parça bitince durur)…";
+  });
+  $("run-dizin").addEventListener("click", () => void run(createIndex, "Şahıslar dizini oluşturuluyor"));
+  $("run-dizinkaldir").addEventListener("click", () => void run(deleteIndexMarks, "Dizin işaretleri kaldırılıyor"));
+  $("run-dizinsil").addEventListener("click", () => void run(deleteIndex, "Dizin kaldırılıyor"));
+  $("run-temizlik").addEventListener("click", () => void run(cleanup, "Teslim temizliği"));
   file.addEventListener("change", () => {
     const chosen = file.files?.[0];
     if (chosen) void chooseCatalog(chosen);
@@ -1259,7 +1309,7 @@ function initialise(): void {
       else void refresh();
     }, 250);
   });
-  $("inventory-refresh").addEventListener("click", () => void run(prepareInventory));
+  $("inventory-refresh").addEventListener("click", () => void run(prepareInventory, "Şahıs dökümü hazırlanıyor"));
   $("inventory-act").addEventListener("click", () => void actOnRow());
   $("inventory-prev").addEventListener("click", () => {
     if (state.page > 0) state.page--;

@@ -236,7 +236,7 @@ const CHUNK = 200;
 
 export type Progress = (done: number, total: number) => void;
 
-export async function readSegments(): Promise<{ segments: Segment[]; footnotes: boolean }> {
+export async function readSegments(progress: Progress = () => {}): Promise<{ segments: Segment[]; footnotes: boolean }> {
   return Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
     paragraphs.load("items/text");
@@ -255,6 +255,7 @@ export async function readSegments(): Promise<{ segments: Segment[]; footnotes: 
         notes.forEach((collection, k) => {
           collection.items.forEach((note, i) => segments.push({ part: "note", anchor: from + k, order: i + 1, text: note.body.text }));
         });
+        progress(Math.min(from + CHUNK, paragraphs.items.length), paragraphs.items.length);
       }
     }
     return { segments, footnotes };
@@ -528,6 +529,8 @@ async function insertMarks(segments: readonly Segment[], rows: readonly Inventor
       }
       await context.sync();
     }
+    // One search per paragraph and spelling serves all its mentions.
+    const cache = new Map<string, Word.RangeCollection>();
     const find = (row: InventoryRow) => {
       const segment = segments[row.segment];
       if (!segment || row.text.length > 250 || !row.person) return null;
@@ -536,15 +539,27 @@ async function insertMarks(segments: readonly Segment[], rows: readonly Inventor
       const scope: Word.Body | Word.Range | undefined =
         segment.part === "note" ? noteLists.get(segment.anchor)?.items[segment.order - 1]?.body : host.getRange("Whole");
       if (!scope) return null;
-      const results = scope.search(searchText(row.text), { matchCase: true, matchWholeWord: false });
-      results.load("items");
+      const key = `${row.segment}|${row.text}`;
+      let results = cache.get(key);
+      if (!results) {
+        results = scope.search(searchText(row.text), { matchCase: true, matchWholeWord: false });
+        results.load("items");
+        cache.set(key, results);
+      }
       return { row, results, nth: occurrenceBefore(segment.text, row.text, row.start) };
     };
     // From the end backwards: a mark never shifts the mentions still to be found before it.
     const ordered = [...rows].reverse();
+    // Chunks never split a paragraph: all its mentions are found before any mark goes in.
+    const chunks: InventoryRow[][] = [];
+    for (const row of ordered) {
+      const last = chunks[chunks.length - 1];
+      if (last && (last.length < CHUNK || (last[last.length - 1] as InventoryRow).segment === row.segment)) last.push(row);
+      else chunks.push([row]);
+    }
     let marks = 0;
-    for (let from = 0; from < ordered.length; from += CHUNK) {
-      const chunk = ordered.slice(from, from + CHUNK);
+    let done = 0;
+    for (const chunk of chunks) {
       const searches = chunk.map(find).filter((x) => x !== null);
       await context.sync();
       const targets = searches.map(({ row, results, nth }) => ({ row, target: results.items[nth] })).filter((t) => t.target);
@@ -564,7 +579,9 @@ async function insertMarks(segments: readonly Segment[], rows: readonly Inventor
           }
         }
       }
-      progress(Math.min(from + CHUNK, ordered.length), ordered.length);
+      cache.clear(); // ranges of this chunk are done with
+      done += chunk.length;
+      progress(done, ordered.length);
     }
     return marks;
   });

@@ -148,3 +148,4 @@ input[type="search"] {
 .report{margin-top:6px;font-size:12px}.report p{margin:2px 0;white-space:pre-wrap}.report .warning{color:#a4262c}.tools button{margin-top:4px;display:block}
 #health-list input,#bulk-list input{margin-right:6px}
 #prefs-text{width:100%;box-sizing:border-box;font:12px monospace}
+.busy{display:flex;gap:8px;align-items:center;padding:6px 8px;margin:4px 0;background:#f3f2f1;border-radius:4px;font-size:12px}.busy button{margin-left:auto}
