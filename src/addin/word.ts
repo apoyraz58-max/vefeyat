@@ -2,7 +2,8 @@
  * Thin Word layer (Office.js, WordApi 1.3). Every decision is made in
  * logic.ts; these functions only read or write the document.
  */
-import type { Segment } from "./inventory.js";
+import type { InventoryRow, Segment } from "./inventory.js";
+import { INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
 import { type SettingName, type Settings, parseConfirmations, settingValue } from "./logic.js";
 
 export interface SelectionText {
@@ -291,4 +292,105 @@ export async function finalizeDocument(): Promise<{ controls: number; settings: 
     settings.saveAsync((result) => (result.status === Office.AsyncResultStatus.Succeeded ? resolve() : reject(new Error(result.error.message))));
   });
   return { controls, settings: removed };
+}
+
+// ---- Şahıslar dizini (WordApi 1.5: insertField) ----
+
+export function canIndex(): boolean {
+  return Office.context.requirements.isSetSupported("WordApi", "1.5");
+}
+
+/** Deletes Vefeyât's XE and INDEX fields from body and footnotes. */
+async function deleteIndexFields(context: Word.RequestContext): Promise<number> {
+  const notes = context.document.body.footnotes;
+  notes.load("items");
+  await context.sync();
+  const lists = [context.document.body.fields, ...notes.items.map((n) => n.body.fields)];
+  for (const list of lists) list.load("items/code");
+  await context.sync();
+  let count = 0;
+  for (const list of lists) {
+    for (const field of list.items) {
+      if (!isVefeyatIndexField(field.code)) continue;
+      field.delete();
+      count++;
+    }
+  }
+  await context.sync();
+  return count;
+}
+
+export async function removeIndex(): Promise<number> {
+  return Word.run(deleteIndexFields);
+}
+
+/**
+ * Şahıslar dizini: replaces Vefeyât's index marks with one XE field before
+ * every certain mention and puts the INDEX field at the end of the document
+ * (or where the previous index stood). Returns the number of marks.
+ */
+export async function buildIndex(segments: readonly Segment[], rows: readonly InventoryRow[]): Promise<{ marks: number; missing: number }> {
+  return Word.run(async (context) => {
+    // Where the old index was, so the new one goes back there.
+    const oldIndex = context.document.body.fields;
+    oldIndex.load("items/code");
+    await context.sync();
+    const previous = oldIndex.items.find((f) => /^\s*INDEX\b/i.test(f.code) && isVefeyatIndexField(f.code));
+    const anchor = previous ? previous.result.paragraphs.getFirst().insertParagraph("", "Before") : null;
+    await deleteIndexFields(context);
+
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("items");
+    await context.sync();
+    const noteLists = new Map<number, Word.NoteItemCollection>();
+    for (const row of rows) {
+      const segment = segments[row.segment];
+      if (segment?.part === "note" && !noteLists.has(segment.anchor)) {
+        const host = paragraphs.items[segment.anchor];
+        if (!host) continue;
+        const list = host.getRange("Whole").footnotes;
+        list.load("items");
+        noteLists.set(segment.anchor, list);
+      }
+    }
+    await context.sync();
+    const searches: Array<{ row: InventoryRow; results: Word.RangeCollection; nth: number }> = [];
+    for (const row of rows) {
+      const segment = segments[row.segment];
+      if (!segment || row.text.length > 250) continue;
+      const host = paragraphs.items[segment.anchor];
+      if (!host) continue;
+      const scope: Word.Body | Word.Range | undefined =
+        segment.part === "note" ? noteLists.get(segment.anchor)?.items[segment.order - 1]?.body : host.getRange("Whole");
+      if (!scope) continue;
+      const results = scope.search(searchText(row.text), { matchCase: true, matchWholeWord: false });
+      results.load("items");
+      searches.push({ row, results, nth: occurrenceBefore(segment.text, row.text, row.start) });
+    }
+    await context.sync();
+    let marks = 0;
+    for (const { row, results, nth } of searches) {
+      const target = results.items[nth];
+      if (!target || !row.person) continue;
+      target.insertField("Before", "XE", xeCode(row.person));
+      marks++;
+    }
+    await context.sync();
+
+    let place: Word.Range;
+    if (anchor) {
+      place = anchor.getRange("Start");
+    } else {
+      const body = context.document.body;
+      body.insertBreak("Page", "End");
+      const heading = body.insertParagraph("Şahıslar Dizini", "End");
+      heading.styleBuiltIn = "Heading1";
+      place = body.insertParagraph("", "End").getRange("Start");
+    }
+    const index = place.insertField("Start", "Index", INDEX_CODE);
+    await context.sync();
+    index.updateResult();
+    await context.sync();
+    return { marks, missing: rows.length - marks };
+  });
 }

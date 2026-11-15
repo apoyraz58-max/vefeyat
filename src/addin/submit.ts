@@ -220,3 +220,31 @@ export function personReportDocx(documentName: string, rows: readonly InventoryR
     },
   ]);
 }
+
+// ---- Şahıslar dizini ----
+
+/** Index identifier: Vefeyât's XE/INDEX fields carry `\f "v"`. */
+export const INDEX_ID = "v";
+
+/** Index entry text of a person: DİA short name, quotes and colons made safe. */
+export function indexEntry(person: Person): string {
+  return textName(person.shortName).replace(/"/g, "'").replace(/:/g, "\\:");
+}
+
+/** Text after `XE` in the field code. */
+export function xeCode(person: Person): string {
+  return `"${indexEntry(person)}" \\f "${INDEX_ID}"`;
+}
+
+/** Text after `INDEX` in the field code (Turkish sort, letter headings). */
+export const INDEX_CODE = `\\f "${INDEX_ID}" \\h "A" \\c "2" \\z "1055"`;
+
+/** Whether a field code belongs to Vefeyât's index (XE or INDEX with `\f "v"`). */
+export function isVefeyatIndexField(code: string): boolean {
+  return /^\s*(XE|INDEX)\b/i.test(code) && /\\f\s+"?v"?(\s|$)/i.test(code);
+}
+
+/** Mentions that get an XE field: every certain or confirmed mention. */
+export function indexRows(rows: readonly InventoryRow[]): InventoryRow[] {
+  return rows.filter((r) => r.person !== null);
+}

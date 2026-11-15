@@ -125,7 +125,7 @@ export function candidateLabel(person: Person): string {
 }
 
 export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "yakinda";
-export type Tool = "tutarlilik" | "rapor" | "dizin" | "temizlik";
+export type Tool = "tutarlilik" | "rapor" | "dizin" | "dizinkaldir" | "temizlik";
 
 export interface Launch {
   readonly view: View;
@@ -148,7 +148,6 @@ export const SOON: Readonly<Record<string, readonly [string, string]>> = {
   coverage: ["Denetim kapsamını göster", "Taranan ve taranmayan belge bölümlerini raporlar."],
   identity: ["Kimlik eşleşmelerini düzelt", "Belirsiz adlar için verdiğiniz kimlik onaylarını yönetir."],
   exclusions: ["Belge istisnaları", "\"Şahıs değil\" olarak işaretlediğiniz ifadeleri yönetir."],
-  indexRemove: ["Dizin işaretlerini kaldır", "Yalnız Vefeyât dizin işaretlerini ve dizinini siler."],
   preferSpelling: ["Seçili yazımı tercih et", "Seçili yazımı bu şahıs için belgeye özgü tercih olarak kaydeder."],
   clearSpelling: ["Yazım tercihlerini temizle", "Belgeye özgü yazım tercihlerini siler."],
   exportPrefs: ["Tercihleri dışa aktar", "Ad biçimi ve yazım tercihlerini bir dosyaya kaydeder."],
@@ -169,7 +168,7 @@ export function parseLaunch(search: string): Launch {
   if (action === "insert" || action === "spelling" || action === "dia") return { view: "secili", action, tool: null };
   const soon = query.get("soon");
   if (soon && soon in SOON) return { view: "yakinda", action: null, tool: null, soon };
-  if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "temizlik") {
+  if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "dizinkaldir" || tool === "temizlik") {
     return { view: "teslim", action: null, tool };
   }
   if (view === "denetim") return { view: "secili", action: "audit", tool: null };

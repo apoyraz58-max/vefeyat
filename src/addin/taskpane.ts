@@ -29,8 +29,8 @@ import {
 } from "./logic.js";
 import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
-import { consistencyReport, personReportDocx, toBase64 } from "./submit.js";
-import { documentName, finalizeDocument, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
+import { buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -563,6 +563,39 @@ async function createPersonReport(): Promise<void> {
   setMessage("Şahıs raporu yeni bir Word belgesi olarak açıldı.", "success");
 }
 
+async function createIndex(): Promise<void> {
+  if (!canIndex()) {
+    setMessage("Bu Word sürümü alan eklemeyi desteklemiyor (WordApi 1.5 gerekir). Microsoft 365 Word'ü güncelleyin.", "warning");
+    return;
+  }
+  if (!state.catalog) {
+    setMessage("Katalog yüklenmedi.", "warning");
+    return;
+  }
+  const read = await readSegments();
+  state.index ??= new NameIndex(state.catalog.people);
+  const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations()));
+  if (rows.length === 0) {
+    setMessage("Dizine girecek kimliği kesin geçiş yok. Belirsiz adları Şahıs dökümünde onaylayın.", "info");
+    return;
+  }
+  const people = new Set(rows.map((r) => r.person?.source)).size;
+  const result = await buildIndex(read.segments, rows);
+  setMessage(
+    `Şahıslar dizini hazır: ${people} şahıs, ${result.marks} işaret.` + (result.missing ? ` ${result.missing} geçiş metinde bulunamadı.` : "") + " Dizin işaretleri gizli metindir; ¶ düğmesiyle görünür.",
+    result.missing ? "warning" : "success",
+  );
+}
+
+async function deleteIndex(): Promise<void> {
+  if (!canIndex()) {
+    setMessage("Bu Word sürümü alanları düzenlemeyi desteklemiyor (WordApi 1.5 gerekir).", "warning");
+    return;
+  }
+  const count = await removeIndex();
+  setMessage(count ? `${count} Vefeyât dizin alanı kaldırıldı.` : "Belgede Vefeyât dizini yok.", "success");
+}
+
 let cleanupArmed = false;
 async function cleanup(): Promise<void> {
   const button = $<HTMLButtonElement>("run-temizlik");
@@ -581,11 +614,13 @@ async function cleanup(): Promise<void> {
 /** Carries out what the ribbon or context-menu button asked for. */
 async function launch(request: Launch): Promise<void> {
   showView(request.view);
-  if (request.tool) document.getElementById(`tool-${request.tool}`)?.classList.add("focus");
+  if (request.tool) document.getElementById(`tool-${request.tool === "dizinkaldir" ? "dizin" : request.tool}`)?.classList.add("focus");
   if (request.view === "ara") $<HTMLInputElement>("search-query").focus();
   if (request.view === "dokum") await run(prepareInventory);
   if (request.tool === "tutarlilik") await run(showConsistency);
   if (request.tool === "rapor") await run(createPersonReport);
+  if (request.tool === "dizin") await run(createIndex);
+  if (request.tool === "dizinkaldir") await run(deleteIndex);
   if (request.action === "audit") await run(startAudit);
   if (request.action === "dia") {
     const person = state.chosen;
@@ -614,6 +649,8 @@ function initialise(): void {
   $("reset-catalog").addEventListener("click", () => void resetCatalog());
   $("run-tutarlilik").addEventListener("click", () => void run(showConsistency));
   $("run-rapor").addEventListener("click", () => void run(createPersonReport));
+  $("run-dizin").addEventListener("click", () => void run(createIndex));
+  $("run-dizinkaldir").addEventListener("click", () => void run(deleteIndex));
   $("run-temizlik").addEventListener("click", () => void run(cleanup));
   file.addEventListener("change", () => {
     const chosen = file.files?.[0];

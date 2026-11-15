@@ -73,3 +73,16 @@ describe("person report and chronology", () => {
     expect(xml).toContain("A &amp; &lt;B&gt;");
   });
 });
+
+describe("Şahıslar dizini", () => {
+  it("field codes", async () => {
+    const { xeCode, INDEX_CODE, isVefeyatIndexField } = await import("../src/addin/submit.js");
+    const person = p('Ebû "Ali": İbn Sînâ', "", "", "x");
+    expect(xeCode(person)).toBe(`"Ebû 'Ali'\\: İbn Sînâ" \\f "v"`);
+    expect(isVefeyatIndexField(` XE ${xeCode(person)} `)).toBe(true);
+    expect(isVefeyatIndexField(` INDEX ${INDEX_CODE}`)).toBe(true);
+    expect(isVefeyatIndexField(` XE "Başka" `)).toBe(false);
+    expect(isVefeyatIndexField(` INDEX \\f "k"`)).toBe(false);
+    expect(isVefeyatIndexField(` TOC \\f "v"`)).toBe(false);
+  });
+});
