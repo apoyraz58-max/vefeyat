@@ -7,7 +7,7 @@
 import { MAX_NAME_LENGTH } from "./alias.js";
 import type { Person } from "./catalog.js";
 import { personKey } from "./catalog.js";
-import { excludeMention, hasSuffix, schoolRoot } from "./context.js";
+import { excludeMention, hasSuffix, isSentenceInitial, schoolRoot } from "./context.js";
 import { nameQuery, nameScore, prominence } from "./names.js";
 import { collapseLetters, isSeparator, nameKey, normalize } from "./normalize.js";
 import { vbLower, vbTrim } from "./text.js";
@@ -76,6 +76,13 @@ const WEAK_PARTS = new Set(
     "molla|efendi|bey|pasa|sultan|seyh|hoca|dede|baba|kadi|emir|mir|han|hatun|banu|aga|celebi|mevlana|sah|hace|hafiz|hakim|mufti|imam|mollasi|sehzade|vezir|beylerbeyi|kethuda|reis|nakib|hatip|vaiz|muezin|katip|kadiasker|seyhulislam|" +
     "hayat|hayati|hayatin|has|cem|ehl|ehli|bil|minhac|nur|sir|can|gul|bahar|derd|dert|hal|kal|ask|asik|garip|garib|fakir|dervis|sufi|zahit|zahid|abit|abid|arif|salih|emin|kerim|rahim|aziz|celil|cemal|kemal|celal|hilal|hayal|sabit|baki|fani|kadim|cedid|kebir|sagir|kucuk|buyuk|yeni|eski|kara|ak|kizil|sari|ali|ulu|has|hassa|nesih|talik|sulus|divani|rika|mevlevi|bektasi|nakisbendi|kadiri|rifai|halveti|celveti|hanefi|safii|maliki|hanbeli|sunni|sii|abbasi|emevi|fatimi|selcuklu|osmanli|ilhanli|timurlu|safevi|babur").split("|").map(collapseLetters),
 );
+
+/**
+ * Ordinary words that open a sentence right before a name: kinship and
+ * teacher–student nouns, sentence adverbs ("Hocası Cüveynî", "Nitekim Gazzâlî").
+ */
+const OPENERS =
+  /^(hoca|talebe|ogrenci|baba|ogul|oglu|kizi|kardes|agabey|dede|anne|esi|hanimi|seyhi|muridi|halife|cagdas|muasir|rakib|rakip|sarih|hami|veziri|sultani|hukumdar|muasiri|ustad|ustat|nitekim|ayrica|ozellikle|hatta|yine|mesela|ornegin|dolayisiyla|boylece|nihayet|ilk|son|gene|bilhasa|bunun|bunlardan|onun|ondan|sonraki|onceki|daha|ancak|fakat|lakin|zira|cunku|hem|ne|ya|ise|keza|kezalik)/;
 
 const NAME_LINKS = new Set("b|ibn|ibni|bin|bint|ebu|ebul|el|er|es|et|ez|en|ed".split("|"));
 
@@ -181,6 +188,8 @@ export class NameIndex {
     // "Bursalı", "Tunuslu": a place adjective is not the person's name on its own; "-iyye" abstracts too.
     if (plain.length > 5 && /(li|lu)$/.test(plain) && /[lL][ıiuü]$/u.test(part)) return true;
     if (/iye$|iyye$/.test(plain)) return true;
+    // "İshak Hocası" → "Hocası": kinship and teacher words are not names on their own.
+    if (OPENERS.test(plain)) return true;
     // "Minhâc-ı Sirâc" → "Minhâc-ı": the izafet ending does not make it a name.
     return WEAK_PARTS.has(collapseLetters(nameKey(part))) || WEAK_PARTS.has(collapseLetters(nameKey(part.replace(/[-‐][ıiuü]$/u, ""))));
   }
@@ -364,6 +373,10 @@ export function findMatches(text: string, index: NameIndex, strict = false, cita
       }
       if (accepted) result.push({ start: first, length: bestEnd - first, text: text.slice(first, bestEnd), key: bestKey });
       i = Math.max(bestIndex, spanEnd) + 1;
+    } else if (strict && spanEnd > i && !index.has(firstToken.key) && OPENERS.test(firstToken.key) && isSentenceInitial(text, first)) {
+      // "Hocası Cüveynî …": a capitalised ordinary word opening the sentence
+      // is not the start of the name run; look again from the next word.
+      i++;
     } else {
       i = spanEnd + 1;
     }

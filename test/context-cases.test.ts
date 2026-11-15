@@ -72,6 +72,10 @@ describe.runIf(have)("contextual detection", () => {
     ["Cem Sultan'ın sürgün yılları uzun sürdü.", ["Cem Sultan'ın"]],
     ["İmam Mâlik'in talebesi.", ["Mâlik'in"]],
     ["Hayâtî Ahmed Efendi bu tekkede şeyhti.", ["Hayâtî Ahmed Efendi"]],
+    ["Hocası Cüveynî (ö. 478/1085) Nizâmiye'de ders vermiştir.", ["Cüveynî"]],
+    ["Talebesi Gazzâlî bu görüşü geliştirdi.", ["Gazzâlî"]],
+    ["Nitekim Fahreddin er-Râzî de bunu kabul eder.", ["Fahreddin er-Râzî"]],
+    ["F. er-Râzî bu görüşü savunur.", ["F. er-Râzî"]],
   ] as const)("person kept: %s", (text, names) => {
     expect(found(text)).toEqual(names);
   });

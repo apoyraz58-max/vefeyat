@@ -59,3 +59,7 @@ const manifest = template.replaceAll("{{BASE_URL}}", baseUrl).replaceAll("{{VERS
 await writeFile(new URL("manifest.xml", out), manifest);
 
 console.log(`Built Vefeyât ${pkg.version} (manifest ${manifestVersion}) for ${baseUrl}`);
+
+// Test thesis for trying every command in real Word (scripts/test-doc.mjs).
+const testDoc = new URL("docs/vefeyat-deneme.docx", root);
+if (existsSync(testDoc)) await cp(testDoc, new URL("vefeyat-deneme.docx", out));
