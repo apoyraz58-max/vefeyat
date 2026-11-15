@@ -23,6 +23,8 @@ const manifestVersion = [...numbers, process.env.GITHUB_RUN_NUMBER ?? "0", "0"].
 await rm(out, { recursive: true, force: true });
 await mkdir(new URL("assets/", out), { recursive: true });
 
+const version = process.env.GITHUB_RUN_NUMBER ? `${pkg.version.replace(/-dev$/, "")}.${process.env.GITHUB_RUN_NUMBER}` : pkg.version;
+
 for (const entry of ["taskpane", "commands"]) {
   await build({
     entryPoints: [new URL(`src/addin/${entry}.ts`, root).pathname],
@@ -32,14 +34,20 @@ for (const entry of ["taskpane", "commands"]) {
     target: ["es2018"],
     minify: true,
     sourcemap: true,
-    define: { __VERSION__: JSON.stringify(process.env.GITHUB_RUN_NUMBER ? `${pkg.version.replace(/-dev$/, "")}.${process.env.GITHUB_RUN_NUMBER}` : pkg.version) },
+    define: { __VERSION__: JSON.stringify(version) },
     logLevel: "warning",
   });
 }
 
-for (const file of ["taskpane.html", "taskpane.css", "commands.html"]) {
-  await cp(new URL(`src/addin/${file}`, root), new URL(file, out));
+// Word keeps add-in files in its own cache: every reference carries the
+// version, and version.json tells an open pane that a newer one exists.
+await cp(new URL("src/addin/taskpane.css", root), new URL("taskpane.css", out));
+for (const file of ["taskpane.html", "commands.html"]) {
+  const html = (await readFile(new URL(`src/addin/${file}`, root), "utf8"))
+    .replace(/(src|href)="(taskpane|commands)\.(js|css)"/g, `$1="$2.$3?v=${version}"`);
+  await writeFile(new URL(file, out), html);
 }
+await writeFile(new URL("version.json", out), JSON.stringify({ version }));
 await cp(new URL("assets/icons/", root), new URL("assets/icons/", out), { recursive: true });
 for (const size of [16, 32, 64, 80, 128]) {
   await cp(new URL(`assets/icon-${size}.png`, root), new URL(`assets/icon-${size}.png`, out));

@@ -1356,7 +1356,32 @@ async function launch(request: Launch): Promise<void> {
   }
 }
 
+/**
+ * Word may open the pane from its own cache long after an update. The
+ * published version.json is read past every cache; when it names a newer
+ * build, the pane reloads itself once with that version in the address,
+ * which also fetches the new script and style (their URLs carry it).
+ */
+async function checkForUpdate(): Promise<void> {
+  try {
+    const response = await fetch(`version.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return;
+    const { version } = (await response.json()) as { version?: string };
+    if (!version || version === __VERSION__) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("_v") === version) {
+      setMessage(`Yeni sürüm (${version}) yayında ama Word eski kopyayı açtı (${__VERSION__}). Word'ü kapatıp açın; düzelmezse Wef klasörünü temizleyin.`, "warning");
+      return;
+    }
+    url.searchParams.set("_v", version);
+    window.location.replace(url.toString());
+  } catch {
+    /* offline or blocked: keep the running copy */
+  }
+}
+
 function initialise(): void {
+  void checkForUpdate();
   $("version").textContent = __VERSION__;
   const file = $<HTMLInputElement>("catalog-file");
   $("choose-catalog").addEventListener("click", () => file.click());

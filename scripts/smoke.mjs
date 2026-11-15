@@ -247,6 +247,19 @@ try {
   check("Bütün kullanımlar skips the earlier-mention warning", (await docText(tab)) === "Gazzâlî önce. Sonra Gazzâlî (ö. 505/1111).", await docText(tab));
   await tab.close();
 
+  // A pane opened from Word's cache reloads itself once when a newer build is published.
+  {
+    const page = await context.newPage();
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.route("https://appsforoffice.microsoft.com/**", (route) => route.fulfill({ contentType: "text/javascript", body: FAKE_OFFICE }));
+    await page.route("**/version.json*", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ version: "9.9.9.9" }) }));
+    await page.goto(`${base}taskpane.html?view=yardim`);
+    await page.waitForURL(/_v=9\.9\.9\.9/, { timeout: 5000 });
+    await page.waitForTimeout(800);
+    const url = page.url();
+    check("stale pane reloads once with the new version", url.includes("_v=9.9.9.9") && url.includes("view=yardim") && (await page.textContent("#message")).includes("eski kopyayı"), url);
+    await page.close();
+  }
   // Ribbon buttons.
   tab = await open("?action=insert", "İlk kez Gazzâlî burada.", "Gazzâlî");
   check("ribbon insert writes at once when unambiguous", (await docText(tab)) === "İlk kez Gazzâlî (ö. 505/1111) burada.", await docText(tab));
