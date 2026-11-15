@@ -76,6 +76,12 @@ bu durumda penceredeki düğmeyi kullanın.
   dipnotta atlanır; dipnotun geri kalanı okunur. "Kaynakça/Bibliyografya"
   başlığından sonraki bölüm ("Ekler", "Dizin" gibi bir başlığa kadar) ve
   kaynakça girdisi biçimindeki paragraflar taranmaz.
+- Şahıslar dizini: Word sayfa bilgisini okuyabiliyorsa (güncel Microsoft 365
+  masaüstü, WordApiDesktop 1.2) dizin belgeye işaret konmadan sayfa
+  numaralarından hazırlanır; numaralar sabittir, metin değişince yeniden
+  oluşturun. Panelde "1 numaralı sayfa"yı ayarlayın (öncesi Roma rakamı).
+  Sayfa bilgisi okunamayan Word'de dizin gizli XE işaretleriyle hazırlanır;
+  büyük belgede bu uzun sürer.
 - Sonnotlar, üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz
   (Diğer araçlar → Denetim kapsamını göster).
 - **VBA belgeleri:** VBA sürümünün eklediği tarihler Word alanıdır

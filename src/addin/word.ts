@@ -6,7 +6,7 @@ import type { Person } from "../core/index.js";
 import type { InventoryRow, Segment } from "./inventory.js";
 import { parseSpellings } from "./prefs.js";
 import { DATE_TAG_PREFIX, type DateControl } from "./health.js";
-import { INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
+import { type IndexLine, staticIndex, INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
 import { type SettingName, type Settings, parseConfirmations, parseExclusions, settingValue } from "./logic.js";
 
 export interface SelectionText {
@@ -598,7 +598,7 @@ async function insertMarks(segments: readonly Segment[], rows: readonly Inventor
  * break inside; if Word refuses, without the inner page break; last, plain
  * paragraphs without a block.
  */
-async function insertIndexBlock(): Promise<void> {
+async function insertIndexBlock(lines: readonly IndexLine[] | null = null): Promise<void> {
   const attempt = (mode: "block" | "block-outer-break" | "plain") =>
     Word.run(async (context) => {
       const places = context.document.body.contentControls.getByTag(PLACE_TAG);
@@ -611,8 +611,21 @@ async function insertIndexBlock(): Promise<void> {
       if (place) place.delete(true);
       first.insertText(INDEX_HEADING, "Replace");
       first.styleBuiltIn = "Heading1";
-      const holder = first.insertParagraph("", "After");
+      let holder = first.insertParagraph("", "After");
       holder.styleBuiltIn = "Normal";
+      if (lines) {
+        // Static index (page lookup): plain paragraphs, letters bold.
+        let last: Word.Paragraph | null = null;
+        for (const line of lines) {
+          const paragraph: Word.Paragraph = last ? last.insertParagraph(line.text, "After") : holder;
+          if (!last) paragraph.insertText(line.text, "Replace");
+          paragraph.styleBuiltIn = "Normal";
+          paragraph.font.bold = line.kind === "letter";
+          if (line.kind === "letter") paragraph.spaceBefore = 8;
+          last = paragraph;
+        }
+        if (last) holder = last;
+      }
       if (mode !== "plain") {
         const control = first.getRange("Whole").expandTo(holder.getRange("Whole")).insertContentControl();
         control.tag = INDEX_TAG;
@@ -620,9 +633,11 @@ async function insertIndexBlock(): Promise<void> {
         control.appearance = "BoundingBox";
         if (mode === "block") control.insertBreak("Page", "Start");
       }
-      const index = holder.getRange("Start").insertField("Start", "Index", INDEX_CODE);
-      await context.sync();
-      index.updateResult();
+      if (!lines) {
+        const index = holder.getRange("Start").insertField("Start", "Index", INDEX_CODE);
+        await context.sync();
+        index.updateResult();
+      }
       await context.sync();
     });
   try {
@@ -792,4 +807,136 @@ export async function toggleDateFrames(): Promise<{ visible: boolean; count: num
     await context.sync();
     return { visible, count: controls.length };
   });
+}
+
+// ---- Sayfa numaralarından dizin (WordApiDesktop 1.2: Range.pages) ----
+
+/** Whether this Word can tell on which page a range is. */
+export function canReadPages(): boolean {
+  return Office.context.requirements.isSetSupported("WordApiDesktop", "1.2");
+}
+
+/** Physical page (1-based) of the selection: "this page carries number 1". */
+export async function selectionPage(): Promise<number | null> {
+  return Word.run(async (context) => {
+    const pages = context.document.getSelection().pages;
+    pages.load("items/index");
+    await context.sync();
+    return pages.items[0]?.index ?? null;
+  });
+}
+
+/**
+ * Şahıslar dizini without marks: reads the page of every certain mention
+ * (paragraph pages; the mention itself when its paragraph spans pages;
+ * footnotes by their reference) and writes the index as plain text.
+ * The document is only read until the index block is written.
+ */
+export async function buildPageIndex(
+  segments: readonly Segment[],
+  rows: readonly InventoryRow[],
+  firstArabic: number,
+  progress: Progress = () => {},
+): Promise<{ people: number; hits: number; missing: number }> {
+  try {
+    await clearOldIndex();
+  } catch (error) {
+    throw new StepError("Eski dizin kaldırılamadı", error);
+  }
+  let hits: Array<{ person: Person; page: number }>;
+  try {
+    hits = await Word.run(async (context) => {
+      const paragraphs = context.document.body.paragraphs;
+      paragraphs.load("items");
+      await context.sync();
+      const out: Array<{ person: Person; page: number }> = [];
+      const mainRows = new Map<number, InventoryRow[]>();
+      const noteRows = new Map<number, InventoryRow[]>();
+      for (const row of rows) {
+        const segment = segments[row.segment];
+        if (!segment || !row.person) continue;
+        const map = segment.part === "main" ? mainRows : noteRows;
+        map.set(segment.anchor, [...(map.get(segment.anchor) ?? []), row]);
+      }
+      const total = mainRows.size + noteRows.size;
+      let done = 0;
+      // Main text: pages of each paragraph that names someone.
+      const spanning: Array<{ anchor: number; rows: InventoryRow[] }> = [];
+      const mainList = [...mainRows.entries()];
+      for (let from = 0; from < mainList.length; from += CHUNK) {
+        const chunk = mainList.slice(from, from + CHUNK).map(([anchor, list]) => {
+          const pages = paragraphs.items[anchor]?.getRange("Whole").pages;
+          pages?.load("items/index");
+          return { anchor, list, pages };
+        });
+        await context.sync();
+        for (const { anchor, list, pages } of chunk) {
+          if (!pages || pages.items.length === 0) continue;
+          if (pages.items.length === 1) for (const row of list) out.push({ person: row.person as Person, page: (pages.items[0] as Word.Page).index });
+          else spanning.push({ anchor, rows: list });
+        }
+        done += chunk.length;
+        progress(done, total);
+      }
+      // A paragraph over a page break: the page of each mention itself.
+      for (let from = 0; from < spanning.length; from += 20) {
+        const lookups = spanning.slice(from, from + 20).flatMap(({ anchor, rows: list }) => {
+          const segment = segments[(list[0] as InventoryRow).segment] as Segment;
+          const host = paragraphs.items[anchor] as Word.Paragraph;
+          return list.map((row) => {
+            const results = host.getRange("Whole").search(searchText(row.text), { matchCase: true, matchWholeWord: false });
+            results.load("items");
+            return { row, results, nth: occurrenceBefore(segment.text, row.text, row.start) };
+          });
+        });
+        await context.sync();
+        const pageLists = lookups.map(({ row, results, nth }) => {
+          const target = results.items[nth];
+          const pages = target?.pages;
+          pages?.load("items/index");
+          return { row, pages };
+        });
+        await context.sync();
+        for (const { row, pages } of pageLists) {
+          const page = pages?.items[0]?.index;
+          if (page) out.push({ person: row.person as Person, page });
+        }
+      }
+      // Footnotes: the page of the reference mark in the text.
+      const noteList = [...noteRows.entries()];
+      for (let from = 0; from < noteList.length; from += CHUNK) {
+        const chunk = noteList.slice(from, from + CHUNK).map(([anchor, list]) => {
+          const notes = paragraphs.items[anchor]?.getRange("Whole").footnotes;
+          notes?.load("items");
+          return { list, notes };
+        });
+        await context.sync();
+        const pageLists = chunk.flatMap(({ list, notes }) =>
+          list.map((row) => {
+            const segment = segments[row.segment] as Segment;
+            const pages = notes?.items[segment.order - 1]?.reference.pages;
+            pages?.load("items/index");
+            return { row, pages };
+          }),
+        );
+        await context.sync();
+        for (const { row, pages } of pageLists) {
+          const page = pages?.items[0]?.index;
+          if (page) out.push({ person: row.person as Person, page });
+        }
+        done += chunk.length;
+        progress(done, total);
+      }
+      return out;
+    });
+  } catch (error) {
+    throw new StepError("Sayfa numaraları okunamadı", error);
+  }
+  const lines = staticIndex(hits, firstArabic);
+  try {
+    await insertIndexBlock(lines);
+  } catch (error) {
+    throw new StepError("Sayfalar okundu, ama dizin sayfası yazılamadı", error);
+  }
+  return { people: lines.filter((l) => l.kind === "entry").length, hits: hits.length, missing: rows.length - hits.length };
 }

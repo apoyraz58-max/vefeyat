@@ -98,3 +98,24 @@ describe("indexRows", () => {
     ]);
   });
 });
+
+describe("static index from pages", () => {
+  it("pages, letters, Roman front matter, article ignored", async () => {
+    const { staticIndex, pageLabel } = await import("../src/addin/submit.js");
+    const g = p("Gazzâlî", "", "", "g");
+    const c = p("Cüveynî", "", "", "c");
+    const z = p("ez-Zemahşerî", "", "", "z");
+    const lines = staticIndex(
+      [
+        { person: g, page: 14 },
+        { person: c, page: 3 },
+        { person: g, page: 12 },
+        { person: g, page: 14 },
+        { person: z, page: 20 },
+      ],
+      11,
+    );
+    expect(lines.map((l) => l.text)).toEqual(["C", "Cüveynî, iii", "G", "Gazzâlî, 2, 4", "Z", "ez-Zemahşerî, 10"]);
+    expect(pageLabel(9, 11)).toBe("ix");
+  });
+});

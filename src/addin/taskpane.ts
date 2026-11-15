@@ -35,7 +35,7 @@ import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, ad
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
 import { HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -675,12 +675,29 @@ async function createIndex(): Promise<void> {
   }
   const people = new Set(rows.map((r) => r.person?.source)).size;
   setMessage("", "info");
+  if (canReadPages()) {
+    const firstArabic = Math.max(1, Number($<HTMLInputElement>("index-first").value) || 1);
+    try {
+      window.localStorage.setItem("vefeyat.indexFirst", String(firstArabic));
+    } catch {
+      /* ignored */
+    }
+    const t0 = Date.now();
+    const result = await buildPageIndex(read.segments, rows, firstArabic, progress("Sayfa numaraları okunuyor"));
+    const seconds = Math.round((Date.now() - t0) / 1000);
+    logHistory("index", `${result.people} şahıs, sayfalardan, ${seconds} sn`);
+    setMessage(
+      `Şahıslar dizini hazır: ${result.people} şahıs, ${seconds} sn. Belgeye işaret konmadı; sayfa numaraları sabittir, metin değişince dizini yeniden oluşturun.` +
+        (result.missing ? ` ${result.missing} geçişin sayfası okunamadı.` : ""),
+      result.missing ? "warning" : "success",
+    );
+    return;
+  }
   const started = Date.now();
   const result = await buildIndex(read.segments, rows, progress("Dizin işaretleri ekleniyor"));
   const minutes = Math.round((Date.now() - started) / 6000) / 10;
   logHistory("index", `${people} şahıs, ${result.marks} işaret, ${minutes} dk`);
-  // Tells whether a faster, read-only page lookup could be used on this Word (next version).
-  const pages = Office.context.requirements.isSetSupported("WordApiDesktop", "1.2") ? " [sayfa API: var]" : " [sayfa API: yok]";
+  const pages = " [sayfa API: yok; dizin işaretlerle hazırlandı]";
   setMessage(
     `Şahıslar dizini hazır: ${people} şahıs, ${result.marks} işaret, ${minutes} dk.` +
       (result.missing ? ` ${result.missing} geçiş metinde bulunamadı.` : "") +
@@ -1294,6 +1311,22 @@ function initialise(): void {
     cancelRequested = true;
     $("busy-text").textContent = "İptal ediliyor (Word'ün elindeki parça bitince durur)…";
   });
+  $("index-pages").hidden = !canReadPages();
+  try {
+    const saved = window.localStorage.getItem("vefeyat.indexFirst");
+    if (saved) $<HTMLInputElement>("index-first").value = saved;
+  } catch {
+    /* ignored */
+  }
+  $("index-here").addEventListener("click", () =>
+    void run(async () => {
+      const page = await selectionPage();
+      if (page) {
+        $<HTMLInputElement>("index-first").value = String(page);
+        setMessage(`İmleç belgenin ${page}. sayfasında; bu sayfa 1 numaralı kabul edilecek.`, "success");
+      }
+    }),
+  );
   $("run-dizin").addEventListener("click", () => void run(createIndex, "Şahıslar dizini oluşturuluyor"));
   $("run-dizinkaldir").addEventListener("click", () => void run(deleteIndexMarks, "Dizin işaretleri kaldırılıyor"));
   $("run-dizinsil").addEventListener("click", () => void run(deleteIndex, "Dizin kaldırılıyor"));

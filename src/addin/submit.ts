@@ -260,3 +260,66 @@ export function indexRows(rows: readonly InventoryRow[]): InventoryRow[] {
     return true;
   });
 }
+
+// ---- Sayfa numaralarından dizin (WordApiDesktop 1.2) ----
+
+/** Roman numeral for front-matter pages (i, ii, …). */
+export function roman(value: number): string {
+  const table: Array<[number, string]> = [[1000, "m"], [900, "cm"], [500, "d"], [400, "cd"], [100, "c"], [90, "xc"], [50, "l"], [40, "xl"], [10, "x"], [9, "ix"], [5, "v"], [4, "iv"], [1, "i"]];
+  let rest = Math.max(0, Math.floor(value));
+  let out = "";
+  for (const [n, s] of table) while (rest >= n) {
+    out += s;
+    rest -= n;
+  }
+  return out;
+}
+
+/**
+ * Printed page number of a physical page (1-based). `firstArabic` is the
+ * physical page that carries the number 1; pages before it are Roman.
+ */
+export function pageLabel(physical: number, firstArabic = 1): string {
+  return physical >= firstArabic ? String(physical - firstArabic + 1) : roman(physical);
+}
+
+/** Sort key of an entry: Arabic article ("el-", "er-" …) ignored, Turkish order. */
+function entrySortKey(entry: string): string {
+  return entry.replace(/^(el|er|es|et|ez|en|ed|eş|eț|ed)[-‐]/i, "");
+}
+
+export interface IndexLine {
+  readonly kind: "letter" | "entry";
+  readonly text: string;
+}
+
+/**
+ * Index lines from (person, physical page) pairs: one line per person with
+ * its pages in order, under letter headings.
+ *   G
+ *   Gazzâlî, 12, 45, 101
+ */
+export function staticIndex(hits: ReadonlyArray<{ person: Person; page: number }>, firstArabic = 1): IndexLine[] {
+  const byPerson = new Map<string, { name: string; pages: Set<number> }>();
+  for (const { person, page } of hits) {
+    const key = personKey(person);
+    const entry = byPerson.get(key) ?? { name: textName(person.shortName), pages: new Set<number>() };
+    entry.pages.add(page);
+    byPerson.set(key, entry);
+  }
+  const entries = [...byPerson.values()].sort((a, b) => entrySortKey(a.name).localeCompare(entrySortKey(b.name), "tr", { sensitivity: "base" }));
+  const lines: IndexLine[] = [];
+  let letter = "";
+  for (const { name, pages } of entries) {
+    const first = entrySortKey(name).charAt(0).toLocaleUpperCase("tr");
+    // Turkish letters keep their own heading; Â, Ā … go under A.
+    const bucket = /^[ÇĞİÖŞÜ]$/.test(first) ? first : first.normalize("NFD").replace(/\p{M}/gu, "") || first;
+    if (bucket !== letter) {
+      letter = bucket;
+      lines.push({ kind: "letter", text: bucket });
+    }
+    const labels = [...pages].sort((a, b) => a - b).map((p) => pageLabel(p, firstArabic));
+    lines.push({ kind: "entry", text: `${name}, ${[...new Set(labels)].join(", ")}` });
+  }
+  return lines;
+}
