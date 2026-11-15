@@ -30,6 +30,8 @@ export function isBreak(ch: string): boolean {
   return isSeparator(code);
 }
 
+const QUOTES = new Set(["'", "’", "‘", "ʻ", "ʼ", "ʿ", "`", "´"]);
+
 /** `VfbTokens`. */
 export function tokenize(text: string, cache: Map<string, string> = new Map()): Token[] {
   const result: Token[] = [];
@@ -38,13 +40,21 @@ export function tokenize(text: string, cache: Map<string, string> = new Map()): 
     const ch = i < text.length ? (text[i] as string) : " ";
     if (isBreak(ch)) {
       if (first >= 0) {
-        const value = text.slice(first, i);
+        // Quotation marks around a word are not part of it: ‘Gazzâlî’, 'Râzî'.
+        let last = i;
+        while (first < last && QUOTES.has(text[first] as string)) first++;
+        while (last > first && QUOTES.has(text[last - 1] as string)) last--;
+        if (first >= last) {
+          first = -1;
+          continue;
+        }
+        const value = text.slice(first, last);
         let key = cache.get(value);
         if (key === undefined) {
           key = nameKey(value);
           cache.set(value, key);
         }
-        if (key.length > 0) result.push({ key, start: first, length: i - first });
+        if (key.length > 0) result.push({ key, start: first, length: last - first });
         first = -1;
       }
     } else if (first < 0) {

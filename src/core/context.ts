@@ -261,9 +261,13 @@ export function isSchool(window: string, localFirst: number, length: number, lit
   for (const part of words(window).split(" ")) {
     if (part.startsWith("mezhep") || part.startsWith("mezheb") || part.startsWith("ekol")) return true;
   }
-  // A bare school label is insufficient evidence for any of the many scholars
-  // sharing that nisba; explicit personal names remain eligible.
-  return true;
+  // "… âlimleri Mâtürîdî idi", "Eş‘arî olarak bilinir": a predicate, not the imam.
+  if (["idi", "idiler", "dir", "dirler", "dur", "oldu", "olan", "olarak", "oldugu", "olmustur", "sayilir", "kabul"].includes(firstWord(after))) return true;
+  // Şâfiî, Eş‘arî and Mâtürîdî are eponyms: written alone, without a school
+  // word or group noun after them (handled above and by isGroupAdjective),
+  // they are the imam himself, also in a list of names. Hanefî, Mâlikî … are
+  // adjectives (the imams are Ebû Hanîfe, Mâlik), so for them the label stays.
+  return !(root === "safi" || root === "esari" || root === "maturidi");
 }
 
 /** `VfcWorkUsage`: "… adlı eserinde", "… isimli kitabın". */
@@ -389,10 +393,10 @@ export function isSentenceInitial(text: string, first: number): boolean {
 export function isAdjectiveUse(text: string, first: number, length: number, literal: string, lowerWords: ReadonlySet<string> = new Set()): boolean {
   const bare = nameQuery(literal);
   if (bare.length < literal.length || /[\s‐-]/.test(bare.trim())) return false;
-  if (!isSentenceInitial(text, first)) return false;
+  const initial = isSentenceInitial(text, first);
   const after = text.slice(first + length, first + length + 120);
   // "Kadı, edip ve şair": a profession heading a list, no verb about a person.
-  if (OCCUPATIONS.has(key(bare)) && /^\s*(,|ve\s)/.test(after) && !isNarrative(words(after.slice(0, 80)))) return true;
+  if (initial && OCCUPATIONS.has(key(bare)) && /^\s*(,|ve\s)/.test(after) && !isNarrative(words(after.slice(0, 80)))) return true;
   if (/^\s*\((ö|öl|v|d|m)\.|^\s*\(\d|^\s*[,;]/.test(after)) return false;
   const next = words(after.split(/[.;:!?()]/)[0] ?? "").trim().split(" ").filter(Boolean);
   const word = next[0];
@@ -402,9 +406,12 @@ export function isAdjectiveUse(text: string, first: number, length: number, lite
   const own = key(bare);
   // Only words that really are ordinary words: listed, or written in lower case elsewhere in the document.
   if (!DICTIONARY_WORDS.has(own) && !lowerWords.has(own)) return false;
-  if (lowerWords.has(own)) return true;
   const head = word === "bir" ? next[1] ?? "" : word;
-  return ADJECTIVE_CONTEXT.some((stem) => head.startsWith(stem)) || GROUP_NOUNS.some((stem) => head.startsWith(stem));
+  const context = ADJECTIVE_CONTEXT.some((stem) => head.startsWith(stem)) || GROUP_NOUNS.some((stem) => head.startsWith(stem));
+  // Mid-sentence a capital usually means a name: only a manner/topic noun after it ("…, Usûlî açıdan") says otherwise.
+  if (!initial) return context;
+  if (lowerWords.has(own)) return true;
+  return context;
 }
 
 /** Keys (as words() writes them) of every word written in lower case in the texts. */

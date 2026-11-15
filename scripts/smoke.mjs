@@ -257,6 +257,10 @@ try {
   tab = await open("?action=insert", "Gazzâlî önce. Sonra Gazzâlî.", "Gazzâlî", { last: true });
   check("ribbon insert still warns about an earlier mention", (await tab.isVisible("#earlier")) && (await docText(tab)) === "Gazzâlî önce. Sonra Gazzâlî.");
   await tab.close();
+  // Another person with the same short name earlier is no earlier mention.
+  tab = await open("?action=insert", "Fahreddin er-Râzî tefsir yazdı. Ebû Bekir er-Râzî tıpta meşhurdur.", "Ebû Bekir er-Râzî");
+  check("an earlier homonym does not count as an earlier mention", !(await tab.isVisible("#earlier")) && (await docText(tab)) === "Fahreddin er-Râzî tefsir yazdı. Ebû Bekir er-Râzî (ö. 313/925) tıpta meşhurdur.", await docText(tab));
+  await tab.close();
   tab = await open("?tool=dizin");
   check("Teslim menu opens the tools window", (await tab.isVisible("#view-teslim")) && (await tab.getAttribute("#tool-dizin", "class")) === "focus" && (await tab.textContent("#view-title")) === "Teslim araçları");
   await tab.click("#run-tutarlilik");

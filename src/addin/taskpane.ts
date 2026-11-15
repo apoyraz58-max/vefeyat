@@ -450,7 +450,7 @@ async function addDate(force: boolean): Promise<void> {
     setMessage(plan.reason, "warning");
     return;
   }
-  if (!force && rule.checkEarlier && (await findEarlier(earlierSpellings(person, current.alias)))) {
+  if (!force && rule.checkEarlier && (await earlierMention(person))) {
     $("earlier").hidden = false;
     setMessage("", "info");
     return;
@@ -463,13 +463,47 @@ async function addDate(force: boolean): Promise<void> {
   state.alias = null; // the caret moved; read the next selection afresh
 }
 
+let earlierRow: InventoryRow | null = null;
+let rowsReadAt = 0;
+
+/** The document read as a whole (cached for two minutes; inserting dates does not change identities). */
+async function documentRows(): Promise<InventoryRow[]> {
+  if (!state.catalog) return [];
+  if (state.rows.length > 0 && Date.now() - rowsReadAt < 120_000) return state.rows;
+  const read = await readSegments();
+  state.index ??= new NameIndex(state.catalog.people);
+  state.segments = read.segments;
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  rowsReadAt = Date.now();
+  rowsReadAt = Date.now();
+  return state.rows;
+}
+
+/**
+ * "Daha önce geçti": an earlier mention of the same person, by identity, not
+ * by spelling. Fahreddin er-Râzî before does not count for Ebû Bekir er-Râzî;
+ * "Gazali" settled as Gazzâlî does. Falls back to spellings when the selected
+ * mention is not found in the reading of the document.
+ */
+async function earlierMention(person: Person): Promise<boolean> {
+  earlierRow = null;
+  const rows = await documentRows();
+  const here = state.mention ? rows.findIndex((r) => rowKey(r, state.segments) === state.mention) : -1;
+  if (here < 0) return state.alias ? findEarlier(earlierSpellings(person, state.alias)) : false;
+  const target = personKey(person);
+  earlierRow = rows.slice(0, here).find((r) => r.person !== null && personKey(r.person) === target) ?? null;
+  return earlierRow !== null;
+}
+
 /** Remembers the user's choice for an ambiguous mention in the document. */
 async function rememberChoice(): Promise<void> {
+  rowsReadAt = 0; // identities may change
   if (!state.chosen || !state.mention || !state.found || state.found.automatic) return;
   await writeConfirmations(addConfirmation(readConfirmations(), state.mention, personKey(state.chosen)));
 }
 
 async function respell(): Promise<void> {
+  rowsReadAt = 0; // identities may change
   const spelling = $<HTMLSelectElement>("spelling").value;
   if (!spelling) return;
   const selection = await readSelection();
@@ -505,6 +539,7 @@ async function prepareInventory(): Promise<void> {
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  rowsReadAt = Date.now();
   state.page = 0;
   state.selectedRow = null;
   const sum = summarize(state.rows);
@@ -577,6 +612,7 @@ async function startAudit(): Promise<void> {
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  rowsReadAt = Date.now();
   state.audit = auditRows(state.rows, state.settings);
   state.auditAt = 0;
   setMessage("", "info");
@@ -605,6 +641,7 @@ async function resumeAudit(): Promise<void> {
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  rowsReadAt = Date.now();
   state.audit = auditRows(state.rows, state.settings);
   const at = resumeIndex(state.audit, state.segments, bookmark);
   if (at < 0) {
@@ -963,6 +1000,7 @@ async function prepareBulk(): Promise<void> {
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  rowsReadAt = Date.now();
   suggestions = bulkSuggestions(state.rows, state.settings, readSpellings());
   bulkChosen.clear();
   for (const s of suggestions) if (s.preselected) bulkChosen.add(s.id);
@@ -1045,6 +1083,7 @@ function renderExclusionToggle(): void {
 }
 
 async function toggleExclusion(): Promise<void> {
+  rowsReadAt = 0; // identities may change
   if (!state.alias) return;
   const key = exclusionKey(state.alias);
   const list = readExclusions();
@@ -1145,6 +1184,7 @@ async function showCoverage(): Promise<void> {
 // ---- Tercihler ----
 
 async function preferSelection(): Promise<void> {
+  rowsReadAt = 0; // identities may change
   const person = state.chosen;
   if (!state.alias || !person) {
     setMessage(quickInsertBlocker(state.catalog !== null, state.alias, state.found) ?? "Önce şahsı seçin.", "info");
@@ -1192,6 +1232,7 @@ function renderSpellings(): void {
 }
 
 async function clearSpellings(): Promise<void> {
+  rowsReadAt = 0; // identities may change
   const count = Object.keys(readSpellings()).length;
   await writeSpellings({});
   renderSpellings();
@@ -1228,6 +1269,7 @@ async function copyPrefs(): Promise<void> {
 }
 
 async function applyPrefs(): Promise<void> {
+  rowsReadAt = 0; // identities may change
   const parsed = parsePrefs($<HTMLTextAreaElement>("prefs-text").value);
   if (!parsed.ok) {
     setMessage(parsed.reason, "warning");
@@ -1396,8 +1438,13 @@ function initialise(): void {
   $("insert-anyway").addEventListener("click", () => void run(() => addDate(true)));
   $("go-earlier").addEventListener("click", () =>
     void run(async () => {
-      const person = state.chosen;
-      if (person && state.alias) await findEarlier(earlierSpellings(person, state.alias), true);
+      const row = earlierRow;
+      const segment = row ? state.segments[row.segment] : undefined;
+      if (row && segment && !(await selectMention(segment, row.start, row.text))) {
+        setMessage("Önceki geçiş metinde bulunamadı; metin değişmiş olabilir.", "warning");
+      } else if (!row && state.chosen && state.alias) {
+        await findEarlier(earlierSpellings(state.chosen, state.alias), true);
+      }
       hideEarlier();
     }),
   );

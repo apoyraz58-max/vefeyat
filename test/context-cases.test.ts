@@ -50,6 +50,8 @@ describe.runIf(have)("contextual detection", () => {
     "Kadı, edip ve şair.",
     "Tunuslu bir âlim olarak tanınır.",
     "İngiliz şarkiyatçısı bu eseri neşretti.",
+    "Bu konu, Usûlî açıdan ele alınmalıdır.",
+    "Osmanlı âlimleri Mâtürîdî idi.",
   ])("group adjective: %s", (text) => {
     expect(found(text)).toEqual([]);
   });
@@ -76,6 +78,10 @@ describe.runIf(have)("contextual detection", () => {
     ["Talebesi Gazzâlî bu görüşü geliştirdi.", ["Gazzâlî"]],
     ["Nitekim Fahreddin er-Râzî de bunu kabul eder.", ["Fahreddin er-Râzî"]],
     ["F. er-Râzî bu görüşü savunur.", ["F. er-Râzî"]],
+    ["Kitapta ‘Gazzâlî’ adı geçer.", ["Gazzâlî"]],
+    ["“Râzî” burada farklı düşünür.", ["Râzî"]],
+    ["Bu konuda Gazzâlî, Cüveynî ve Şâfiî aynı görüştedir.", ["Gazzâlî", "Cüveynî", "Şâfiî"]],
+    ["Mâtürîdî, Kitâbü't-Tevhîd'de aklı öne çıkarır.", ["Mâtürîdî"]],
   ] as const)("person kept: %s", (text, names) => {
     expect(found(text)).toEqual(names);
   });
