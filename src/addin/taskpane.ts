@@ -3,7 +3,7 @@
  * button asked for. Settings live in the ribbon's Tercihler menus; the pane
  * only displays them. Writes happen only on an explicit click.
  */
-import { Catalog, CatalogError, NameIndex, type Person, nameOptions, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
+import { Catalog, CatalogError, NameIndex, type Person, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
 import {
   DEFAULT_SETTINGS,
   type Launch,
@@ -255,15 +255,23 @@ function renderCandidates(): void {
     radio.name = "candidate";
     radio.id = id;
     radio.checked = state.chosen !== null && personKey(state.chosen) === personKey(person);
+    row.classList.toggle("chosen", radio.checked);
     radio.addEventListener("change", () => {
       state.chosen = person;
       hideEarlier();
+      renderCandidates();
       renderDetails();
     });
     const text = document.createElement("span");
     const title = document.createElement("strong");
     title.textContent = candidateLabel(person);
     text.append(title);
+    if (radio.checked) {
+      const tag = document.createElement("span");
+      tag.className = "chosen-tag";
+      tag.textContent = "seçili";
+      text.append(" ", tag);
+    }
     const chosenHere = state.chosen !== null && personKey(state.chosen) === personKey(person);
     const note =
       state.confirmed && chosenHere
@@ -287,11 +295,14 @@ function renderCandidates(): void {
   });
 }
 
+let spellingOwner = "";
+
 function renderDetails(): void {
   const person = state.chosen;
   $("details").hidden = person === null;
   $<HTMLButtonElement>("insert").disabled = person === null || state.busy;
   const spelling = $<HTMLSelectElement>("spelling");
+  const picked = spelling.value; // kept across re-renders (busy state, settings)
   spelling.replaceChildren();
   $<HTMLButtonElement>("respell").disabled = true;
   if (!person || !state.alias) return;
@@ -301,14 +312,39 @@ function renderDetails(): void {
   const link = $<HTMLAnchorElement>("detail-link");
   link.hidden = !person.source.startsWith("https://islamansiklopedisi.org.tr/");
   link.href = link.hidden ? "#" : person.source;
+  $("details-heading").textContent = `Seçili şahıs: ${textName(person.shortName)}`;
+  // The current spelling heads the list and is what is selected: nothing changes until another one is picked.
+  const current = document.createElement("option");
+  current.value = "";
+  current.textContent = `${state.alias} (metindeki yazım; değişmez)`;
+  current.selected = true;
+  spelling.append(current);
+  let alternatives = 0;
   for (const option of withPreferred(orderByNameForm(nameOptions(person, state.alias), state.settings.nameForm), preferredSpelling(readSpellings(), person))) {
-    if (option.value === state.alias) continue;
+    if (option.value === state.alias || option.value === nameQuery(state.alias)) continue;
     const element = document.createElement("option");
     element.value = option.value;
     element.textContent = `${option.value} (${option.label})`;
     spelling.append(element);
+    alternatives++;
   }
-  $<HTMLButtonElement>("respell").disabled = spelling.options.length === 0 || state.busy;
+  // Only for the same name and person: a new selection starts from its own spelling.
+  const owner = `${state.alias}|${personKey(person)}`;
+  if (picked && owner === spellingOwner && [...spelling.options].some((o) => o.value === picked)) spelling.value = picked;
+  spellingOwner = owner;
+  spelling.disabled = alternatives === 0;
+  if (alternatives === 0) current.textContent = `${state.alias} (başka yazım önerisi yok)`;
+  renderSpellingChoice();
+}
+
+/** "Değiştir" works only once another spelling is picked, and says what it will write. */
+function renderSpellingChoice(): void {
+  const spelling = $<HTMLSelectElement>("spelling");
+  const chosen = spelling.value;
+  const preview = $("spelling-preview");
+  $<HTMLButtonElement>("respell").disabled = !chosen || state.busy;
+  preview.hidden = !chosen || !state.alias;
+  if (chosen && state.alias) preview.textContent = `Değiştir'e basınca: ${state.alias} → ${withEnding(state.alias, chosen)}`;
 }
 
 function hideEarlier(): void {
@@ -830,6 +866,12 @@ async function checkHealth(): Promise<void> {
   renderHealth();
 }
 
+/** The row just clicked in a list stays marked, the others are unmarked. */
+function markSelected(item: HTMLElement): void {
+  for (const sibling of item.parentElement?.children ?? []) sibling.setAttribute("aria-selected", "false");
+  item.setAttribute("aria-selected", "true");
+}
+
 function renderHealth(): void {
   const problems = healthRows.filter((r) => r.health !== "ok");
   $("health-summary").textContent =
@@ -863,11 +905,12 @@ function renderHealth(): void {
     status.className = "meta warn";
     status.textContent = HEALTH_LABEL[row.health];
     item.append(box, name, badge, meta, status);
-    item.addEventListener("click", () =>
+    item.addEventListener("click", () => {
+      markSelected(item);
       void run(async () => {
         if (!(await selectDateControl(row.id))) setMessage("Bu tarih artık belgede yok; yeniden denetleyin.", "warning");
-      }),
-    );
+      });
+    });
     list.append(item);
   }
   $<HTMLButtonElement>("health-repair").disabled = healthChosen.size === 0;
@@ -975,11 +1018,12 @@ function renderHistory(): void {
     item.append(name, meta);
     if (entry.control !== undefined) {
       const id = entry.control;
-      item.addEventListener("click", () =>
+      item.addEventListener("click", () => {
+        markSelected(item);
         void run(async () => {
           if (!(await selectDateControl(id))) setMessage("Bu tarih artık belgede yok.", "warning");
-        }),
-      );
+        });
+      });
     }
     list.append(item);
   }
@@ -1037,7 +1081,10 @@ function renderBulk(): void {
     meta.className = "meta";
     meta.textContent = s.kind === "date" ? `Tarih ekle · ${textName(s.person.shortName)}` : `Kaynak yazımı · ${textName(s.person.shortName)}${s.row.confirmed ? " · onaylı kimlik" : ""}`;
     item.append(box, name, badge, meta);
-    item.addEventListener("click", () => void run(() => chooseRowQuiet(s.row)));
+    item.addEventListener("click", () => {
+      markSelected(item);
+      void run(() => chooseRowQuiet(s.row));
+    });
     list.append(item);
   }
   $<HTMLButtonElement>("bulk-apply").disabled = bulkChosen.size === 0;
@@ -1475,6 +1522,7 @@ function initialise(): void {
     }),
   );
   $("respell").addEventListener("click", () => void run(respell));
+  $("spelling").addEventListener("change", renderSpellingChoice);
   let timer: number | undefined;
   onSelectionChanged(() => {
     window.clearTimeout(timer);

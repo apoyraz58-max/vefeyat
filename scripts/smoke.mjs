@@ -207,7 +207,11 @@ try {
   check("weak spelling is not chosen automatically", !(await page.isVisible("#details")));
   await page.check("#candidate-0");
   const options = await page.$$eval("#spelling option", (o) => o.map((x) => x.value));
-  check("spelling suggestion offered", options[0] === "Gazzâlî", options.join(" | "));
+  check("spelling suggestion offered", options[0] === "" && options[1] === "Gazzâlî", options.join(" | "));
+  check("current spelling is what is selected; nothing to change yet", (await page.isDisabled("#respell")) && (await page.$eval("#spelling", (e) => e.selectedOptions[0].textContent)).startsWith("Gazali'nin"));
+  check("chosen candidate is marked", (await page.textContent(".candidate.chosen")).includes("seçili"));
+  await page.selectOption("#spelling", "Gazzâlî");
+  check("picking a spelling shows what will be written", (await page.textContent("#spelling-preview")).includes("Gazali'nin → Gazzâlî'nin") && !(await page.isDisabled("#respell")));
   await page.click("#respell");
   await page.waitForTimeout(300);
   check("spelling replaced with ending kept", (await docText(page)).includes("Gazzâlî'nin eseri"), await docText(page));
@@ -227,7 +231,7 @@ try {
   check("homonyms listed, well-known first", candidates[0]?.startsWith("Fahreddin er-Râzî") && candidates.length === 2, candidates.join(" | "));
   check("choice required for homonyms", !(await page.isEnabled("#insert")));
   await page.check("#candidate-0");
-  check("Ad biçimi puts the full name first", (await page.$eval("#spelling option", (o) => o.textContent)).includes("Tam / uzun ad"));
+  check("Ad biçimi puts the full name first", (await page.$$eval("#spelling option", (o) => o[1]?.textContent ?? "")).includes("Tam / uzun ad"));
   if (shotPath) await page.screenshot({ path: shotPath, fullPage: true });
   await page.click("#insert");
   await page.waitForTimeout(200);
