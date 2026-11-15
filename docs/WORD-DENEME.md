@@ -82,7 +82,7 @@ bu durumda penceredeki düğmeyi kullanın.
   oluşturun. Panelde "1 numaralı sayfa"yı ayarlayın (öncesi Roma rakamı).
   Sayfa bilgisi okunamayan Word'de dizin gizli XE işaretleriyle hazırlanır;
   büyük belgede bu uzun sürer.
-- Sonnotlar, üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz
+- Üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz
   (Diğer araçlar → Denetim kapsamını göster).
 - **VBA belgeleri:** VBA sürümünün eklediği tarihler Word alanıdır
   (`ADDIN Vefeyat.Date`). Belge sağlığı bunları sayar ve **VBA tarihlerini

@@ -3,7 +3,7 @@
  * logic.ts; these functions only read or write the document.
  */
 import type { NameIndex, Person } from "../core/index.js";
-import type { InventoryRow, Segment } from "./inventory.js";
+import { ENDNOTE_BASE, type InventoryRow, type Segment } from "./inventory.js";
 import { parseSpellings } from "./prefs.js";
 import { DATE_TAG_PREFIX, type DateControl, type LegacyResolution, isLegacyDateField, legacyPerson } from "./health.js";
 import { type IndexLine, staticIndex, INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
@@ -99,11 +99,13 @@ export async function findEarlier(spellings: readonly string[], select = false):
     }
     // Footnotes (WordApi 1.5): a note whose reference precedes the selection.
     if (!Office.context.requirements.isSetSupported("WordApi", "1.5")) return false;
-    const notes = context.document.body.footnotes;
-    notes.load("items/body/text");
+    const foot = context.document.body.footnotes;
+    const end = context.document.body.endnotes;
+    foot.load("items/body/text");
+    end.load("items/body/text");
     await context.sync();
     const lowered = spellings.map((value) => value.toLocaleLowerCase("tr"));
-    const containing = notes.items.filter((note) => {
+    const containing = [...foot.items, ...end.items].filter((note) => {
       const text = note.body.text.toLocaleLowerCase("tr");
       return lowered.some((value) => text.includes(value));
     });
@@ -230,7 +232,23 @@ export function onSelectionChanged(handler: () => void): void {
 
 // ---- Whole-document reading for Şahıs dökümü and Belgeyi denetle ----
 
-/** Main-text paragraphs and, where WordApi 1.5 is available, footnotes. */
+
+/** The footnote or endnote a note segment comes from, in its anchor paragraph. */
+function noteOf(lists: { foot: Word.NoteItemCollection; end?: Word.NoteItemCollection | undefined }, order: number): Word.NoteItem | undefined {
+  return order > ENDNOTE_BASE ? lists.end?.items[order - ENDNOTE_BASE - 1] : lists.foot.items[order - 1];
+}
+
+/** Footnote and endnote bodies of the whole document (WordApi 1.5). */
+async function noteBodies(context: Word.RequestContext): Promise<Word.Body[]> {
+  if (!Office.context.requirements.isSetSupported("WordApi", "1.5")) return [];
+  const foot = context.document.body.footnotes;
+  const end = context.document.body.endnotes;
+  foot.load("items");
+  end.load("items");
+  await context.sync();
+  return [...foot.items, ...end.items].map((n) => n.body);
+}
+
 /** Word requests queued per sync in long operations. */
 const CHUNK = 200;
 /** Marks per sync: each one makes Word re-lay out the page, so keep batches small. */
@@ -241,6 +259,7 @@ const breathe = () => new Promise<void>((resolve) => setTimeout(resolve, 60));
 
 export type Progress = (done: number, total: number) => void;
 
+/** Main-text paragraphs and, where WordApi 1.5 is available, footnotes and endnotes. */
 export async function readSegments(progress: Progress = () => {}): Promise<{ segments: Segment[]; footnotes: boolean }> {
   return Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
@@ -252,13 +271,16 @@ export async function readSegments(progress: Progress = () => {}): Promise<{ seg
       // In chunks: one request per paragraph of a 500-page thesis is too much for one sync.
       for (let from = 0; from < paragraphs.items.length; from += CHUNK) {
         const notes = paragraphs.items.slice(from, from + CHUNK).map((p) => {
-          const collection = p.getRange("Whole").footnotes;
-          collection.load("items/body/text");
-          return collection;
+          const foot = p.getRange("Whole").footnotes;
+          const end = p.getRange("Whole").endnotes;
+          foot.load("items/body/text");
+          end.load("items/body/text");
+          return { foot, end };
         });
         await context.sync();
-        notes.forEach((collection, k) => {
-          collection.items.forEach((note, i) => segments.push({ part: "note", anchor: from + k, order: i + 1, text: note.body.text }));
+        notes.forEach(({ foot, end }, k) => {
+          foot.items.forEach((note, i) => segments.push({ part: "note", anchor: from + k, order: i + 1, text: note.body.text }));
+          end.items.forEach((note, i) => segments.push({ part: "note", anchor: from + k, order: ENDNOTE_BASE + i + 1, text: note.body.text }));
         });
         progress(Math.min(from + CHUNK, paragraphs.items.length), paragraphs.items.length);
       }
@@ -284,10 +306,12 @@ export async function selectMention(segment: Segment, start: number, literal: st
     if (!host) return false;
     let scope: Word.Body | Word.Range = host.getRange("Whole");
     if (segment.part === "note") {
-      const notes = host.getRange("Whole").footnotes;
-      notes.load("items");
+      const foot = host.getRange("Whole").footnotes;
+      const end = host.getRange("Whole").endnotes;
+      foot.load("items");
+      end.load("items");
       await context.sync();
-      const note = notes.items[segment.order - 1];
+      const note = noteOf({ foot, end }, segment.order);
       if (!note) return false;
       scope = note.body;
     }
@@ -327,13 +351,7 @@ export async function finalizeDocument(): Promise<{ controls: number; settings: 
   let marks = 0;
   if (canIndex()) marks = (await removeIndexMarks()).marks;
   const controls = await Word.run(async (context) => {
-    const lists = [context.document.body.contentControls];
-    if (Office.context.requirements.isSetSupported("WordApi", "1.5")) {
-      const notes = context.document.body.footnotes;
-      notes.load("items");
-      await context.sync();
-      for (const note of notes.items) lists.push(note.body.contentControls);
-    }
+    const lists = [context.document.body.contentControls, ...(await noteBodies(context)).map((b) => b.contentControls)];
     let count = 0;
     for (let from = 0; from < lists.length; from += CHUNK) {
       const chunk = lists.slice(from, from + CHUNK);
@@ -374,10 +392,7 @@ const INDEX_HEADING = "Şahıslar Dizini";
 
 /** Deletes Vefeyât's XE and INDEX fields from body and footnotes. */
 async function deleteIndexFields(context: Word.RequestContext): Promise<{ marks: number; indexes: number }> {
-  const notes = context.document.body.footnotes;
-  notes.load("items");
-  await context.sync();
-  const lists = [context.document.body.fields, ...notes.items.map((n) => n.body.fields)];
+  const lists = [context.document.body.fields, ...(await noteBodies(context)).map((b) => b.fields)];
   let marks = 0;
   let indexes = 0;
   for (let from = 0; from < lists.length; from += CHUNK) {
@@ -528,15 +543,17 @@ async function insertMarks(segments: readonly Segment[], rows: readonly Inventor
     const paragraphs = context.document.body.paragraphs;
     paragraphs.load("items");
     await context.sync();
-    const noteLists = new Map<number, Word.NoteItemCollection>();
+    const noteLists = new Map<number, { foot: Word.NoteItemCollection; end: Word.NoteItemCollection }>();
     const anchors = [...new Set(rows.filter((r) => segments[r.segment]?.part === "note").map((r) => (segments[r.segment] as Segment).anchor))];
     for (let from = 0; from < anchors.length; from += CHUNK) {
       for (const anchor of anchors.slice(from, from + CHUNK)) {
         const host = paragraphs.items[anchor];
         if (!host) continue;
-        const list = host.getRange("Whole").footnotes;
-        list.load("items");
-        noteLists.set(anchor, list);
+        const foot = host.getRange("Whole").footnotes;
+        const end = host.getRange("Whole").endnotes;
+        foot.load("items");
+        end.load("items");
+        noteLists.set(anchor, { foot, end });
       }
       await context.sync();
     }
@@ -548,7 +565,10 @@ async function insertMarks(segments: readonly Segment[], rows: readonly Inventor
       const host = paragraphs.items[segment.anchor];
       if (!host) return null;
       const scope: Word.Body | Word.Range | undefined =
-        segment.part === "note" ? noteLists.get(segment.anchor)?.items[segment.order - 1]?.body : host.getRange("Whole");
+        segment.part === "note" ? (() => {
+          const lists = noteLists.get(segment.anchor);
+          return lists ? noteOf(lists, segment.order)?.body : undefined;
+        })() : host.getRange("Whole");
       if (!scope) return null;
       const key = `${row.segment}|${row.text}`;
       let results = cache.get(key);
@@ -687,12 +707,7 @@ export async function buildIndex(segments: readonly Segment[], rows: readonly In
 /** Content-control lists of the body and (WordApi 1.5) the footnotes, loaded. */
 async function controlLists(context: Word.RequestContext): Promise<Array<{ part: "main" | "note"; list: Word.ContentControlCollection }>> {
   const lists: Array<{ part: "main" | "note"; list: Word.ContentControlCollection }> = [{ part: "main", list: context.document.body.contentControls }];
-  if (Office.context.requirements.isSetSupported("WordApi", "1.5")) {
-    const notes = context.document.body.footnotes;
-    notes.load("items");
-    await context.sync();
-    for (const note of notes.items) lists.push({ part: "note", list: note.body.contentControls });
-  }
+  for (const body of await noteBodies(context)) lists.push({ part: "note", list: body.contentControls });
   for (let from = 0; from < lists.length; from += CHUNK) {
     for (const { list } of lists.slice(from, from + CHUNK)) list.load("items/id,items/tag,items/text");
     await context.sync();
@@ -767,7 +782,7 @@ export interface Coverage {
   readonly comments: number | null;
 }
 
-/** What Vefeyât scans (body, footnotes) and what it does not (endnotes, headers, comments). */
+/** What Vefeyât scans (body, footnotes, endnotes) and what it does not (headers, comments, text boxes). */
 export async function readCoverage(): Promise<Coverage> {
   return Word.run(async (context) => {
     const body = context.document.body;
@@ -912,15 +927,18 @@ export async function buildPageIndex(
       const noteList = [...noteRows.entries()];
       for (let from = 0; from < noteList.length; from += CHUNK) {
         const chunk = noteList.slice(from, from + CHUNK).map(([anchor, list]) => {
-          const notes = paragraphs.items[anchor]?.getRange("Whole").footnotes;
-          notes?.load("items");
-          return { list, notes };
+          const range = paragraphs.items[anchor]?.getRange("Whole");
+          const foot = range?.footnotes;
+          const end = range?.endnotes;
+          foot?.load("items");
+          end?.load("items");
+          return { list, notes: foot ? { foot, end } : undefined };
         });
         await context.sync();
         const pageLists = chunk.flatMap(({ list, notes }) =>
           list.map((row) => {
             const segment = segments[row.segment] as Segment;
-            const pages = notes?.items[segment.order - 1]?.reference.pages;
+            const pages = notes ? noteOf(notes, segment.order)?.reference.pages : undefined;
             pages?.load("items/index");
             return { row, pages };
           }),
@@ -950,13 +968,7 @@ export async function buildPageIndex(
 // ---- VBA belgeleri (ADDIN Vefeyat.Date) → içerik denetimleri ----
 
 async function legacyFields(context: Word.RequestContext): Promise<Word.Field[]> {
-  const bodies: Word.Body[] = [context.document.body];
-  if (Office.context.requirements.isSetSupported("WordApi", "1.5")) {
-    const notes = context.document.body.footnotes;
-    notes.load("items");
-    await context.sync();
-    for (const note of notes.items) bodies.push(note.body);
-  }
+  const bodies: Word.Body[] = [context.document.body, ...(await noteBodies(context))];
   const found: Word.Field[] = [];
   for (let from = 0; from < bodies.length; from += CHUNK) {
     const lists = bodies.slice(from, from + CHUNK).map((b) => {

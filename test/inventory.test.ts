@@ -128,3 +128,15 @@ describe("identity from the document", () => {
     expect(rows[2]!.candidates[0]).toBe(fahreddin);
   });
 });
+
+describe("endnotes", () => {
+  it("are read like footnotes, after them, and labelled Sonnot", async () => {
+    const { ENDNOTE_BASE, placeOf } = await import("../src/addin/inventory.js");
+    const segments: Segment[] = [main(0, "Giriş."), note(0, ENDNOTE_BASE + 1, "Cüveynî de bu görüştedir."), note(0, 1, "Gazzâlî de bu görüştedir.")];
+    const rows = buildInventory(segments, catalog);
+    expect(rows.map((r) => [r.text, placeOf(segments[r.segment])])).toEqual([
+      ["Gazzâlî", "Dipnot"],
+      ["Cüveynî", "Sonnot"],
+    ]);
+  });
+});

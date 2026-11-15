@@ -6,7 +6,7 @@
  */
 import { strToU8, zipSync } from "fflate";
 import { type DateKind, type Person, chronoYear, dateKind, isValidDate, nameQuery, normalize, personKey, textName } from "../core/index.js";
-import type { InventoryRow, Segment } from "./inventory.js";
+import { type InventoryRow, type Segment, placeOf } from "./inventory.js";
 
 // ---- Tutarlılık raporu ----
 
@@ -41,7 +41,7 @@ export function consistencyReport(segments: readonly Segment[]): ConsistencyRepo
   const markerCount = new Map<string, string[]>();
   const kindCount = new Map<DateKind, string[]>();
   for (const segment of segments) {
-    const place = segment.part === "note" ? "Dipnot" : "Metin";
+    const place = placeOf(segment);
     for (const [marker, label] of MARKERS) {
       for (let at = segment.text.indexOf(marker); at >= 0; at = segment.text.indexOf(marker, at + 1)) {
         const closing = segment.text.indexOf(")", at);

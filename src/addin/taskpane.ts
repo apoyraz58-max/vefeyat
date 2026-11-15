@@ -29,7 +29,7 @@ import {
   scopeRule,
   settingsSummary,
 } from "./logic.js";
-import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLabel, summarize } from "./inventory.js";
+import { type InventoryRow, type Segment, buildInventory, catalogLabel, placeOf, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
 import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, addHistory, applyOrder, bulkSuggestions, describeSuggestion, parseBookmark, parseHistory, resumeIndex, rowKey } from "./bulk.js";
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
@@ -493,7 +493,7 @@ async function respell(): Promise<void> {
 
 // ---- Şahıs dökümü ----
 
-const LOCATION = { main: "Metin", note: "Dipnot" } as const;
+const placeOfRow = (row: { segment: number }) => placeOf(state.segments[row.segment]);
 
 async function prepareInventory(): Promise<void> {
   if (!state.catalog) {
@@ -510,7 +510,7 @@ async function prepareInventory(): Promise<void> {
   const sum = summarize(state.rows);
   $("inventory-summary").textContent =
     `${sum.mentions} geçiş · ${sum.people} kesin şahıs · ${sum.uncertain} doğrulanacak · ${sum.firstWithoutDate} ilk geçişte tarih yok · ${sum.spelling} yazım uyarısı` +
-    (read.footnotes ? "" : " · Bu Word sürümünde dipnotlar okunamıyor");
+    (read.footnotes ? "" : " · Bu Word sürümünde dipnot ve sonnotlar okunamıyor");
   renderInventory();
 }
 
@@ -527,7 +527,7 @@ function renderInventory(): void {
     name.textContent = row.text;
     const badge = document.createElement("span");
     badge.className = "badge";
-    badge.textContent = LOCATION[row.part];
+    badge.textContent = placeOfRow(row);
     const meta = document.createElement("span");
     meta.className = "meta";
     meta.textContent = `${catalogLabel(row)} · ${row.date || "tarih yok"}`;
@@ -636,7 +636,7 @@ function renderAudit(): void {
   bar.hidden = state.audit === null;
   if (!state.audit) return;
   const row = state.audit[state.auditAt];
-  $("audit-position").textContent = `Denetim: ${state.auditAt + 1} / ${state.audit.length}` + (row ? ` · ${LOCATION[row.part]} · ${statusLabel(row)}` : "");
+  $("audit-position").textContent = `Denetim: ${state.auditAt + 1} / ${state.audit.length}` + (row ? ` · ${placeOfRow(row)} · ${statusLabel(row)}` : "");
   $<HTMLButtonElement>("audit-prev").disabled = state.auditAt === 0;
   $<HTMLButtonElement>("audit-next").textContent = state.auditAt + 1 >= state.audit.length ? "Bitir" : "Sonraki ▶";
 }
@@ -659,7 +659,7 @@ async function showConsistency(): Promise<void> {
   if (report.total === 0) {
     line("Belgede (ö. …) biçiminde tarih bulunamadı.");
   } else {
-    line(`${report.total} tarih incelendi${footnotes ? " (dipnotlar dahil)" : " (dipnotlar bu Word sürümünde okunamadı)"}.`);
+    line(`${report.total} tarih incelendi${footnotes ? " (dipnot ve sonnotlar dahil)" : " (dipnot ve sonnotlar bu Word sürümünde okunamadı)"}.`);
     for (const [title, entries, mixed] of [["İşaret", report.markers, report.mixedMarkers], ["Biçim", report.kinds, report.mixedKinds]] as const) {
       line(`${title}: ${entries.map((e) => `${e.label} ${e.count}`).join(" · ")}${mixed ? " — karışık" : " — tutarlı"}`, mixed ? "warning" : "");
       for (const e of entries) for (const x of e.examples) line(`  ${x}`, "muted");
@@ -817,7 +817,7 @@ function renderHealth(): void {
     name.textContent = row.person ? textName(row.person.shortName) : "Bilinmeyen kayıt";
     const badge = document.createElement("span");
     badge.className = "badge";
-    badge.textContent = LOCATION[row.part];
+    badge.textContent = row.part === "note" ? "Not" : "Metin";
     const meta = document.createElement("span");
     meta.className = "meta";
     meta.textContent = `Belgede: ${row.text.trim() || "(boş)"}` + (row.expected ? ` → ${row.expected}` : "");
@@ -993,7 +993,7 @@ function renderBulk(): void {
     name.textContent = describeSuggestion(s);
     const badge = document.createElement("span");
     badge.className = "badge";
-    badge.textContent = LOCATION[s.row.part];
+    badge.textContent = placeOfRow(s.row);
     const meta = document.createElement("span");
     meta.className = "meta";
     meta.textContent = s.kind === "date" ? `Tarih ekle · ${textName(s.person.shortName)}` : `Kaynak yazımı · ${textName(s.person.shortName)}${s.row.confirmed ? " · onaylı kimlik" : ""}`;
@@ -1119,7 +1119,7 @@ async function showCoverage(): Promise<void> {
   const lines: Array<[string, string]> = [
     ["Taranır", `Ana metin: ${c.paragraphs} paragraf (tablolar dahil).`],
     c.footnotes === null ? ["Taranmaz", "Dipnotlar: bu Word sürümü dipnot okumayı desteklemiyor (WordApi 1.5)."] : ["Taranır", `Dipnotlar: ${c.footnotes}.`],
-    ["Taranmaz", c.endnotes === null ? "Sonnotlar: bu Word sürümünde okunamıyor." : `Sonnotlar: ${c.endnotes}.`],
+    c.endnotes === null ? ["Taranmaz", "Sonnotlar: bu Word sürümünde okunamıyor."] : ["Taranır", `Sonnotlar: ${c.endnotes}.`],
     ["Taranmaz", `Üst ve alt bilgiler: ${c.headers} dolu bölüm.`],
     ["Taranmaz", c.comments === null ? "Açıklamalar: bu Word sürümünde okunamıyor." : `Açıklamalar: ${c.comments}.`],
     ["Taranmaz", "Metin kutuları ve şekiller içindeki metin (Office.js bunlara erişemiyor)."],

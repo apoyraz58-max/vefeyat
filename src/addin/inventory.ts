@@ -32,6 +32,15 @@ import {
 } from "../core/index.js";
 import { type Confirmations, confirmedPerson, exclusionKey, mentionKey } from "./logic.js";
 
+/** Segment.order of an endnote: ENDNOTE_BASE + its number in the paragraph (footnotes are 1, 2 …). */
+export const ENDNOTE_BASE = 1000;
+
+/** "Metin", "Dipnot" or "Sonnot" for a segment. */
+export function placeOf(segment: Pick<Segment, "part" | "order"> | undefined): "Metin" | "Dipnot" | "Sonnot" {
+  if (!segment || segment.part === "main") return "Metin";
+  return segment.order > ENDNOTE_BASE ? "Sonnot" : "Dipnot";
+}
+
 /** A paragraph of the main text or of a footnote, in reading order. */
 export interface Segment {
   readonly part: "main" | "note";
