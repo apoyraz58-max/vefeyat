@@ -125,7 +125,7 @@ export function candidateLabel(person: Person): string {
 }
 
 export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "saglik" | "kaynak" | "gecmis" | "toplu" | "kimlik" | "istisna" | "kapsam" | "tercihler";
-export type Tool = "tutarlilik" | "rapor" | "dizin" | "dizinkaldir" | "temizlik";
+export type Tool = "tutarlilik" | "rapor" | "dizin" | "dizinkaldir" | "dizinsil" | "temizlik";
 
 export interface Launch {
   readonly view: View;
@@ -146,7 +146,7 @@ export function parseLaunch(search: string): Launch {
   const view = query.get("view");
   if (action === "insert" || action === "spelling" || action === "dia" || action === "prefer") return { view: "secili", action, tool: null };
   if (action === "clearSpelling" || action === "shading") return { view: "tercihler", action, tool: null };
-  if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "dizinkaldir" || tool === "temizlik") {
+  if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "dizinkaldir" || tool === "dizinsil" || tool === "temizlik") {
     return { view: "teslim", action: null, tool };
   }
   if (view === "denetim") return { view: "secili", action: "audit", tool: null };

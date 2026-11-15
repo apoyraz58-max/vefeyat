@@ -308,7 +308,9 @@ export function documentName(): string {
  * Teslim öncesi temizle: removes Vefeyât's date content controls (keeping
  * the date text) from the body and footnotes, and the vefeyat.* settings.
  */
-export async function finalizeDocument(): Promise<{ controls: number; settings: number }> {
+export async function finalizeDocument(): Promise<{ controls: number; settings: number; marks: number }> {
+  let marks = 0;
+  if (canIndex()) marks = (await removeIndexMarks()).marks;
   const controls = await Word.run(async (context) => {
     const lists = [context.document.body.contentControls];
     if (Office.context.requirements.isSetSupported("WordApi", "1.5")) {
@@ -340,7 +342,7 @@ export async function finalizeDocument(): Promise<{ controls: number; settings: 
   await new Promise<void>((resolve, reject) => {
     settings.saveAsync((result) => (result.status === Office.AsyncResultStatus.Succeeded ? resolve() : reject(new Error(result.error.message))));
   });
-  return { controls, settings: removed };
+  return { controls, settings: removed, marks };
 }
 
 // ---- Şahıslar dizini (WordApi 1.5: insertField) ----
@@ -409,6 +411,47 @@ async function deleteOldHeadings(context: Word.RequestContext): Promise<void> {
   await context.sync();
 }
 
+/**
+ * Turns Vefeyât's INDEX field into plain paragraphs (after updating it), so
+ * the index survives once its marks are gone. Page numbers no longer follow
+ * later edits. Returns whether an index was found.
+ */
+async function freezeIndex(context: Word.RequestContext): Promise<boolean> {
+  const fields = context.document.body.fields;
+  fields.load("items/code");
+  await context.sync();
+  const indexes = fields.items.filter((f) => /^\s*INDEX\b/i.test(f.code) && isVefeyatIndexField(f.code));
+  if (indexes.length === 0) return false;
+  for (const field of indexes) field.updateResult();
+  await context.sync();
+  const results = indexes.map((field) => {
+    const paragraphs = field.result.paragraphs;
+    paragraphs.load("items/text,items/style");
+    return { field, paragraphs, first: field.result.paragraphs.getFirst() };
+  });
+  await context.sync();
+  for (const { field, paragraphs, first } of results) {
+    for (const p of paragraphs.items) {
+      if (p.text.trim().length === 0) continue;
+      const copy = first.insertParagraph(p.text, "Before");
+      copy.style = p.style;
+    }
+    field.delete();
+  }
+  await context.sync();
+  return true;
+}
+
+/** Dizin işaretlerini kaldır: the index stays as text, the hidden XE marks go. */
+export async function removeIndexMarks(): Promise<{ marks: number; index: boolean }> {
+  return Word.run(async (context) => {
+    const index = await freezeIndex(context);
+    const fields = await deleteIndexFields(context);
+    return { marks: fields.marks, index };
+  });
+}
+
+/** Dizini tamamen kaldır: marks, index, its heading and page break. */
 export async function removeIndex(): Promise<{ marks: number; index: boolean }> {
   return Word.run(async (context) => {
     const block = await deleteIndexBlock(context);

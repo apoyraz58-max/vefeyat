@@ -117,7 +117,8 @@ groups = [
         button("Report", S("Report", "Şahıs raporu"), L("Report.Tip", "Şahısları ilk geçiş sırasıyla ve kronolojik olarak yeni bir belgede listeler."), "report", pane(U("U.Report", "taskpane.html?tool=rapor"))),
         menu("Index", S("Index", "Şahıslar dizini"), L("Index.Tip", "Kimliği kesin geçişlerden Word şahıslar dizini."), "index", [
             item("IndexBuild", S("IndexBuild", "Dizini oluştur / güncelle"), "Index.Tip", "index", pane(U("U.IndexBuild", "taskpane.html?tool=dizin"))),
-            item("IndexRemove", S("IndexRemove", "Dizin işaretlerini kaldır"), L("IndexRemove.Tip", "Yalnız Vefeyât dizin işaretlerini ve dizinini siler."), "index", pane(U("U.IndexRemove", "taskpane.html?tool=dizinkaldir"))),
+            item("IndexRemove", S("IndexRemove", "Dizin işaretlerini kaldır"), L("IndexRemove.Tip", "Gizli dizin işaretlerini siler; dizin, güncel hâliyle metin olarak kalır."), "index", pane(U("U.IndexRemove", "taskpane.html?tool=dizinkaldir"))),
+            item("IndexDelete", S("IndexDelete", "Dizini tamamen kaldır"), L("IndexDelete.Tip", "Vefeyât dizinini, başlığını ve dizin işaretlerini birlikte siler."), "index", pane(U("U.IndexDelete", "taskpane.html?tool=dizinsil"))),
         ]),
         button("Finalize", S("Finalize", "Teslim öncesi temizle"), L("Finalize.Tip", "Teslim kopyası için Vefeyât izlerini kaldırır; görünen metin değişmez."), "finalize", pane(U("U.Finalize", "taskpane.html?tool=temizlik"))),
     ]),

@@ -545,6 +545,22 @@
                         <SourceLocation resid="U.IndexRemove"/>
                       </Action>
                     </Item>
+                    <Item id="Vefeyat.IndexDelete">
+                      <Label resid="IndexDelete"/>
+                      <Supertip>
+                        <Title resid="IndexDelete"/>
+                        <Description resid="IndexDelete.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.index.16"/>
+                        <bt:Image size="32" resid="Ic.index.32"/>
+                        <bt:Image size="80" resid="Ic.index.80"/>
+                      </Icon>
+                      <Action xsi:type="ShowTaskpane">
+                        <TaskpaneId>VefeyatPane</TaskpaneId>
+                        <SourceLocation resid="U.IndexDelete"/>
+                      </Action>
+                    </Item>
                   </Items>
                 </Control>
                 <Control xsi:type="Button" id="Vefeyat.Finalize">
@@ -1057,6 +1073,7 @@
         <bt:Url id="U.Report" DefaultValue="{{BASE_URL}}taskpane.html?tool=rapor"/>
         <bt:Url id="U.IndexBuild" DefaultValue="{{BASE_URL}}taskpane.html?tool=dizin"/>
         <bt:Url id="U.IndexRemove" DefaultValue="{{BASE_URL}}taskpane.html?tool=dizinkaldir"/>
+        <bt:Url id="U.IndexDelete" DefaultValue="{{BASE_URL}}taskpane.html?tool=dizinsil"/>
         <bt:Url id="U.Finalize" DefaultValue="{{BASE_URL}}taskpane.html?tool=temizlik"/>
         <bt:Url id="U.Prefer" DefaultValue="{{BASE_URL}}taskpane.html?action=prefer"/>
         <bt:Url id="U.ClearSpelling" DefaultValue="{{BASE_URL}}taskpane.html?action=clearSpelling"/>
@@ -1104,6 +1121,7 @@
         <bt:String id="Index" DefaultValue="Şahıslar dizini"/>
         <bt:String id="IndexBuild" DefaultValue="Dizini oluştur / güncelle"/>
         <bt:String id="IndexRemove" DefaultValue="Dizin işaretlerini kaldır"/>
+        <bt:String id="IndexDelete" DefaultValue="Dizini tamamen kaldır"/>
         <bt:String id="Finalize" DefaultValue="Teslim öncesi temizle"/>
         <bt:String id="G.Submit" DefaultValue="Teslim ve dizin"/>
         <bt:String id="S.nameForm.ask" DefaultValue="Her seferinde sor"/>
@@ -1156,7 +1174,8 @@
         <bt:String id="Consistency.Tip" DefaultValue="ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerleri gösterir; belgeyi değiştirmez."/>
         <bt:String id="Report.Tip" DefaultValue="Şahısları ilk geçiş sırasıyla ve kronolojik olarak yeni bir belgede listeler."/>
         <bt:String id="Index.Tip" DefaultValue="Kimliği kesin geçişlerden Word şahıslar dizini."/>
-        <bt:String id="IndexRemove.Tip" DefaultValue="Yalnız Vefeyât dizin işaretlerini ve dizinini siler."/>
+        <bt:String id="IndexRemove.Tip" DefaultValue="Gizli dizin işaretlerini siler; dizin, güncel hâliyle metin olarak kalır."/>
+        <bt:String id="IndexDelete.Tip" DefaultValue="Vefeyât dizinini, başlığını ve dizin işaretlerini birlikte siler."/>
         <bt:String id="Finalize.Tip" DefaultValue="Teslim kopyası için Vefeyât izlerini kaldırır; görünen metin değişmez."/>
         <bt:String id="S.nameForm.Tip" DefaultValue="İsim yazımında önce önerilecek biçim. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="S.prefix.Tip" DefaultValue="Ölüm tarihinin başındaki kısaltma. Seçili değer Vefeyât penceresinin üstünde yazar."/>

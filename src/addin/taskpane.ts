@@ -35,7 +35,7 @@ import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, ad
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
 import { HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -620,6 +620,21 @@ async function createIndex(): Promise<void> {
   );
 }
 
+async function deleteIndexMarks(): Promise<void> {
+  if (!canIndex()) {
+    setMessage("Bu Word sürümü alanları düzenlemeyi desteklemiyor (WordApi 1.5 gerekir).", "warning");
+    return;
+  }
+  const result = await removeIndexMarks();
+  if (!result.index && result.marks === 0) setMessage("Belgede Vefeyât dizini yok.", "info");
+  else
+    setMessage(
+      `${result.marks} dizin işareti kaldırıldı.` + (result.index ? " Şahıslar Dizini güncel hâliyle metin olarak kaldı; sayfa numaraları artık kendiliğinden güncellenmez." : ""),
+      "success",
+    );
+  logHistory("index", `işaretler kaldırıldı, dizin metin oldu (${result.marks} işaret)`);
+}
+
 async function deleteIndex(): Promise<void> {
   if (!canIndex()) {
     setMessage("Bu Word sürümü alanları düzenlemeyi desteklemiyor (WordApi 1.5 gerekir).", "warning");
@@ -1115,13 +1130,13 @@ async function cleanup(): Promise<void> {
   button.textContent = "Temizle";
   const result = await finalizeDocument();
   logHistory("cleanup", `${result.controls} tarih metne dönüştü`);
-  setMessage(`Temizlendi: ${result.controls} tarih denetimi metne dönüştürüldü, ${result.settings} belge ayarı kaldırıldı.`, "success");
+  setMessage(`Temizlendi: ${result.controls} tarih denetimi metne dönüştürüldü, ${result.marks} dizin işareti kaldırıldı (dizin metin olarak kaldı), ${result.settings} belge ayarı kaldırıldı.`, "success");
 }
 
 /** Carries out what the ribbon or context-menu button asked for. */
 async function launch(request: Launch): Promise<void> {
   showView(request.view);
-  if (request.tool) document.getElementById(`tool-${request.tool === "dizinkaldir" ? "dizin" : request.tool}`)?.classList.add("focus");
+  if (request.tool) document.getElementById(`tool-${request.tool === "dizinkaldir" || request.tool === "dizinsil" ? "dizin" : request.tool}`)?.classList.add("focus");
   if (request.view === "ara") $<HTMLInputElement>("search-query").focus();
   if (request.view === "dokum") await run(prepareInventory);
   if (request.view === "saglik") await run(checkHealth);
@@ -1139,7 +1154,8 @@ async function launch(request: Launch): Promise<void> {
   if (request.tool === "tutarlilik") await run(showConsistency);
   if (request.tool === "rapor") await run(createPersonReport);
   if (request.tool === "dizin") await run(createIndex);
-  if (request.tool === "dizinkaldir") await run(deleteIndex);
+  if (request.tool === "dizinkaldir") await run(deleteIndexMarks);
+  if (request.tool === "dizinsil") await run(deleteIndex);
   if (request.action === "audit") await run(startAudit);
   if (request.action === "dia") {
     const person = state.chosen;
@@ -1205,7 +1221,8 @@ function initialise(): void {
   $("health-repair").addEventListener("click", () => void run(repairHealth));
   $("source-repair").addEventListener("click", () => void run(repairSource));
   $("run-dizin").addEventListener("click", () => void run(createIndex));
-  $("run-dizinkaldir").addEventListener("click", () => void run(deleteIndex));
+  $("run-dizinkaldir").addEventListener("click", () => void run(deleteIndexMarks));
+  $("run-dizinsil").addEventListener("click", () => void run(deleteIndex));
   $("run-temizlik").addEventListener("click", () => void run(cleanup));
   file.addEventListener("change", () => {
     const chosen = file.files?.[0];
