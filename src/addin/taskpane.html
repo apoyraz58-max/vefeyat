@@ -107,13 +107,15 @@
     <div id="view-teslim" class="view" data-title="Teslim araçları" hidden>
       <section>
         <ul class="tools">
-          <li id="tool-tutarlilik"><strong>Tutarlılık raporu</strong>: ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerler.</li>
-          <li id="tool-rapor"><strong>Şahıs raporu ve kronoloji</strong>: ilk geçiş sırası, eksik tarih ve kısa ad notları; milâdî yıla göre sıralı liste.</li>
-          <li id="tool-dizin"><strong>Şahıslar dizini</strong>: kimliği kesin geçişlerden Word dizini.</li>
-          <li id="tool-temizlik"><strong>Teslim öncesi temizle</strong>: teslim kopyasından Vefeyât izlerini kaldırır.</li>
+          <li id="tool-tutarlilik"><strong>Tutarlılık raporu</strong>: ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerler.
+            <button id="run-tutarlilik" type="button">Raporu göster</button><div id="consistency-out" class="report" hidden></div></li>
+          <li id="tool-rapor"><strong>Şahıs raporu ve kronoloji</strong>: ilk geçiş sırası, eksik tarih ve kısa ad notları; milâdî yıla göre sıralı liste. Yeni bir Word belgesi olarak açılır.
+            <button id="run-rapor" type="button">Raporu oluştur</button></li>
+          <li id="tool-dizin"><strong>Şahıslar dizini</strong>: kimliği kesin geçişlerden Word dizini.
+            <p class="soon">Sıradaki adımda geliyor.</p></li>
+          <li id="tool-temizlik"><strong>Teslim öncesi temizle</strong>: tarihler metin olarak kalır; Vefeyât denetimleri, onaylar ve ayarlar belgeden kaldırılır. Teslim kopyasında kullanın.
+            <button id="run-temizlik" type="button">Temizle</button></li>
         </ul>
-        <p class="soon">Bu araçlar Office.js sürümüne taşınıyor. Şimdilik VBA sürümündeki
-          <strong>Teslim ve dizin</strong> grubunu kullanın.</p>
       </section>
     </div>
 

@@ -236,3 +236,59 @@ export async function selectMention(segment: Segment, start: number, literal: st
     return true;
   });
 }
+
+// ---- Teslim ve dizin ----
+
+/** Opens a generated .docx as a new Word document (WordApi 1.3). */
+export async function openNewDocument(base64: string): Promise<void> {
+  await Word.run(async (context) => {
+    context.application.createDocument(base64).open();
+    await context.sync();
+  });
+}
+
+/** Name of the current document, for report titles. */
+export function documentName(): string {
+  const url = Office.context.document.url ?? "";
+  const name = decodeURIComponent(url.split(/[\\/]/).pop() ?? "");
+  return name || "Adsız belge";
+}
+
+/**
+ * Teslim öncesi temizle: removes Vefeyât's date content controls (keeping
+ * the date text) from the body and footnotes, and the vefeyat.* settings.
+ */
+export async function finalizeDocument(): Promise<{ controls: number; settings: number }> {
+  const controls = await Word.run(async (context) => {
+    const lists = [context.document.body.contentControls];
+    if (Office.context.requirements.isSetSupported("WordApi", "1.5")) {
+      const notes = context.document.body.footnotes;
+      notes.load("items");
+      await context.sync();
+      for (const note of notes.items) lists.push(note.body.contentControls);
+    }
+    for (const list of lists) list.load("items/tag");
+    await context.sync();
+    let count = 0;
+    for (const list of lists) {
+      for (const control of list.items) {
+        if (!control.tag?.startsWith("vefeyat:")) continue;
+        control.cannotDelete = false;
+        control.delete(true);
+        count++;
+      }
+    }
+    await context.sync();
+    return count;
+  });
+  const settings = Office.context.document.settings;
+  let removed = 0;
+  for (const key of [CONFIRMATIONS_KEY, ...Object.values(SETTING_KEYS)]) {
+    if (settings.get(key) !== null && settings.get(key) !== undefined) removed++;
+    settings.remove(key);
+  }
+  await new Promise<void>((resolve, reject) => {
+    settings.saveAsync((result) => (result.status === Office.AsyncResultStatus.Succeeded ? resolve() : reject(new Error(result.error.message))));
+  });
+  return { controls, settings: removed };
+}

@@ -239,6 +239,9 @@ try {
   await tab.close();
   tab = await open("?tool=dizin");
   check("Teslim menu opens the tools window", (await tab.isVisible("#view-teslim")) && (await tab.getAttribute("#tool-dizin", "class")) === "focus" && (await tab.textContent("#view-title")) === "Teslim araçları");
+  await tab.click("#run-tutarlilik");
+  await tab.waitForSelector("#consistency-out:not([hidden])");
+  check("Tutarlılık raporu runs on the document", ((await tab.textContent("#consistency-out")) ?? "").length > 0);
   await tab.click("#back");
   check("back returns to the selected name", await tab.isVisible("#view-secili"));
   await tab.close();

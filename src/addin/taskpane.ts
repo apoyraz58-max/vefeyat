@@ -29,7 +29,8 @@ import {
 } from "./logic.js";
 import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
-import { findEarlier, insertDate, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { consistencyReport, personReportDocx, toBase64 } from "./submit.js";
+import { documentName, finalizeDocument, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -523,12 +524,68 @@ function renderAudit(): void {
   $<HTMLButtonElement>("audit-next").textContent = state.auditAt + 1 >= state.audit.length ? "Bitir" : "Sonraki ▶";
 }
 
+
+// ---- Teslim ve dizin ----
+
+async function showConsistency(): Promise<void> {
+  const { segments, footnotes } = await readSegments();
+  const report = consistencyReport(segments);
+  const out = $("consistency-out");
+  out.hidden = false;
+  out.replaceChildren();
+  const line = (text: string, cls = "") => {
+    const p = document.createElement("p");
+    p.textContent = text;
+    if (cls) p.className = cls;
+    out.append(p);
+  };
+  if (report.total === 0) {
+    line("Belgede (ö. …) biçiminde tarih bulunamadı.");
+  } else {
+    line(`${report.total} tarih incelendi${footnotes ? " (dipnotlar dahil)" : " (dipnotlar bu Word sürümünde okunamadı)"}.`);
+    for (const [title, entries, mixed] of [["İşaret", report.markers, report.mixedMarkers], ["Biçim", report.kinds, report.mixedKinds]] as const) {
+      line(`${title}: ${entries.map((e) => `${e.label} ${e.count}`).join(" · ")}${mixed ? " — karışık" : " — tutarlı"}`, mixed ? "warning" : "");
+      for (const e of entries) for (const x of e.examples) line(`  ${x}`, "muted");
+    }
+  }
+  setMessage(report.mixedMarkers || report.mixedKinds ? "Tarih yazımında karışıklık var; örnekler aşağıda." : "Tutarlılık raporu hazır.", report.mixedMarkers || report.mixedKinds ? "warning" : "success");
+}
+
+async function createPersonReport(): Promise<void> {
+  if (!state.catalog) {
+    setMessage("Katalog yüklenmedi.", "warning");
+    return;
+  }
+  const read = await readSegments();
+  state.index ??= new NameIndex(state.catalog.people);
+  const rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations());
+  await openNewDocument(toBase64(personReportDocx(documentName(), rows)));
+  setMessage("Şahıs raporu yeni bir Word belgesi olarak açıldı.", "success");
+}
+
+let cleanupArmed = false;
+async function cleanup(): Promise<void> {
+  const button = $<HTMLButtonElement>("run-temizlik");
+  if (!cleanupArmed) {
+    cleanupArmed = true;
+    button.textContent = "Eminim, temizle";
+    setMessage("Bu işlem geri alınamaz; teslim kopyasında çalıştığınızdan emin olun ve tekrar tıklayın.", "warning");
+    return;
+  }
+  cleanupArmed = false;
+  button.textContent = "Temizle";
+  const result = await finalizeDocument();
+  setMessage(`Temizlendi: ${result.controls} tarih denetimi metne dönüştürüldü, ${result.settings} belge ayarı kaldırıldı.`, "success");
+}
+
 /** Carries out what the ribbon or context-menu button asked for. */
 async function launch(request: Launch): Promise<void> {
   showView(request.view);
   if (request.tool) document.getElementById(`tool-${request.tool}`)?.classList.add("focus");
   if (request.view === "ara") $<HTMLInputElement>("search-query").focus();
   if (request.view === "dokum") await run(prepareInventory);
+  if (request.tool === "tutarlilik") await run(showConsistency);
+  if (request.tool === "rapor") await run(createPersonReport);
   if (request.action === "audit") await run(startAudit);
   if (request.action === "dia") {
     const person = state.chosen;
@@ -555,6 +612,9 @@ function initialise(): void {
   $("choose-catalog").addEventListener("click", () => file.click());
   $("choose-catalog-inline").addEventListener("click", () => file.click());
   $("reset-catalog").addEventListener("click", () => void resetCatalog());
+  $("run-tutarlilik").addEventListener("click", () => void run(showConsistency));
+  $("run-rapor").addEventListener("click", () => void run(createPersonReport));
+  $("run-temizlik").addEventListener("click", () => void run(cleanup));
   file.addEventListener("change", () => {
     const chosen = file.files?.[0];
     if (chosen) void chooseCatalog(chosen);
