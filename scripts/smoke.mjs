@@ -274,6 +274,11 @@ try {
   tab = await open("?action=insert", "Gazzâlî önce. Sonra Gazzâlî.", "Gazzâlî", { last: true });
   check("ribbon insert still warns about an earlier mention", (await tab.isVisible("#earlier")) && (await docText(tab)) === "Gazzâlî önce. Sonra Gazzâlî.");
   await tab.close();
+  // A date written after an ambiguous name picks its bearer in the selected-name window.
+  tab = await open("", "Bu konuda Râzî (ö. 313/925) farklı düşünür.", "Râzî");
+  await tab.waitForSelector(".candidate.chosen");
+  check("written date picks and marks the homonym", (await tab.textContent(".candidate.chosen")).includes("Ebû Bekir") && (await tab.textContent(".candidate.chosen")).includes("metindeki ölüm tarihine göre"), await tab.textContent(".candidate.chosen"));
+  await tab.close();
   // Another person with the same short name earlier is no earlier mention.
   tab = await open("?action=insert", "Fahreddin er-Râzî tefsir yazdı. Ebû Bekir er-Râzî tıpta meşhurdur.", "Ebû Bekir er-Râzî");
   check("an earlier homonym does not count as an earlier mention", !(await tab.isVisible("#earlier")) && (await docText(tab)) === "Fahreddin er-Râzî tefsir yazdı. Ebû Bekir er-Râzî (ö. 313/925) tıpta meşhurdur.", await docText(tab));

@@ -3,7 +3,7 @@
  * button asked for. Settings live in the ribbon's Tercihler menus; the pane
  * only displays them. Writes happen only on an explicit click.
  */
-import { Catalog, CatalogError, NameIndex, type Person, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
+import { Catalog, CatalogError, NameIndex, type Person, alreadyHasDate, isValidDate, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../core/index.js";
 import {
   DEFAULT_SETTINGS,
   type Launch,
@@ -378,6 +378,15 @@ async function refresh(force = false): Promise<void> {
         state.confirmed = state.chosen !== null;
       }
       if (!state.chosen && state.mention) applyDocumentContext(state.mention);
+      if (!state.chosen && state.found.candidates.length > 1) {
+        // "Râzî (ö. 313/925)": the date written after the name picks the bearer.
+        const dated = state.found.candidates.filter((c) => isValidDate(c.deathDate) && alreadyHasDate(selection.following, c.deathDate));
+        if (dated.length === 1) {
+          state.chosen = dated[0] as Person;
+          contextNote = "metindeki ölüm tarihine göre";
+          state.found = { ...state.found, candidates: [dated[0] as Person, ...state.found.candidates.filter((c) => c !== dated[0])] };
+        }
+      }
     }
     renderCandidates();
     renderDetails();
