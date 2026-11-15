@@ -11,6 +11,7 @@ import { excludeMention, hasSuffix, schoolRoot } from "./context.js";
 import { nameQuery, nameScore, prominence } from "./names.js";
 import { collapseLetters, isSeparator, nameKey, normalize } from "./normalize.js";
 import { vbLower, vbTrim } from "./text.js";
+import { isValidAlias } from "./alias.js";
 import { mid, upper } from "./vb.js";
 
 /** A token: lookup key, 0-based start and length in the source text. */
@@ -308,6 +309,67 @@ export function findMatches(text: string, index: NameIndex, strict = false, cita
     } else {
       i = spanEnd + 1;
     }
+  }
+  return result;
+}
+
+// ---- People absent from the catalog (VBA VfjUnknownMatches) ----
+
+const ROLES = new Set(["dr", "prof", "doc", "yazar", "muellif", "sair", "filozof", "dusunur", "tarihci"]);
+const ORGANIZATIONS = "universite|fakulte|enstitu|yayin|matbaa|kutuphane|devleti|bakanlik|belediye|vakfi|dernegi|konseyi|ansiklopedisi|sempozyum|kongresi".split("|");
+
+const isCased = (text: string): boolean => text.toUpperCase() !== text.toLowerCase();
+
+function roleGap(gap: string, role: string): boolean {
+  if (gap.length > 8) return false;
+  for (const ch of gap) {
+    if (ch === " " || ch === "\t" || ch === ":") continue;
+    if (ch !== "." || (role !== "dr" && role !== "prof" && role !== "doc")) return false;
+  }
+  return true;
+}
+
+/**
+ * Capitalised names right after a person role ("Dr.", "müellif", "şair" …)
+ * that are not in the catalog, used by Şahıs dökümü. Organisations, common
+ * words and context exclusions are rejected.
+ */
+export function findUnknownPeople(text: string, index: NameIndex): Match[] {
+  const result: Match[] = [];
+  const tokens = tokenize(text, index.cache);
+  let i = 0;
+  while (i < tokens.length) {
+    const token = tokens[i] as Token;
+    let raw = text.slice(token.start, token.start + token.length);
+    if (ROLES.has(token.key) || !isCased(raw) || !initialUpper(raw) || isCommonWord(token.key)) {
+      i++;
+      continue;
+    }
+    const last = nameSpanEnd(text, tokens, i, index);
+    let strong = 0;
+    let reject = false;
+    let role = false;
+    if (i > 0) {
+      const previous = tokens[i - 1] as Token;
+      role = ROLES.has(previous.key) && roleGap(gapBetween(text, previous, token), previous.key);
+    }
+    for (let j = i; j <= last; j++) {
+      const part = tokens[j] as Token;
+      raw = text.slice(part.start, part.start + part.length);
+      if (ORGANIZATIONS.some((word) => part.key.includes(word)) || isCommonWord(part.key)) reject = true;
+      if (!isNameLink(part.key) && !isNoise(part.key)) {
+        if (isCased(raw) && initialUpper(raw)) strong++;
+        else reject = true;
+      }
+    }
+    const first = token.start;
+    const end = tokens[last] as Token;
+    const finish = end.start + end.length;
+    raw = text.slice(first, finish);
+    if (!reject && role && strong >= 1 && isValidAlias(raw) && !excludeMention(text, first, finish - first, "", true)) {
+      result.push({ start: first, length: finish - first, text: raw, key: "" });
+    }
+    i = last + 1;
   }
   return result;
 }

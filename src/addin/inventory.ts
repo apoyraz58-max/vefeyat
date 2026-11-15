@@ -14,6 +14,7 @@ import {
   citationSpans,
   containsSpan,
   findMatches,
+  findUnknownPeople,
   isValidDate,
   nameQuery,
   personKey,
@@ -96,9 +97,13 @@ export function buildInventory(
   const rows: InventoryRow[] = [];
   const seen = new Set<string>();
   for (const { segment, i } of ordered) {
-    const hits = notePeopleOrMatches(segment, index);
+    const known = notePeopleOrMatches(segment, index);
+    const unknown = findUnknownPeople(segment.text, index).filter(
+      (u) => !known.some((k) => u.start < k.start + k.length && k.start < u.start + u.length),
+    );
+    const hits = [...known, ...unknown].sort((a, b) => a.start - b.start);
     for (const hit of hits) {
-      const candidates = index.rank(hit.key, nameQuery(hit.text));
+      const candidates = hit.key ? index.rank(hit.key, nameQuery(hit.text)) : [];
       let person = singleSafe(candidates, hit.text) ? (candidates[0] as Person) : null;
       let confirmed = false;
       if (!person) {

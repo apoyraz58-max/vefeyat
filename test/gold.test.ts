@@ -11,7 +11,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { notePeopleOrMatches } from "../src/addin/inventory.js";
+import { buildInventory, notePeopleOrMatches } from "../src/addin/inventory.js";
 import { Catalog, NameIndex, confirmationCandidates, singleSafe } from "../src/core/index.js";
 
 const catalogPath = new URL("../data/catalog.csv", import.meta.url);
@@ -55,6 +55,28 @@ describe.runIf(haveCatalog)("VBA academic challenge set", () => {
     console.log(`strict: tp ${tp}, fp ${fp}, fn ${fn}, precision ${precision.toFixed(3)}, recall ${recall.toFixed(3)}\n  ${errors.join("\n  ")}`);
     expect(precision).toBeGreaterThanOrEqual(0.96);
     expect(recall).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("Şahıs dökümü discovery at least as good as VBA 0.3.41 (P 0.964, R 0.844)", () => {
+    let dtp = 0;
+    let dfp = 0;
+    let dfn = 0;
+    const misses: string[] = [];
+    for (const doc of gold.documents) {
+      const rows = buildInventory([{ part: doc.story === "footnote" ? "note" : "main", anchor: 0, order: 0, text: doc.text }], catalog, index);
+      const wanted = new Set(doc.entities.map((e) => `${e.start_utf16}:${e.end_utf16}`));
+      const actual = new Set(rows.map((r) => `${r.start}:${r.start + r.length}`));
+      const hit = [...wanted].filter((x) => actual.has(x)).length;
+      dtp += hit;
+      dfp += actual.size - hit;
+      dfn += wanted.size - hit;
+      if (hit !== wanted.size || hit !== actual.size) misses.push(`${doc.id} ${doc.category}`);
+    }
+    const p = dtp / (dtp + dfp);
+    const r = dtp / (dtp + dfn);
+    console.log(`inventory: tp ${dtp}, fp ${dfp}, fn ${dfn}, precision ${p.toFixed(3)}, recall ${r.toFixed(3)}; ${misses.join(", ")}`);
+    expect(p).toBeGreaterThanOrEqual(0.964);
+    expect(r).toBeGreaterThanOrEqual(0.84375);
   });
 
   it("identity queries at least as good as VBA 0.3.41", () => {
