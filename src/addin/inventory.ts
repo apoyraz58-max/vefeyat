@@ -6,6 +6,7 @@
  */
 import {
   type Catalog,
+  type Match,
   type NameHit,
   NameIndex,
   type Person,
@@ -68,6 +69,18 @@ export function spellingMatches(person: Person, literal: string): boolean {
   return sourceName(person, bare) === bare;
 }
 
+/**
+ * Person mentions of one paragraph. Main text: strict matches with context
+ * rules. Footnotes (VBA test harness `FootnotePeople`): citation islands are
+ * computed from all catalog spellings and strict matches inside them dropped.
+ */
+export function notePeopleOrMatches(segment: Pick<Segment, "part" | "text">, index: NameIndex): Match[] {
+  if (segment.part !== "note") return findMatches(segment.text, index, true, true);
+  const names = findMatches(segment.text, index, false).map((h): NameHit => [h.start, h.length, h.text]);
+  const spans = citationSpans(segment.text, names);
+  return findMatches(segment.text, index, true, false).filter((hit) => !containsSpan(spans, hit.start, hit.length));
+}
+
 export function buildInventory(segments: readonly Segment[], catalog: Catalog, index = new NameIndex(catalog.people)): InventoryRow[] {
   const ordered = segments
     .map((segment, i) => ({ segment, i }))
@@ -75,12 +88,8 @@ export function buildInventory(segments: readonly Segment[], catalog: Catalog, i
   const rows: InventoryRow[] = [];
   const seen = new Set<string>();
   for (const { segment, i } of ordered) {
-    const hits = findMatches(segment.text, index, true, true);
-    // Footnotes: a name inside an author–title reference is a citation.
-    const spans =
-      segment.part === "note" ? citationSpans(segment.text, hits.map((h): NameHit => [h.start, h.length, h.text])) : [];
+    const hits = notePeopleOrMatches(segment, index);
     for (const hit of hits) {
-      if (containsSpan(spans, hit.start, hit.length)) continue;
       const candidates = index.rank(hit.key, nameQuery(hit.text));
       const person = singleSafe(candidates, hit.text) ? (candidates[0] as Person) : null;
       const after = segment.text.slice(hit.start + hit.length);

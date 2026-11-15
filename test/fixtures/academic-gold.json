@@ -1,0 +1,797 @@
+{
+  "schema": 1,
+  "purpose": "Hand-labelled small challenge set; not a representative corpus or independently verified biography dataset. Names/URLs are checked against a local input catalog; no dates are invented.",
+  "catalog_sha256": "d70e907b9eee33880514427dbd644b1183e8f399e1c852bba4a2237b2e2ebf56",
+  "offsets": "UTF-16 code units, half-open, exact full mention including suffix; titles excluded",
+  "discovery_target": "personal mentions in prose; citations, school/adjective references and headings excluded; catalog-absent people remain gold positives to expose recall loss",
+  "documents": [
+    {
+      "id": "p01",
+      "category": "variant",
+      "text": "Gazzâlî bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 7,
+          "text": "Gazzâlî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p02",
+      "category": "variant",
+      "text": "Gazali bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 6,
+          "text": "Gazali",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p03",
+      "category": "variant",
+      "text": "GAZZÂLÎ bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 7,
+          "text": "GAZZÂLÎ",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p04",
+      "category": "lowercase",
+      "text": "gazali bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 6,
+          "text": "gazali",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p05",
+      "category": "full_name",
+      "text": "Fahreddin er-Râzî bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 17,
+          "text": "Fahreddin er-Râzî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p06",
+      "category": "homonym",
+      "text": "Râzî bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 4,
+          "text": "Râzî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p07",
+      "category": "homonym",
+      "text": "Ahmed el-Gazzâlî bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 16,
+          "text": "Ahmed el-Gazzâlî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p08",
+      "category": "suffix",
+      "text": "Bakıllani'nin görüşü burada ele alınır.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 13,
+          "text": "Bakıllani'nin",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p09",
+      "category": "suffix",
+      "text": "Bâkıllânî’nin görüşü burada ele alınır.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 13,
+          "text": "Bâkıllânî’nin",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p10",
+      "category": "embedded_alias",
+      "text": "Kıvâmüssünne bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 12,
+          "text": "Kıvâmüssünne",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p11",
+      "category": "embedded_alias",
+      "text": "Kıvâmü’s-sünne bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 14,
+          "text": "Kıvâmü’s-sünne",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p12",
+      "category": "name_order",
+      "text": "Seyfeddin el-Âmidî bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 18,
+          "text": "Seyfeddin el-Âmidî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p13",
+      "category": "arabic",
+      "text": "الغزّالي bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 8,
+          "text": "الغزّالي",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p14",
+      "category": "arabic",
+      "text": "الباقلاني bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 9,
+          "text": "الباقلاني",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p15",
+      "category": "title",
+      "text": "İmam Şâfiî bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 5,
+          "end_utf16": 10,
+          "text": "Şâfiî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p16",
+      "category": "title",
+      "text": "Şair Usûlî düşüncesini açıklar.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 5,
+          "end_utf16": 10,
+          "text": "Usûlî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p17",
+      "category": "name_order",
+      "text": "Mustafa İsmet İnönü burada anılır.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 19,
+          "text": "Mustafa İsmet İnönü",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p18",
+      "category": "name_order",
+      "text": "Halide Edip Adıvar burada anılır.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 18,
+          "text": "Halide Edip Adıvar",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p19",
+      "category": "multiple",
+      "text": "Gazzâlî ve Bâkıllânî bu görüşü tartışır.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 7,
+          "text": "Gazzâlî",
+          "catalog": true
+        },
+        {
+          "start_utf16": 11,
+          "end_utf16": 20,
+          "text": "Bâkıllânî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p20",
+      "category": "note_prose",
+      "text": "Bâkıllânî bu görüşü savunur.",
+      "story": "footnote",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 9,
+          "text": "Bâkıllânî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p21",
+      "category": "mixed_note",
+      "text": "Gazzâlî bu görüşü savunur. Bâkıllânî, et-Taḳrîb ve’l-irşâd, 1/173.",
+      "story": "footnote",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 7,
+          "text": "Gazzâlî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p22",
+      "category": "unknown",
+      "text": "Asım Cüneyd Köksal burada anılır.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 18,
+          "text": "Asım Cüneyd Köksal",
+          "catalog": false
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p23",
+      "category": "unknown_role",
+      "text": "Yazar: Asım Cüneyd Köksal bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 7,
+          "end_utf16": 25,
+          "text": "Asım Cüneyd Köksal",
+          "catalog": false
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p24",
+      "category": "unknown_role",
+      "text": "Dr. Zeyd Yılmaz bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 4,
+          "end_utf16": 15,
+          "text": "Zeyd Yılmaz",
+          "catalog": false
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p25",
+      "category": "abbreviation",
+      "text": "F. er-Râzî bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 10,
+          "text": "F. er-Râzî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p26",
+      "category": "abbreviation",
+      "text": "İbn Sînâ bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 8,
+          "text": "İbn Sînâ",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p27",
+      "category": "known_date",
+      "text": "Gazzâlî (ö. 505/1111) bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 7,
+          "text": "Gazzâlî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p28",
+      "category": "suffix",
+      "text": "Gazzâlî'nin ardından Bâkıllânî’ye geçilir.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 0,
+          "end_utf16": 11,
+          "text": "Gazzâlî'nin",
+          "catalog": true
+        },
+        {
+          "start_utf16": 21,
+          "end_utf16": 33,
+          "text": "Bâkıllânî’ye",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p29",
+      "category": "title",
+      "text": "Prof. Dr. Murat Şimşek burada anılır.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 10,
+          "end_utf16": 22,
+          "text": "Murat Şimşek",
+          "catalog": false
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "p30",
+      "category": "unicode_offset",
+      "text": "😀 Gazzâlî bu görüşü savunur.",
+      "story": "main",
+      "entities": [
+        {
+          "start_utf16": 3,
+          "end_utf16": 10,
+          "text": "Gazzâlî",
+          "catalog": true
+        }
+      ],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n01",
+      "category": "concept",
+      "text": "Tarif, ilim ve isim kavramları ele alınır.",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n02",
+      "category": "adjective",
+      "text": "Bu hâli de açıklamaya muhtaçtır.",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n03",
+      "category": "school",
+      "text": "Hanefî, Şâfiî ve Mâlikî mezhepleri bu konuda ayrılır.",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n04",
+      "category": "adjective",
+      "text": "Usûlî düşüncenin gelişimi önemlidir.",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n05",
+      "category": "adjective",
+      "text": "Aynı müellifte bu görüş vardır.",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n06",
+      "category": "concept",
+      "text": "Usûl-i fıkıhta deliller incelenir.",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n07",
+      "category": "heading",
+      "text": "Usûlü Tariflerinde Süreklilik",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n08",
+      "category": "heading",
+      "text": "Üzerinden Tarihsel",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n09",
+      "category": "heading",
+      "text": "A Historical Study",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n10",
+      "category": "heading",
+      "text": "Anahtar Kelimeler",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n11",
+      "category": "heading",
+      "text": "Islamic Law",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n12",
+      "category": "heading",
+      "text": "Mevzû-Mebâdî-Mesâil-Gâye Bağlamı",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n13",
+      "category": "organization",
+      "text": "Ankara Üniversitesi bu konuda açıklama yaptı.",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n14",
+      "category": "ordinary",
+      "text": "Bu araştırmada iki farklı görüş ele alınır.",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n15",
+      "category": "cross_sentence",
+      "text": "Yazar. A Historical Study",
+      "story": "main",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n16",
+      "category": "citation",
+      "text": "Bâkıllânî, et-Taḳrîb ve’l-irşâd, 1/173.",
+      "story": "footnote",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n17",
+      "category": "citation",
+      "text": "Seyfüddîn Ali b. Muhammed el-Âmidî, el-İḥkâm fî uṣûli’l-aḥkâm, thk. Abdürrezzâk Afîfî (Dımaşk - Beyrut: el-Mektebü’l-İslâmî, 1986), 1/7-9;",
+      "story": "footnote",
+      "entities": [],
+      "inventory_explicit_role": true
+    },
+    {
+      "id": "n18",
+      "category": "citation",
+      "text": "Yılmaz, “4./10. Yüzyıl Usul-i Fıkıh Edebiyatında Haber-i Vâhid Tartışmaları”, 461-462.",
+      "story": "footnote",
+      "entities": [],
+      "inventory_explicit_role": true
+    }
+  ],
+  "queries": [
+    {
+      "id": "g0",
+      "query": "Gazzâlî",
+      "target_article": "gazzali",
+      "must_confirm": false
+    },
+    {
+      "id": "g1",
+      "query": "Gazali",
+      "target_article": "gazzali",
+      "must_confirm": false
+    },
+    {
+      "id": "g2",
+      "query": "Gazzali",
+      "target_article": "gazzali",
+      "must_confirm": false
+    },
+    {
+      "id": "g3",
+      "query": "GAZZALİ",
+      "target_article": "gazzali",
+      "must_confirm": false
+    },
+    {
+      "id": "g4",
+      "query": "الغزالي",
+      "target_article": "gazzali",
+      "must_confirm": false
+    },
+    {
+      "id": "g5",
+      "query": "الغزّالي",
+      "target_article": "gazzali",
+      "must_confirm": false
+    },
+    {
+      "id": "b0",
+      "query": "Bâkıllânî",
+      "target_article": "bakillani",
+      "must_confirm": false
+    },
+    {
+      "id": "b1",
+      "query": "Bakillani",
+      "target_article": "bakillani",
+      "must_confirm": false
+    },
+    {
+      "id": "b2",
+      "query": "Bakıllani'nin",
+      "target_article": "bakillani",
+      "must_confirm": false
+    },
+    {
+      "id": "b3",
+      "query": "الباقلاني",
+      "target_article": "bakillani",
+      "must_confirm": false
+    },
+    {
+      "id": "t0",
+      "query": "Kıvâmüssünne",
+      "target_article": "teymi",
+      "must_confirm": false
+    },
+    {
+      "id": "t1",
+      "query": "Kıvâmü’s-sünne",
+      "target_article": "teymi",
+      "must_confirm": false
+    },
+    {
+      "id": "a0",
+      "query": "Seyfeddin el-Âmidî",
+      "target_article": "amidi-seyfeddin",
+      "must_confirm": false
+    },
+    {
+      "id": "a1",
+      "query": "Seyfüddîn el-Âmidî",
+      "target_article": "amidi-seyfeddin",
+      "must_confirm": false
+    },
+    {
+      "id": "a2",
+      "query": "Âmidî, Seyfeddin",
+      "target_article": "amidi-seyfeddin",
+      "must_confirm": false
+    },
+    {
+      "id": "r01",
+      "query": "Fahreddin er-Râzî",
+      "target_article": "fahreddin-er-razi",
+      "must_confirm": false
+    },
+    {
+      "id": "r02",
+      "query": "Râzî",
+      "target_article": "fahreddin-er-razi",
+      "must_confirm": true
+    },
+    {
+      "id": "r03",
+      "query": "Âmidî",
+      "target_article": "amidi-seyfeddin",
+      "must_confirm": true
+    },
+    {
+      "id": "r04",
+      "query": "İbn Teymiyye",
+      "target_article": "ibn-teymiyye-takiyyuddin",
+      "must_confirm": true
+    },
+    {
+      "id": "r05",
+      "query": "Ahmed el-Gazzâlî",
+      "target_article": "ahmed-el-gazzali",
+      "must_confirm": false
+    },
+    {
+      "id": "m01",
+      "query": "Mustafa İsmet İnönü",
+      "target_article": "inonu-mustafa-ismet",
+      "must_confirm": false
+    },
+    {
+      "id": "m02",
+      "query": "Halide Edip Adıvar",
+      "target_article": "adivar-halide-edip",
+      "must_confirm": false
+    },
+    {
+      "id": "f01",
+      "query": "Gazzalîi",
+      "target_article": "gazzali",
+      "must_confirm": true
+    },
+    {
+      "id": "f02",
+      "query": "F. er-Râzî",
+      "target_article": "fahreddin-er-razi",
+      "must_confirm": true
+    },
+    {
+      "id": "u01",
+      "query": "Asım Cüneyd Köksal",
+      "target_article": null,
+      "must_confirm": true
+    },
+    {
+      "id": "u02",
+      "query": "Murat Şimşek",
+      "target_article": null,
+      "must_confirm": true
+    },
+    {
+      "id": "u03",
+      "query": "Hâli de",
+      "target_article": null,
+      "must_confirm": true
+    },
+    {
+      "id": "u04",
+      "query": "Usûlî düşüncenin",
+      "target_article": null,
+      "must_confirm": true
+    },
+    {
+      "id": "u05",
+      "query": "aynı müellifte",
+      "target_article": null,
+      "must_confirm": true
+    },
+    {
+      "id": "u06",
+      "query": "Zzxqv Qqzxy",
+      "target_article": null,
+      "must_confirm": true
+    }
+  ]
+}
