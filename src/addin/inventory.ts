@@ -12,6 +12,8 @@ import {
   type Person,
   alreadyHasDate,
   bibliographyFlags,
+  isAdjectiveUse,
+  lowerCaseWords,
   citationSpans,
   containsSpan,
   findMatches,
@@ -113,6 +115,7 @@ export function buildInventory(
   const mains = ordered.filter((o) => o.segment.part === "main");
   const flags = bibliographyFlags(mains.map((o) => o.segment.text));
   const bibliography = new Set(mains.filter((_, k) => flags[k]).map((o) => o.segment.anchor));
+  const lowerWords = lowerCaseWords(segments.map((s) => s.text));
   for (const { segment, i } of ordered) {
     if (bibliography.has(segment.anchor)) continue;
     const known = notePeopleOrMatches(segment, index);
@@ -122,6 +125,7 @@ export function buildInventory(
     const hits = [...known, ...unknown].sort((a, b) => a.start - b.start);
     for (const hit of hits) {
       if (excluded.size > 0 && excluded.has(exclusionKey(hit.text))) continue;
+      if (isAdjectiveUse(segment.text, hit.start, hit.length, hit.text, lowerWords)) continue;
       const candidates = hit.key ? index.rank(hit.key, nameQuery(hit.text)) : [];
       let person = singleSafe(candidates, hit.text) ? (candidates[0] as Person) : null;
       let confirmed = false;

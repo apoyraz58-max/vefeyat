@@ -291,6 +291,29 @@ const GROUP_NOUNS =
 
 const TITLES = new Set("imam|seyh|hz|hazret|hazreti|mevlana|hace|haci|molla|baba|dede|sultan|emir|kadi|hafiz|alim|fakih|muhaddis|sair|mutasavvif|ebu|ibn|ibni".split("|").map(collapseLetters));
 
+const key = (value: string): string => words(value).trim();
+
+/**
+ * Nisbas that are also names of orders, schools, sects, dynasties and
+ * regions; only these are read as adjectives before a group noun. A proper
+ * nisba like Gazzâlî stays a person in "Gazzâlî medrese hocalığı yaptı".
+ */
+const GROUP_NISBAS = new Set(
+  ("Nakşibendî Kādirî Kâdirî Rifâî Mevlevî Bektaşî Halvetî Sühreverdî Çiştî Şâzelî Celvetî Bayramî Gülşenî Şa‘bânî Uşşâkī Sünbülî Cerrâhî Kübrevî Yesevî Ekberî Melâmî Kalenderî Haydarî Hurûfî Nûrbahşî " +
+    "Sünnî Şiî Abbâsî Fâtımî Emevî Eyyûbî Selçukî Memlûkî Safevî Kaçar Osmanlı Gaznelî Karahanlı Tolunî Ihşîdî Hamdânî Büveyhî Muvahhidî Murâbıtî Ağlebî İdrîsî Rüstemî Zeydî İsmâilî Câferî Nizârî Karmatî Hâricî İbâzî Vehhâbî Selefî Mu‘tezilî Mutezilî " +
+    "Hanefî Şâfiî Mâlikî Hanbelî Zâhirî Eş‘arî Mâtürîdî Sûfî Hindî Yemenî Endelüsî Mısrî Şâmî Irâkī Kureşî Arabî Türkî Fârisî Horasânî Mağribî")
+    .split(" ")
+    .map(key),
+);
+
+/** Catalog spellings that are also ordinary adjectives or nouns: "Usûlî açıdan", "Hakîm bir kişi". */
+const DICTIONARY_WORDS = new Set(
+  ("Usûlî Usûl Kelâmî Fıkhî Mantıkî Felsefî Lügavî Nahvî Edîb Hakîm Kâtib Şâir Âlim Fakih Muhaddis Kebîr Emîn Mü’min Fahrî Bâkî Hâlî Kâmî Kânî Mecnûn Musannif Münşî Muallimî Kâşî Zâhidî Vahyî Vücûdî Şeyhî Hilâlî Nebâtî Riyâzî Hayâlî Harbî Sâbit Sürûr Derd Bahâr " +
+    "Sünnî Şiî Sûfî Hindî Yemenî Endelüsî Mısrî Şâmî Kureşî Arabî Türkî Fârisî İsmâilî Selefî Zâhirî")
+    .split(" ")
+    .map(key),
+);
+
 function startsGroupNoun(word: string): boolean {
   return GROUP_NOUNS.some((stem) => word.startsWith(stem));
 }
@@ -307,8 +330,7 @@ export function isGroupAdjective(text: string, first: number, length: number, li
   const after = text.slice(first + length);
   if (/^[-‐][iıuü]\s+\p{Ll}/u.test(after) || /[-‐][iıuü]$/.test(bare) && /^\s+\p{Ll}/u.test(after)) return true;
   if (/\s/.test(bare.trim())) return false; // "Bahâeddin Nakşibend": an explicit name
-  const key = nameKey(bare);
-  if (!/[iy]$/.test(key)) return false;
+  if (!GROUP_NISBAS.has(key(bare))) return false;
   if (/^\s*\((ö|öl|v|d|m)\.|^\s*\(\d/.test(after)) return false;
   const before = words(text.slice(Math.max(0, first - 40), first)).trim().split(" ");
   const prior = before[before.length - 1] ?? "";
@@ -320,11 +342,67 @@ export function isGroupAdjective(text: string, first: number, length: number, li
     const word = next[i] as string;
     if (startsGroupNoun(word)) return true;
     if (word === "ve" || word === "ile" || word === "veya") continue;
-    // Another nisba in the list ("Rifâî"); stop at anything else.
-    if (/[iy]$/.test(word) && word.length >= 2) continue;
+    // Another nisba of the list ("Kādirî ve Rifâî tarikatları"); stop at anything else.
+    if (GROUP_NISBAS.has(word)) continue;
     break;
   }
   return false;
+}
+
+/** Words after a sentence-initial adjective: "Usûlî açıdan", "Usûlî bir yaklaşım", "Vücûdî tevhid". */
+const ADJECTIVE_CONTEXT =
+  "kisi|insan|adam|yazar|sahsiyet|acidan|acisindan|bakimdan|bakimindan|yonden|yonuyle|anlamda|anlami|anlamin|manada|manasi|sekilde|bicimde|tarzda|yaklasim|delil|mesele|tahlil|kaide|kavram|terim|ilke|yontem|metot|metod|tartisma|degerlendirme|cerceve|hukum|ilim|ilm|bilgi|kural|terminoloji|gorus|tefsir|serh|tevhid|baglam|duzey|seviye|boyut|nitelik|karakter|yapi|ozellik|unsur|kategori|tasnif|istilah|kullanim|eser|kitap|literatur|calisma|arastirma|soru|sorun|problem|konu"
+    .split("|")
+    .map(collapseLetters);
+
+/** Sentence start: paragraph start, or after . ! ? : ; or an opening quote/bracket. */
+export function isSentenceInitial(text: string, first: number): boolean {
+  let i = first - 1;
+  while (i >= 0 && /[\s\u00a0]/.test(text.charAt(i))) i--;
+  if (i < 0) return true;
+  const ch = text.charAt(i);
+  if ("!?:;\"“«([‘'".includes(ch)) return true;
+  if (ch !== ".") return false;
+  return isBoundary(text, i + 1);
+}
+
+/**
+ * A one-word catalog spelling that opens a sentence as an adjective:
+ * "Usûlî açıdan bakıldığında…", "Hindî tefsir geleneği…". Evidence is
+ * either the next word (a manner/topic noun, or "bir" + noun) or the same
+ * word written in lower case elsewhere in the document (`lowerWords`: keys
+ * of lower-case words, as words() writes them). A death date, a suffix or a
+ * narrative verb right after keeps the person.
+ */
+export function isAdjectiveUse(text: string, first: number, length: number, literal: string, lowerWords: ReadonlySet<string> = new Set()): boolean {
+  const bare = nameQuery(literal);
+  if (bare.length < literal.length || /[\s‐-]/.test(bare.trim())) return false;
+  if (!isSentenceInitial(text, first)) return false;
+  const after = text.slice(first + length, first + length + 120);
+  if (/^\s*\((ö|öl|v|d|m)\.|^\s*\(\d|^\s*[,;]/.test(after)) return false;
+  const next = words(after.split(/[.;:!?()]/)[0] ?? "").trim().split(" ").filter(Boolean);
+  const word = next[0];
+  if (!word) return false;
+  if (!/^\s*\p{Ll}/u.test(after)) return false; // "Usûlî Şeyh Ahmed": a name goes on
+  if (isNarrative(` ${next.slice(0, 3).join(" ")} `)) return false;
+  const own = key(bare);
+  // Only words that really are ordinary words: listed, or written in lower case elsewhere in the document.
+  if (!DICTIONARY_WORDS.has(own) && !lowerWords.has(own)) return false;
+  if (lowerWords.has(own)) return true;
+  const head = word === "bir" ? next[1] ?? "" : word;
+  return ADJECTIVE_CONTEXT.some((stem) => head.startsWith(stem)) || GROUP_NOUNS.some((stem) => head.startsWith(stem));
+}
+
+/** Keys (as words() writes them) of every word written in lower case in the texts. */
+export function lowerCaseWords(texts: readonly string[]): Set<string> {
+  const out = new Set<string>();
+  for (const text of texts) {
+    for (const match of text.matchAll(/(?<![\p{L}\p{M}'’‘])\p{Ll}[\p{L}\p{M}]{2,}/gu)) {
+      const key = words(match[0]).trim();
+      if (key) out.add(key);
+    }
+  }
+  return out;
 }
 
 /**

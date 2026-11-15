@@ -235,7 +235,8 @@ function nameSpanEnd(text: string, tokens: readonly Token[], first: number, inde
     if (hasSuffix(raw)) key = nameKey(nameQuery(raw));
     if (isCommonWord(key)) break;
     if (isNoise(key) && !isNameLink(key)) break;
-    if (!isNameLink(key) && !index.has(key) && !initialUpper(raw)) break;
+    // A lower-case word ("devlet", "medrese") never continues a name, catalog key or not.
+    if (!isNameLink(key) && !initialUpper(raw)) break;
     if (i > first && !joinable(gapBetween(text, tokens[i - 1] as Token, token), (tokens[i - 1] as Token).key)) break;
     if (!isNameLink(key)) end = i;
     if (hasSuffix(raw)) break;

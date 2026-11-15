@@ -31,6 +31,11 @@ describe.runIf(have)("contextual detection", () => {
     "Fâtımî devleti Mısır'da kuruldu.",
     "Hanefî fıkhında bu mesele farklıdır.",
     "Şâfiî mezhebinde ise durum farklıdır.",
+    "Usûlî açıdan bakıldığında bu delil zayıftır.",
+    "Usûlî bir yaklaşım benimsenmiştir.",
+    "Lügavî anlamı farklıdır.",
+    "Nahvî bir tahlil yapılmıştır.",
+    "Hakîm bir kişi böyle davranmaz.",
   ])("group adjective: %s", (text) => {
     expect(found(text)).toEqual([]);
   });
@@ -43,6 +48,13 @@ describe.runIf(have)("contextual detection", () => {
     ["Gazzâlî, Râzî ve Cüveynî bu görüştedir.", ["Gazzâlî", "Râzî", "Cüveynî"]],
     ["Gazzâlî (1993: 45) aklın sınırlarını vurgular.", ["Gazzâlî"]],
     ["Cüveynî, Nizâmiye Medresesi'nde ders vermiştir; Gazzâlî de onun talebesidir.", ["Cüveynî", "Gazzâlî"]],
+    ["Gazzâlî kelâm ilmine yöneldi.", ["Gazzâlî"]],
+    ["Gazzâlî fıkıh usulünde el-Mustasfâ'yı yazdı.", ["Gazzâlî"]],
+    ["Râzî tefsir alanında Mefâtîhu'l-gayb'ı yazmıştır.", ["Râzî"]],
+    ["Bu dönemde Gazzâlî medrese hocalığı yaptı.", ["Gazzâlî"]],
+    ["Gazzâlî devlet adamlarıyla yakın ilişki kurdu.", ["Gazzâlî"]],
+    ["Süyûtî kitap yazmayı çok severdi.", ["Süyûtî"]],
+    ["Teftâzânî görüşlerini Şerhu'l-Makāsıd'da açıklar.", ["Teftâzânî"]],
   ] as const)("person kept: %s", (text, names) => {
     expect(found(text)).toEqual(names);
   });
@@ -53,6 +65,14 @@ describe.runIf(have)("contextual detection", () => {
     "Bu tartışma (bk. Gazzâlî, 1993; Râzî, 1997) yaygındır.",
   ])("main-text citation left out: %s", (text) => {
     expect(found(text)).toEqual([]);
+  });
+
+  it("a word written in lower case elsewhere is an adjective at a sentence start", () => {
+    const segments: Segment[] = [
+      { part: "main", anchor: 0, order: 0, text: "Bu meseleyi usûlî bakışla ele alalım." },
+      { part: "main", anchor: 1, order: 0, text: "Usûlî gelenek burada belirleyicidir." },
+    ];
+    expect(buildInventory(segments, catalog, index)).toEqual([]);
   });
 
   it("footnote: citation left out, narrative read", () => {
