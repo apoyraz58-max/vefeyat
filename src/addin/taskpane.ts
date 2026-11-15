@@ -35,7 +35,7 @@ import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, ad
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
 import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, firstMentionBefore, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -487,11 +487,12 @@ async function documentRows(): Promise<InventoryRow[]> {
  */
 async function earlierMention(person: Person): Promise<boolean> {
   earlierRow = null;
+  if (!state.catalog) return state.alias ? findEarlier(earlierSpellings(person, state.alias)) : false;
   const rows = await documentRows();
-  const here = state.mention ? rows.findIndex((r) => rowKey(r, state.segments) === state.mention) : -1;
-  if (here < 0) return state.alias ? findEarlier(earlierSpellings(person, state.alias)) : false;
   const target = personKey(person);
-  earlierRow = rows.slice(0, here).find((r) => r.person !== null && personKey(r.person) === target) ?? null;
+  const same = rows.filter((r) => r.person !== null && personKey(r.person) === target);
+  // Word itself tells which of them stands before the selection.
+  earlierRow = await firstMentionBefore(state.segments, same);
   return earlierRow !== null;
 }
 

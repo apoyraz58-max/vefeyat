@@ -1051,3 +1051,45 @@ export async function convertLegacyDates(
     return { converted, unresolved, skipped: plans.length - converted };
   });
 }
+
+/**
+ * The first of `rows` (mentions of one person, in reading order) that lies
+ * before the selection in the document, asked of Word by location rather
+ * than matched by text. A footnote or endnote counts at its reference mark.
+ */
+export async function firstMentionBefore(segments: readonly Segment[], rows: readonly InventoryRow[]): Promise<InventoryRow | null> {
+  if (rows.length === 0) return null;
+  return Word.run(async (context) => {
+    const selection = context.document.getSelection();
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("items");
+    await context.sync();
+    const probes = rows.slice(0, 40).map((row) => {
+      const segment = segments[row.segment];
+      const host = segment ? paragraphs.items[segment.anchor] : undefined;
+      if (!segment || !host || row.text.length > 250) return null;
+      if (segment.part === "main") {
+        const results = host.getRange("Whole").search(searchText(row.text), { matchCase: true, matchWholeWord: false });
+        results.load("items");
+        return { row, segment, results, notes: null };
+      }
+      const foot = host.getRange("Whole").footnotes;
+      const end = host.getRange("Whole").endnotes;
+      foot.load("items");
+      end.load("items");
+      return { row, segment, results: null, notes: { foot, end } };
+    });
+    await context.sync();
+    const relations = probes.map((probe) => {
+      if (!probe) return null;
+      const range = probe.results
+        ? probe.results.items[occurrenceBefore(probe.segment.text, probe.row.text, probe.row.start)]
+        : probe.notes
+          ? noteOf(probe.notes, probe.segment.order)?.reference
+          : undefined;
+      return range ? { row: probe.row, relation: range.compareLocationWith(selection) } : null;
+    });
+    await context.sync();
+    return relations.find((r) => r && BEFORE.has(r.relation.value))?.row ?? null;
+  });
+}
