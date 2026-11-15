@@ -13,10 +13,12 @@ let baseUrl = process.env.BASE_URL ?? "https://apoyraz58-max.github.io/vefeyat/"
 if (!baseUrl.endsWith("/")) baseUrl += "/";
 if (!baseUrl.startsWith("https://")) throw new Error("BASE_URL must use https:// (Office requires it).");
 
-// Manifest versions are four numbers: 0.4.0-dev -> 0.4.0.0
-const numbers = pkg.version.split(/[.-]/).filter((part) => /^\d+$/.test(part)).slice(0, 4);
-while (numbers.length < 4) numbers.push("0");
-const manifestVersion = numbers.join(".");
+// Manifest versions are four numbers: 0.4.<CI run>.0
+// The third number is the CI run number, so every published build has a new
+// version and Word replaces its cached copy of the ribbon.
+const numbers = pkg.version.split(/[.-]/).filter((part) => /^\d+$/.test(part)).slice(0, 2);
+while (numbers.length < 2) numbers.push("0");
+const manifestVersion = [...numbers, process.env.GITHUB_RUN_NUMBER ?? "0", "0"].join(".");
 
 await rm(out, { recursive: true, force: true });
 await mkdir(new URL("assets/", out), { recursive: true });
