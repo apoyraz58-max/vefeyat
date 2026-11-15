@@ -26,16 +26,19 @@ const end = (t) => {
 const vbaDate = (t) =>
   `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> ADDIN Vefeyat.Date.D0123456789ABCDEF.P1 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r>${run(t)}<w:r><w:fldChar w:fldCharType="end"/></w:r>`;
 
+// The checklist names no one: it is part of the document, and a name in it
+// would be the first mention of that person (dates, audit, "daha önce geçti").
 const check = [
-  "KONTROL LİSTESİ (bu bölümü denemeden sonra silebilirsiniz)",
-  "1. Şahıs dökümü: Gazzâlî, Fahreddin er-Râzî, Ebû Bekir er-Râzî, Cüveynî, Zemahşerî, İbn Sînâ, Şâfiî listelenmeli; dipnot ve sonnottakiler 'Dipnot'/'Sonnot' etiketiyle. Nakşibendî tarikatı, Sünnî müellifler, Usûlî açıdan, Irak'taki, Arap dili, HAYATI başlığı ve kaynakça LİSTELENMEMELİ.",
-  "2. 'Gazzâlî' kısa geçişleri 'kimlik belgedeki diğer geçişlerden'; 'Râzî (ö. 313/925)' 'kimlik yazılı tarihten' olmalı; F. er-Râzî Fahreddin olmalı.",
-  "3. Belge sağlığı: 1 VBA tarihi bulunmalı; 'VBA tarihlerini dönüştür' sonrası Cüveynî'nin tarihi metinde aynen kalmalı ve listede sağlam görünmeli.",
-  "4. Bir adı seçip Ölüm tarihi ekle; sonra Tarihin kaynağı; sonra Ayarlar → Tarih alanlarını göster/gizle.",
+  "KONTROL LİSTESİ (bu bölümde şahıs adı geçmez; denemeden sonra silebilirsiniz)",
+  "1. Şahıs dökümü: GİRİŞ'teki 1.–4. paragraflardaki altı kişi ve 6. paragrafın son cümlesindeki imam listelenmeli; dipnot ve sonnottakiler 'Dipnot'/'Sonnot' etiketiyle. 5. paragraf, 6. paragrafın ilk iki cümlesi, 7. paragraftaki atıflar, başlıklar ve KAYNAKÇA listelenmemeli.",
+  "2. 1. paragraftaki kısa adlar 'kimlik belgedeki diğer geçişlerden'; 4. paragraftaki tarihli kısa ad 'kimlik yazılı tarihten' olmalı; 3. paragraftaki baş harfli ad tefsir müellifine bağlanmalı.",
+  "3. Belge sağlığı: 1 VBA tarihi bulunmalı; 'VBA tarihlerini dönüştür' sonrası 2. paragraftaki tarih metinde aynen kalmalı ve listede sağlam görünmeli.",
+  "4. 4. paragraftaki ilk tam adı seçip Ölüm tarihi ekle: 'daha önce geçti' uyarısı çıkmamalı. 4. paragraftaki tarihli kısa adı seçince doğru kişi işaretli gelmeli. Sonra Tarihin kaynağı; sonra Ayarlar → Tarih alanlarını göster/gizle.",
   "5. Şahıslar dizini → oluştur (süre ve [sayfa API] bilgisini not edin) → Dizin işaretlerini kaldır (dizin metin kalmalı) → Dizini tamamen kaldır (hiçbir iz kalmamalı).",
   "6. Tutarlılık raporu: ö. ve v. karışık uyarısı. Şahıs raporu: yeni belge açılmalı.",
-  "7. Toplu düzeltme önizlemesi, Denetime devam et (bir geçişte Denetimi bitir, sonra devam et), Teslim öncesi temizle (kopyada!).",
-  "Sorun görürseniz: paneldeki mesajın ekran görüntüsü ve hangi adımda olduğu.",
+  "7. Toplu düzeltme önizlemesi, Denetime devam et (bir geçişte Denetimi bitir, sonra devam et), Tüm belgeyi denetle (her kişinin ilk geçişinde durmalı), Teslim öncesi temizle (kopyada!).",
+  "8. Sağ tık: bir ada sağ tıklayın; kırmızı çizgiliyse önce Ayarlar → Şahıs adlarını yazım denetiminden çıkar.",
+  "Sorun görürseniz: paneldeki mesajın ekran görüntüsü, panelin altındaki sürüm numarası ve hangi adımda olduğu.",
 ];
 
 const body = [
