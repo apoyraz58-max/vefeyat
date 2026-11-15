@@ -9,8 +9,8 @@ import {
   type Launch,
   type Lookup,
   type Settings,
+  type SettingName,
   type View,
-  SOON,
   auditRows,
   addConfirmation,
   confirmedPerson,
@@ -32,9 +32,10 @@ import {
 import { type InventoryRow, type Segment, buildInventory, catalogLabel, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
 import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, addHistory, applyOrder, bulkSuggestions, describeSuggestion, parseBookmark, parseHistory, resumeIndex, rowKey } from "./bulk.js";
+import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
 import { HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -89,13 +90,6 @@ function setMessage(text: string, kind: "info" | "warning" | "error" | "success"
   box.textContent = text;
   box.className = `message ${kind}`;
   box.hidden = text.length === 0;
-}
-
-function showSoon(key: string): void {
-  const entry = SOON[key];
-  if (!entry) return;
-  $("view-yakinda").dataset.title = entry[0];
-  $("soon-description").textContent = entry[1];
 }
 
 function runSearch(): void {
@@ -281,7 +275,7 @@ function renderDetails(): void {
   const link = $<HTMLAnchorElement>("detail-link");
   link.hidden = !person.source.startsWith("https://islamansiklopedisi.org.tr/");
   link.href = link.hidden ? "#" : person.source;
-  for (const option of orderByNameForm(nameOptions(person, state.alias), state.settings.nameForm)) {
+  for (const option of withPreferred(orderByNameForm(nameOptions(person, state.alias), state.settings.nameForm), preferredSpelling(readSpellings(), person))) {
     if (option.value === state.alias) continue;
     const element = document.createElement("option");
     element.value = option.value;
@@ -425,7 +419,7 @@ async function prepareInventory(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
   state.page = 0;
   state.selectedRow = null;
   const sum = summarize(state.rows);
@@ -497,7 +491,7 @@ async function startAudit(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
   state.audit = auditRows(state.rows, state.settings);
   state.auditAt = 0;
   setMessage("", "info");
@@ -525,7 +519,7 @@ async function resumeAudit(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
   state.audit = auditRows(state.rows, state.settings);
   const at = resumeIndex(state.audit, state.segments, bookmark);
   if (at < 0) {
@@ -596,7 +590,7 @@ async function createPersonReport(): Promise<void> {
   }
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
-  const rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
+  const rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
   await openNewDocument(toBase64(personReportDocx(documentName(), rows)));
   setMessage("Şahıs raporu yeni bir Word belgesi olarak açıldı.", "success");
 }
@@ -612,7 +606,7 @@ async function createIndex(): Promise<void> {
   }
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
-  const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions()));
+  const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings()));
   if (rows.length === 0) {
     setMessage("Dizine girecek kimliği kesin geçiş yok. Belirsiz adları Şahıs dökümünde onaylayın.", "info");
     return;
@@ -814,8 +808,8 @@ async function prepareBulk(): Promise<void> {
   const read = await readSegments();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions());
-  suggestions = bulkSuggestions(state.rows, state.settings);
+  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  suggestions = bulkSuggestions(state.rows, state.settings, readSpellings());
   bulkChosen.clear();
   for (const s of suggestions) if (s.preselected) bulkChosen.add(s.id);
   renderBulk();
@@ -994,6 +988,118 @@ async function showCoverage(): Promise<void> {
   }
 }
 
+// ---- Tercihler ----
+
+async function preferSelection(): Promise<void> {
+  const person = state.chosen;
+  if (!state.alias || !person) {
+    setMessage(quickInsertBlocker(state.catalog !== null, state.alias, state.found) ?? "Önce şahsı seçin.", "info");
+    return;
+  }
+  const spelling = preferenceOf(state.alias);
+  await writeSpellings({ ...readSpellings(), [personKey(person)]: spelling });
+  setMessage(`Bu belgede ${textName(person.shortName)} için tercih edilen yazım: ${spelling}. Döküm ve toplu düzeltme bu yazımı esas alır.`, "success");
+  renderDetails();
+}
+
+function renderSpellings(): void {
+  const map = readSpellings();
+  const people = new Map((state.catalog?.people ?? []).map((p) => [personKey(p), p] as const));
+  const entries = Object.entries(map);
+  $("spellings-summary").textContent = entries.length
+    ? `${entries.length} şahıs için belgeye özgü yazım var.`
+    : "Yazım tercihi yok. Bir adı seçip Vefeyât → Ayarlar → Seçili yazımı tercih et ile ekleyebilirsiniz.";
+  $("spellings-clear").hidden = entries.length === 0;
+  const out = $("spellings-list");
+  out.replaceChildren();
+  for (const [key, spelling] of entries) {
+    const person = people.get(key);
+    const item = document.createElement("li");
+    const name = document.createElement("strong");
+    name.textContent = spelling;
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = person ? `${textName(person.shortName)} · ${person.deathDate || "tarih yok"}` : "katalogda bulunamadı";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "link";
+    remove.textContent = "Kaldır";
+    remove.addEventListener("click", () =>
+      void run(async () => {
+        const next = { ...readSpellings() };
+        delete next[key];
+        await writeSpellings(next);
+        renderSpellings();
+      }),
+    );
+    item.append(name, meta, remove);
+    out.append(item);
+  }
+}
+
+async function clearSpellings(): Promise<void> {
+  const count = Object.keys(readSpellings()).length;
+  await writeSpellings({});
+  renderSpellings();
+  setMessage(count ? `${count} yazım tercihi silindi.` : "Silinecek yazım tercihi yok.", "success");
+}
+
+function prefsText(): string {
+  return exportPrefs(state.settings, readSpellings(), readExclusions(), readConfirmations());
+}
+
+function downloadPrefs(): void {
+  const url = URL.createObjectURL(new Blob([prefsText()], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "vefeyat-tercihler.json";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setMessage("Tercih dosyası indirildi. İndirme açılmadıysa Panoya kopyala'yı kullanın.", "success");
+}
+
+async function copyPrefs(): Promise<void> {
+  const text = prefsText();
+  const area = $<HTMLTextAreaElement>("prefs-text");
+  try {
+    await navigator.clipboard.writeText(text);
+    setMessage("Tercihler panoya kopyalandı.", "success");
+  } catch {
+    area.value = text;
+    area.select();
+    setMessage("Pano kullanılamadı; metin aşağıda seçili, Ctrl+C ile kopyalayın.", "info");
+  }
+}
+
+async function applyPrefs(): Promise<void> {
+  const parsed = parsePrefs($<HTMLTextAreaElement>("prefs-text").value);
+  if (!parsed.ok) {
+    setMessage(parsed.reason, "warning");
+    return;
+  }
+  const merged = mergePrefs({ spellings: readSpellings(), exclusions: readExclusions(), confirmations: readConfirmations() }, parsed.file);
+  for (const [name, value] of Object.entries(parsed.file.settings)) await writeSetting(name as SettingName, value as string);
+  await writeSpellings(merged.spellings);
+  await writeExclusions(merged.exclusions);
+  await writeConfirmations(merged.confirmations);
+  await loadSettings();
+  renderSpellings();
+  setMessage(
+    `Tercihler uygulandı: ${Object.keys(parsed.file.settings).length} ayar, ${Object.keys(parsed.file.spellings).length} yazım, ${parsed.file.exclusions.length} istisna, ${Object.keys(parsed.file.confirmations).length} kimlik onayı.`,
+    "success",
+  );
+}
+
+async function toggleFrames(): Promise<void> {
+  const result = await toggleDateFrames();
+  setMessage(
+    result.count === 0 ? "Belgede Vefeyât tarihi yok." : result.visible ? `${result.count} tarih alanı çerçeveyle gösteriliyor.` : `${result.count} tarih alanının çerçevesi gizlendi.`,
+    "success",
+  );
+}
+
 let cleanupArmed = false;
 async function cleanup(): Promise<void> {
   const button = $<HTMLButtonElement>("run-temizlik");
@@ -1020,6 +1126,10 @@ async function launch(request: Launch): Promise<void> {
   if (request.view === "toplu") await run(prepareBulk);
   if (request.view === "gecmis") renderHistory();
   if (request.view === "kimlik") renderIdentities();
+  if (request.view === "tercihler") renderSpellings();
+  if (request.action === "prefer") await run(preferSelection);
+  if (request.action === "clearSpelling") await run(clearSpellings);
+  if (request.action === "shading") await run(toggleFrames);
   if (request.view === "istisna") renderExclusions();
   if (request.view === "kapsam") await run(showCoverage);
   if (request.action === "resume") await run(resumeAudit);
@@ -1056,6 +1166,21 @@ function initialise(): void {
   $("reset-catalog").addEventListener("click", () => void resetCatalog());
   $("run-tutarlilik").addEventListener("click", () => void run(showConsistency));
   $("run-rapor").addEventListener("click", () => void run(createPersonReport));
+  $("spellings-clear").addEventListener("click", () => void run(clearSpellings));
+  $("prefs-download").addEventListener("click", downloadPrefs);
+  $("prefs-copy").addEventListener("click", () => void copyPrefs());
+  $("prefs-apply").addEventListener("click", () => void run(applyPrefs));
+  $("frames-toggle").addEventListener("click", () => void run(toggleFrames));
+  const prefsFile = $<HTMLInputElement>("prefs-file");
+  $("prefs-choose").addEventListener("click", () => prefsFile.click());
+  prefsFile.addEventListener("change", () => {
+    const chosen = prefsFile.files?.[0];
+    if (chosen) void chosen.text().then((text) => {
+      $<HTMLTextAreaElement>("prefs-text").value = text;
+      prefsFile.value = "";
+      void run(applyPrefs);
+    });
+  });
   $("not-person").addEventListener("click", () => void run(toggleExclusion));
   $("identity-clear").addEventListener("click", () =>
     void run(async () => {
@@ -1140,7 +1265,6 @@ function initialise(): void {
     runSearch();
   });
   const request = parseLaunch(window.location.search);
-  if (request.soon) showSoon(request.soon);
   showView(request.view);
   void restoreCatalog()
     .then(() => refresh())

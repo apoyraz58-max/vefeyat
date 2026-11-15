@@ -746,11 +746,11 @@
                     <bt:Image size="80" resid="Ic.settings.80"/>
                   </Icon>
                   <Items>
-                    <Item id="Vefeyat.Soon.preferSpelling">
-                      <Label resid="Soon.preferSpelling"/>
+                    <Item id="Vefeyat.Prefer">
+                      <Label resid="Prefer"/>
                       <Supertip>
-                        <Title resid="Soon.preferSpelling"/>
-                        <Description resid="Soon.preferSpelling.Tip"/>
+                        <Title resid="Prefer"/>
+                        <Description resid="Prefer.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.settings.16"/>
@@ -759,14 +759,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.preferSpelling"/>
+                        <SourceLocation resid="U.Prefer"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.clearSpelling">
-                      <Label resid="Soon.clearSpelling"/>
+                    <Item id="Vefeyat.ClearSpelling">
+                      <Label resid="ClearSpelling"/>
                       <Supertip>
-                        <Title resid="Soon.clearSpelling"/>
-                        <Description resid="Soon.clearSpelling.Tip"/>
+                        <Title resid="ClearSpelling"/>
+                        <Description resid="ClearSpelling.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.settings.16"/>
@@ -775,14 +775,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.clearSpelling"/>
+                        <SourceLocation resid="U.ClearSpelling"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.exportPrefs">
-                      <Label resid="Soon.exportPrefs"/>
+                    <Item id="Vefeyat.ExportPrefs">
+                      <Label resid="ExportPrefs"/>
                       <Supertip>
-                        <Title resid="Soon.exportPrefs"/>
-                        <Description resid="Soon.exportPrefs.Tip"/>
+                        <Title resid="ExportPrefs"/>
+                        <Description resid="ExportPrefs.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.settings.16"/>
@@ -791,14 +791,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.exportPrefs"/>
+                        <SourceLocation resid="U.ExportPrefs"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.importPrefs">
-                      <Label resid="Soon.importPrefs"/>
+                    <Item id="Vefeyat.ImportPrefs">
+                      <Label resid="ImportPrefs"/>
                       <Supertip>
-                        <Title resid="Soon.importPrefs"/>
-                        <Description resid="Soon.importPrefs.Tip"/>
+                        <Title resid="ImportPrefs"/>
+                        <Description resid="ImportPrefs.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.settings.16"/>
@@ -807,14 +807,14 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.importPrefs"/>
+                        <SourceLocation resid="U.ImportPrefs"/>
                       </Action>
                     </Item>
-                    <Item id="Vefeyat.Soon.shading">
-                      <Label resid="Soon.shading"/>
+                    <Item id="Vefeyat.Shading">
+                      <Label resid="Shading"/>
                       <Supertip>
-                        <Title resid="Soon.shading"/>
-                        <Description resid="Soon.shading.Tip"/>
+                        <Title resid="Shading"/>
+                        <Description resid="Shading.Tip"/>
                       </Supertip>
                       <Icon>
                         <bt:Image size="16" resid="Ic.settings.16"/>
@@ -823,7 +823,7 @@
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
-                        <SourceLocation resid="U.Soon.shading"/>
+                        <SourceLocation resid="U.Shading"/>
                       </Action>
                     </Item>
                   </Items>
@@ -1058,11 +1058,11 @@
         <bt:Url id="U.IndexBuild" DefaultValue="{{BASE_URL}}taskpane.html?tool=dizin"/>
         <bt:Url id="U.IndexRemove" DefaultValue="{{BASE_URL}}taskpane.html?tool=dizinkaldir"/>
         <bt:Url id="U.Finalize" DefaultValue="{{BASE_URL}}taskpane.html?tool=temizlik"/>
-        <bt:Url id="U.Soon.preferSpelling" DefaultValue="{{BASE_URL}}taskpane.html?soon=preferSpelling"/>
-        <bt:Url id="U.Soon.clearSpelling" DefaultValue="{{BASE_URL}}taskpane.html?soon=clearSpelling"/>
-        <bt:Url id="U.Soon.exportPrefs" DefaultValue="{{BASE_URL}}taskpane.html?soon=exportPrefs"/>
-        <bt:Url id="U.Soon.importPrefs" DefaultValue="{{BASE_URL}}taskpane.html?soon=importPrefs"/>
-        <bt:Url id="U.Soon.shading" DefaultValue="{{BASE_URL}}taskpane.html?soon=shading"/>
+        <bt:Url id="U.Prefer" DefaultValue="{{BASE_URL}}taskpane.html?action=prefer"/>
+        <bt:Url id="U.ClearSpelling" DefaultValue="{{BASE_URL}}taskpane.html?action=clearSpelling"/>
+        <bt:Url id="U.ExportPrefs" DefaultValue="{{BASE_URL}}taskpane.html?view=tercihler"/>
+        <bt:Url id="U.ImportPrefs" DefaultValue="{{BASE_URL}}taskpane.html?view=tercihler"/>
+        <bt:Url id="U.Shading" DefaultValue="{{BASE_URL}}taskpane.html?action=shading"/>
         <bt:Url id="U.Info" DefaultValue="{{BASE_URL}}taskpane.html?view=katalog"/>
         <bt:Url id="U.Csv" DefaultValue="{{BASE_URL}}taskpane.html?view=katalog"/>
         <bt:Url id="U.Help" DefaultValue="{{BASE_URL}}taskpane.html?view=yardim"/>
@@ -1118,11 +1118,11 @@
         <bt:String id="S.prefix.v" DefaultValue="v."/>
         <bt:String id="S.prefix" DefaultValue="Kısaltma"/>
         <bt:String id="Prefs" DefaultValue="Ayarlar"/>
-        <bt:String id="Soon.preferSpelling" DefaultValue="Seçili yazımı tercih et"/>
-        <bt:String id="Soon.clearSpelling" DefaultValue="Yazım tercihlerini temizle"/>
-        <bt:String id="Soon.exportPrefs" DefaultValue="Tercihleri dışa aktar"/>
-        <bt:String id="Soon.importPrefs" DefaultValue="Tercihleri al"/>
-        <bt:String id="Soon.shading" DefaultValue="Alan gölgelerini gizle"/>
+        <bt:String id="Prefer" DefaultValue="Seçili yazımı tercih et"/>
+        <bt:String id="ClearSpelling" DefaultValue="Yazım tercihlerini temizle"/>
+        <bt:String id="ExportPrefs" DefaultValue="Tercihleri dışa aktar"/>
+        <bt:String id="ImportPrefs" DefaultValue="Tercihleri al"/>
+        <bt:String id="Shading" DefaultValue="Tarih alanlarını göster / gizle"/>
         <bt:String id="G.Settings" DefaultValue="Tercihler"/>
         <bt:String id="Info" DefaultValue="Veri bilgisi"/>
         <bt:String id="Csv" DefaultValue="CSV seç"/>
@@ -1161,11 +1161,11 @@
         <bt:String id="S.nameForm.Tip" DefaultValue="İsim yazımında önce önerilecek biçim. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="S.prefix.Tip" DefaultValue="Ölüm tarihinin başındaki kısaltma. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="Prefs.Tip" DefaultValue="Yazım tercihleri ve görünüm ayarları."/>
-        <bt:String id="Soon.preferSpelling.Tip" DefaultValue="Seçili yazımı bu şahıs için tercih olarak kaydeder."/>
-        <bt:String id="Soon.clearSpelling.Tip" DefaultValue="Belgeye özgü yazım tercihlerini siler."/>
-        <bt:String id="Soon.exportPrefs.Tip" DefaultValue="Tercihleri bir dosyaya kaydeder."/>
-        <bt:String id="Soon.importPrefs.Tip" DefaultValue="Tercih dosyasını bu belgeye uygular."/>
-        <bt:String id="Soon.shading.Tip" DefaultValue="Tarih alanlarının gri gölgesini gizler."/>
+        <bt:String id="Prefer.Tip" DefaultValue="Seçili adın yazımını bu şahıs için belgeye özgü tercih olarak kaydeder."/>
+        <bt:String id="ClearSpelling.Tip" DefaultValue="Belgeye özgü yazım tercihlerini siler."/>
+        <bt:String id="ExportPrefs.Tip" DefaultValue="Ayarları, yazım tercihlerini, istisnaları ve kimlik onaylarını bir dosyaya kaydeder."/>
+        <bt:String id="ImportPrefs.Tip" DefaultValue="Dışa aktarılmış tercih dosyasını bu belgeye uygular."/>
+        <bt:String id="Shading.Tip" DefaultValue="Vefeyât tarihlerinin çevresine çerçeve koyar ya da kaldırır."/>
         <bt:String id="Info.Tip" DefaultValue="Yüklü kataloğu ve sürümü gösterir."/>
         <bt:String id="Csv.Tip" DefaultValue="Bilgisayarınızdaki başka bir DİA CSV dosyasını kullanır."/>
         <bt:String id="Help.Tip" DefaultValue="Vefeyât komutlarının kısa kılavuzu."/>

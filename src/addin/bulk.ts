@@ -2,7 +2,7 @@
  * Toplu düzeltme önizlemesi, Denetime devam et and İşlem geçmişi:
  * Word-independent helpers (VBA 0.3.41 `VfbPreview`, `VfwResume`, `VfgLog`).
  */
-import { type Person, formatDate, isValidDate, nameQuery, sourceName, textName, withEnding } from "../core/index.js";
+import { type Person, personKey, formatDate, isValidDate, nameQuery, sourceName, textName, withEnding } from "../core/index.js";
 import type { InventoryRow, Segment } from "./inventory.js";
 import { type Settings, mentionKey } from "./logic.js";
 
@@ -22,13 +22,13 @@ export interface Suggestion {
  * and dates for first mentions without one (unless Tarih ekleme is
  * "Yalnız denetle"; with "Bütün kullanımlar", every undated certain mention).
  */
-export function bulkSuggestions(rows: readonly InventoryRow[], settings: Settings): Suggestion[] {
+export function bulkSuggestions(rows: readonly InventoryRow[], settings: Settings, spellings: Readonly<Record<string, string>> = {}): Suggestion[] {
   const out: Suggestion[] = [];
   for (const row of rows) {
     const person = row.person;
     if (!person) continue;
     if (row.status === "spelling") {
-      const spelling = sourceName(person, nameQuery(row.text));
+      const spelling = spellings[personKey(person)] ?? sourceName(person, nameQuery(row.text));
       const value = spelling ? withEnding(row.text, spelling) : "";
       if (value && value !== row.text) out.push({ id: `s${row.id}`, kind: "spelling", row, person, value, preselected: !row.confirmed });
     }

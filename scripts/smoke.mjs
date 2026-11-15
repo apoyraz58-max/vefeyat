@@ -263,8 +263,12 @@ try {
   const hits = await tab.$$eval("#search-results li strong", (n) => n.map((x) => x.textContent));
   check("Şahıs ara lists catalog matches", hits.length === 2 && hits[0].startsWith("Fahreddin er-Râzî"), hits.join(" | "));
   await tab.close();
-  tab = await open("?soon=shading");
-  check("not-yet-ported command explains itself", (await tab.textContent("#view-title")) === "Alan gölgelerini gizle" && (await tab.isVisible("#view-yakinda")));
+  tab = await open("?view=tercihler");
+  check("Tercihler window opens", (await tab.textContent("#view-title")) === "Tercihler" && (await tab.isVisible("#view-tercihler")));
+  await tab.fill("#prefs-text", JSON.stringify({ format: "vefeyat-tercihler", version: 1, settings: { prefix: "v" }, spellings: {}, exclusions: ["deneme"], confirmations: {} }));
+  await tab.click("#prefs-apply");
+  await tab.waitForFunction(() => window.__doc.settings["vefeyat.prefix"] === "v");
+  check("Tercihleri al applies settings and lists", (await tab.evaluate(() => window.__doc.settings["vefeyat.exclusions"])) === '["deneme"]');
   await tab.close();
   tab = await open("?view=saglik");
   await tab.waitForFunction(() => !document.getElementById("health-summary").textContent.startsWith("Denetleniyor"));

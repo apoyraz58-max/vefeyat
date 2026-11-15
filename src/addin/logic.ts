@@ -124,25 +124,15 @@ export function candidateLabel(person: Person): string {
   return person.deathDate ? `${name} ${person.deathDate}` : name;
 }
 
-export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "saglik" | "kaynak" | "gecmis" | "toplu" | "kimlik" | "istisna" | "kapsam" | "yakinda";
+export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "saglik" | "kaynak" | "gecmis" | "toplu" | "kimlik" | "istisna" | "kapsam" | "tercihler";
 export type Tool = "tutarlilik" | "rapor" | "dizin" | "dizinkaldir" | "temizlik";
 
 export interface Launch {
   readonly view: View;
-  readonly action: "insert" | "spelling" | "dia" | "audit" | "resume" | null;
+  readonly action: "insert" | "spelling" | "dia" | "audit" | "resume" | "prefer" | "clearSpelling" | "shading" | null;
   readonly tool: Tool | null;
-  /** Key of a VBA command that is not ported yet (view "yakinda"). */
-  readonly soon?: string;
 }
 
-/** VBA commands shown in the ribbon but not ported yet: title and what they do. */
-export const SOON: Readonly<Record<string, readonly [string, string]>> = {
-  preferSpelling: ["Seçili yazımı tercih et", "Seçili yazımı bu şahıs için belgeye özgü tercih olarak kaydeder."],
-  clearSpelling: ["Yazım tercihlerini temizle", "Belgeye özgü yazım tercihlerini siler."],
-  exportPrefs: ["Tercihleri dışa aktar", "Ad biçimi ve yazım tercihlerini bir dosyaya kaydeder."],
-  importPrefs: ["Tercihleri al", "Dışa aktarılmış tercih dosyasını bu belgeye uygular."],
-  shading: ["Alan gölgelerini gizle", "Tarih alanlarının gri gölgesini gizler."],
-};
 
 /**
  * Which view and action a ribbon or context-menu button asked for, from the
@@ -154,16 +144,15 @@ export function parseLaunch(search: string): Launch {
   const action = query.get("action");
   const tool = query.get("tool");
   const view = query.get("view");
-  if (action === "insert" || action === "spelling" || action === "dia") return { view: "secili", action, tool: null };
-  const soon = query.get("soon");
-  if (soon && soon in SOON) return { view: "yakinda", action: null, tool: null, soon };
+  if (action === "insert" || action === "spelling" || action === "dia" || action === "prefer") return { view: "secili", action, tool: null };
+  if (action === "clearSpelling" || action === "shading") return { view: "tercihler", action, tool: null };
   if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "dizinkaldir" || tool === "temizlik") {
     return { view: "teslim", action: null, tool };
   }
   if (view === "denetim") return { view: "secili", action: "audit", tool: null };
   if (view === "devam") return { view: "secili", action: "resume", tool: null };
   if (view === "dokum") return { view: "dokum", action: null, tool: null };
-  if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara" || view === "saglik" || view === "kaynak" || view === "gecmis" || view === "toplu" || view === "kimlik" || view === "istisna" || view === "kapsam") return { view, action: null, tool: null };
+  if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara" || view === "saglik" || view === "kaynak" || view === "gecmis" || view === "toplu" || view === "kimlik" || view === "istisna" || view === "kapsam" || view === "tercihler") return { view, action: null, tool: null };
   if (view === "ayarlar") return { view: "katalog", action: null, tool: null };
   return { view: "secili", action: null, tool: null };
 }

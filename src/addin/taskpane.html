@@ -83,13 +83,6 @@
       </section>
     </div>
 
-    <div id="view-yakinda" class="view" data-title="Vefeyât" hidden>
-      <section>
-        <p id="soon-description"></p>
-        <p class="soon">Bu komut Office.js sürümüne taşınıyor. Şimdilik VBA sürümündeki aynı adlı komutu kullanın.</p>
-      </section>
-    </div>
-
     <div id="view-toplu" class="view" data-title="Toplu düzeltme" hidden>
       <section>
         <p id="bulk-summary" class="muted">Öneriler hazırlanıyor…</p>
@@ -106,6 +99,38 @@
         <p id="history-summary" class="muted"></p>
         <ol id="history-list" class="inventory" aria-label="İşlem geçmişi"></ol>
         <div class="actions"><button id="history-clear" type="button" class="link">Geçmişi temizle</button></div>
+      </section>
+    </div>
+
+    <div id="view-tercihler" class="view" data-title="Tercihler" hidden>
+      <section>
+        <h2>Yazım tercihleri</h2>
+        <p id="spellings-summary" class="muted"></p>
+        <ol id="spellings-list" class="inventory" aria-label="Yazım tercihleri"></ol>
+        <div class="actions"><button id="spellings-clear" type="button" class="link" hidden>Yazım tercihlerini temizle</button></div>
+      </section>
+      <section id="prefs-export">
+        <h2>Dışa aktar</h2>
+        <p class="muted">Ayarlar, yazım tercihleri, belge istisnaları ve kimlik onayları. Başka bir belgede Tercihleri al ile uygulayabilirsiniz.</p>
+        <div class="actions">
+          <button id="prefs-download" type="button" class="primary">Dosyaya kaydet</button>
+          <button id="prefs-copy" type="button">Panoya kopyala</button>
+        </div>
+      </section>
+      <section id="prefs-import">
+        <h2>Tercihleri al</h2>
+        <p class="muted">Dosya seçin ya da dışa aktarılmış metni aşağıya yapıştırın. Listeler bu belgedekilerle birleştirilir; ayarlar dosyadakiyle değişir.</p>
+        <input id="prefs-file" type="file" accept=".json,application/json" hidden>
+        <textarea id="prefs-text" rows="4" aria-label="Tercih metni"></textarea>
+        <div class="actions">
+          <button id="prefs-choose" type="button">Dosya seç</button>
+          <button id="prefs-apply" type="button" class="primary">Uygula</button>
+        </div>
+      </section>
+      <section>
+        <h2>Tarih alanları</h2>
+        <p class="muted">Vefeyât tarihleri görünmez denetimlerin içindedir. Çerçeveyle görünür yapıp nereye tarih eklendiğini görebilir, sonra yeniden gizleyebilirsiniz.</p>
+        <div class="actions"><button id="frames-toggle" type="button">Tarih alanlarını göster / gizle</button></div>
       </section>
     </div>
 

@@ -37,11 +37,11 @@ yeniden başlatın → **Ekle → Eklentilerim → Paylaşılan Klasör → Vefe
 | Şahıs ve kaynak | **Şahıs ara**, **DİA maddesini aç**, **Tarihin kaynağı** |
 | Belge | **Şahıs dökümü**, **Diğer araçlar ▾**, **Belge sağlığı**, **İşlem geçmişi** |
 | Teslim ve dizin | **Tutarlılık raporu**, **Şahıs raporu** (yeni belge açar), **Şahıslar dizini ▾**, **Teslim öncesi temizle** |
-| Tercihler | **Ad biçimi ▾**, **Kısaltma ▾**, Ayarlar ▾* |
+| Tercihler | **Ad biçimi ▾**, **Kısaltma ▾**, **Ayarlar ▾** (yazım tercihi, tercihleri dışa aktar/al, tarih alanlarını göster/gizle) |
 | Veri ve yardım | **Veri bilgisi**, **CSV seç**, **Kullanım kılavuzu** |
 
-Kalın olanlar çalışıyor; * işaretliler taşınıyor (basınca ne yapacağını anlatır, şimdilik VBA
-sürümündeki aynı komutu kullanın). VBA'daki değer gösteren açılır kutular (Tarih ekleme,
+VBA sekmesindeki bütün komutlar bu sürümde çalışıyor; VBA eklentisini kaldırabilirsiniz
+(önce aşağıdaki "VBA belgeleri" notuna bakın). VBA'daki değer gösteren açılır kutular (Tarih ekleme,
 Denetlenecek, Ad biçimi, Kısaltma) Word'ün Office.js eklentilerine izin vermediği için menüdür;
 seçili değerler Vefeyât penceresinin üstünde yazar.
 
@@ -67,10 +67,18 @@ bu durumda penceredeki düğmeyi kullanın.
 - Tarih, gizli görünümlü ve `vefeyat:date:…` etiketli bir içerik denetimine
   yazılır (VBA sürümündeki gibi Word alanı değil). Zotero ile birlikte nasıl
   davrandığını not edin.
-- "Daha önce geçti" denetimi yalnız ana metinde arar; dipnotlar henüz yok.
-  Aynı yazılışı arar; farklı transkripsiyonla yazılmış önceki geçişi bulamaz.
-- Şahıs dökümü, toplu denetim, dizin, raporlar ve teslim temizliği henüz yok
-  (VBA sürümünde var).
+- "Daha önce geçti" denetimi dipnotları WordApi 1.5 olan Word'de arar.
+  Katalogdaki yazılışları ve seçili yazılışı arar; bunların dışında bir
+  transkripsiyonla yazılmış önceki geçişi bulamaz.
+- Sonnotlar, üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz
+  (Diğer araçlar → Denetim kapsamını göster).
+- **VBA belgeleri:** VBA sürümünün eklediği tarihler Word alanıdır
+  (`ADDIN Vefeyat.Date`). Yeni sürüm bunları metin olarak görür; Belge sağlığı,
+  Tarihin kaynağı ve Teslim öncesi temizle bunları tanımaz. VBA ile başlanmış
+  bir belgeyi teslimden önce VBA'daki Teslim öncesi temizle ile bir kez
+  temizleyin ya da VBA eklentisini o belge bitene kadar tutun.
+- Şahıs raporu yeni belge açar; Word Online'da açılır pencere engelleyicisi
+  buna izin vermeyebilir.
 
 ## Geri bildirim
 

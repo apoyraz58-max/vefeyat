@@ -67,11 +67,6 @@ def group(gid, label, ic, controls):
     return f'{ind}<Group id="Vefeyat.G.{gid}">\n{ind}  <Label resid="{S("G." + gid, label)}"/>\n' + icon(ic, ind + "  ") + "".join(controls) + f"{ind}</Group>\n"
 
 
-def soon(key, label, tip, ic, as_item=False):
-    make = item if as_item else button
-    return make(f"Soon.{key}", S(f"Soon.{key}", label), L(f"Soon.{key}.Tip", tip), ic, pane(U(f"U.Soon.{key}", f"taskpane.html?soon={key}")))
-
-
 def setting_menu(key, label, tip, ic, choices):
     tip_id = L(f"S.{key}.Tip", tip + " Seçili değer Vefeyât penceresinin üstünde yazar.")
     items = [item(f"S.{key}.{v}", S(f"S.{key}.{v}", text), tip_id, ic, function(f"set_{key}_{v}")) for v, text in choices]
@@ -132,11 +127,11 @@ groups = [
         setting_menu("prefix", "Kısaltma", "Ölüm tarihinin başındaki kısaltma.", "prefix",
                      [("original", "Kaynakta olduğu gibi"), ("o", "ö."), ("ol", "öl."), ("v", "v.")]),
         menu("Prefs", S("Prefs", "Ayarlar"), L("Prefs.Tip", "Yazım tercihleri ve görünüm ayarları."), "settings", [
-            soon("preferSpelling", "Seçili yazımı tercih et", "Seçili yazımı bu şahıs için tercih olarak kaydeder.", "settings", True),
-            soon("clearSpelling", "Yazım tercihlerini temizle", "Belgeye özgü yazım tercihlerini siler.", "settings", True),
-            soon("exportPrefs", "Tercihleri dışa aktar", "Tercihleri bir dosyaya kaydeder.", "settings", True),
-            soon("importPrefs", "Tercihleri al", "Tercih dosyasını bu belgeye uygular.", "settings", True),
-            soon("shading", "Alan gölgelerini gizle", "Tarih alanlarının gri gölgesini gizler.", "settings", True),
+            item("Prefer", S("Prefer", "Seçili yazımı tercih et"), L("Prefer.Tip", "Seçili adın yazımını bu şahıs için belgeye özgü tercih olarak kaydeder."), "settings", pane(U("U.Prefer", "taskpane.html?action=prefer"))),
+            item("ClearSpelling", S("ClearSpelling", "Yazım tercihlerini temizle"), L("ClearSpelling.Tip", "Belgeye özgü yazım tercihlerini siler."), "settings", pane(U("U.ClearSpelling", "taskpane.html?action=clearSpelling"))),
+            item("ExportPrefs", S("ExportPrefs", "Tercihleri dışa aktar"), L("ExportPrefs.Tip", "Ayarları, yazım tercihlerini, istisnaları ve kimlik onaylarını bir dosyaya kaydeder."), "settings", pane(U("U.ExportPrefs", "taskpane.html?view=tercihler"))),
+            item("ImportPrefs", S("ImportPrefs", "Tercihleri al"), L("ImportPrefs.Tip", "Dışa aktarılmış tercih dosyasını bu belgeye uygular."), "settings", pane(U("U.ImportPrefs", "taskpane.html?view=tercihler"))),
+            item("Shading", S("Shading", "Tarih alanlarını göster / gizle"), L("Shading.Tip", "Vefeyât tarihlerinin çevresine çerçeve koyar ya da kaldırır."), "settings", pane(U("U.Shading", "taskpane.html?action=shading"))),
         ]),
     ]),
     group("Data", "Veri ve yardım", "info", [

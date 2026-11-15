@@ -91,6 +91,7 @@ export function buildInventory(
   index = new NameIndex(catalog.people),
   confirmations: Confirmations = {},
   exclusions: readonly string[] = [],
+  spellings: Readonly<Record<string, string>> = {},
 ): InventoryRow[] {
   const excluded = new Set(exclusions);
   const ordered = segments
@@ -119,7 +120,11 @@ export function buildInventory(
       if (!date && person && alreadyHasDate(after, person.deathDate)) date = person.deathDate;
       let status: Status;
       if (candidates.length === 0) status = "unknown";
-      else if (person) status = spellingMatches(person, hit.text) ? "match" : "spelling";
+      else if (person) {
+        const preferred = spellings[personKey(person)];
+        const ok = preferred ? nameQuery(hit.text) === preferred : spellingMatches(person, hit.text);
+        status = ok ? "match" : "spelling";
+      }
       else if (candidates.length === 1) status = "near";
       else status = "choose";
       let first = false;

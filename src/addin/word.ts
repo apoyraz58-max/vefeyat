@@ -3,6 +3,7 @@
  * logic.ts; these functions only read or write the document.
  */
 import type { InventoryRow, Segment } from "./inventory.js";
+import { parseSpellings } from "./prefs.js";
 import { DATE_TAG_PREFIX, type DateControl } from "./health.js";
 import { INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
 import { type SettingName, type Settings, parseConfirmations, parseExclusions, settingValue } from "./logic.js";
@@ -128,6 +129,18 @@ export async function findEarlier(spellings: readonly string[], select = false):
 const CONFIRMATIONS_KEY = "vefeyat.confirmations";
 const AUDIT_KEY = "vefeyat.audit";
 const EXCLUSIONS_KEY = "vefeyat.exclusions";
+const SPELLINGS_KEY = "vefeyat.spellings";
+
+/** Preferred spellings of this document (person key -> spelling). */
+export function readSpellings(): Record<string, string> {
+  return parseSpellings(Office.context.document.settings.get(SPELLINGS_KEY));
+}
+
+export function writeSpellings(map: Readonly<Record<string, string>>): Promise<void> {
+  if (Object.keys(map).length === 0) Office.context.document.settings.remove(SPELLINGS_KEY);
+  else Office.context.document.settings.set(SPELLINGS_KEY, JSON.stringify(map));
+  return saveSettings();
+}
 
 function saveSettings(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -320,7 +333,7 @@ export async function finalizeDocument(): Promise<{ controls: number; settings: 
   });
   const settings = Office.context.document.settings;
   let removed = 0;
-  for (const key of [CONFIRMATIONS_KEY, AUDIT_KEY, EXCLUSIONS_KEY, ...Object.values(SETTING_KEYS)]) {
+  for (const key of [CONFIRMATIONS_KEY, AUDIT_KEY, EXCLUSIONS_KEY, SPELLINGS_KEY, ...Object.values(SETTING_KEYS)]) {
     if (settings.get(key) !== null && settings.get(key) !== undefined) removed++;
     settings.remove(key);
   }
@@ -541,5 +554,23 @@ export async function readCoverage(): Promise<Coverage> {
       headers: parts.filter((p) => p.text.trim().length > 0).length,
       comments: comments ? comments.items.length : null,
     };
+  });
+}
+
+/**
+ * Alan gölgeleri: Vefeyât dates are hidden content controls; this shows them
+ * with a frame (to see what Vefeyât added) or hides the frame again.
+ * Returns the new state and the number of controls changed.
+ */
+export async function toggleDateFrames(): Promise<{ visible: boolean; count: number }> {
+  return Word.run(async (context) => {
+    const lists = await controlLists(context);
+    for (const { list } of lists) list.load("items/tag,items/appearance");
+    await context.sync();
+    const controls = lists.flatMap(({ list }) => list.items.filter((c) => c.tag?.startsWith(DATE_TAG_PREFIX)));
+    const visible = controls.some((c) => c.appearance === "Hidden");
+    for (const c of controls) c.appearance = visible ? "BoundingBox" : "Hidden";
+    await context.sync();
+    return { visible, count: controls.length };
   });
 }
