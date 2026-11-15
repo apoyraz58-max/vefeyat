@@ -22,6 +22,7 @@ import {
   findUnknownPeople,
   isValidDate,
   nameQuery,
+  normalize,
   personKey,
   singleSafe,
   sourceName,
@@ -61,6 +62,28 @@ export interface InventoryRow {
   readonly first: boolean;
   /** Identity taken from a confirmation saved in the document. */
   readonly confirmed: boolean;
+  /**
+   * How the identity was settled: the catalog alone, the user's confirmation,
+   * the death date written after the name, or another certain mention of one
+   * of the candidates in the document.
+   */
+  readonly resolved: "catalog" | "confirmed" | "date" | "context" | null;
+}
+
+const LINK_WORDS = new Set(["b", "bin", "bint", "ibn", "ibni", "el", "er", "es", "et", "ez", "en", "ed", "es", "ebu", "ebul", "ebi"]);
+
+/** Every name word written ("Ebû Hâmid el-Gazzâlî") occurs in one of the person's names. */
+const ownWords = new WeakMap<Person, Set<string>>();
+
+function wordsContained(person: Person, literal: string): boolean {
+  if (!/\s/.test(literal.trim())) return false;
+  let own = ownWords.get(person);
+  if (!own) {
+    own = new Set([person.shortName, person.fullName, person.originalName].flatMap((name) => normalize(name).split(" ")).filter(Boolean));
+    ownWords.set(person, own);
+  }
+  const written = normalize(nameQuery(literal)).split(" ").filter((w) => w && !LINK_WORDS.has(w));
+  return written.length >= 2 && written.every((w) => own.has(w));
 }
 
 /** Date text right after a name: "(ö. 505/1111)" etc., or "". */
@@ -75,7 +98,9 @@ export function followingDate(after: string): string {
 export function spellingMatches(person: Person, literal: string): boolean {
   const bare = nameQuery(literal);
   if ([person.shortName, person.fullName, person.originalName].some((name) => name === bare || textName(name) === bare)) return true;
-  return sourceName(person, bare) === bare;
+  if (sourceName(person, bare) === bare) return true;
+  // A usual short form built from the person's own name words: "Ebû Hâmid el-Gazzâlî".
+  return wordsContained(person, literal);
 }
 
 /**
@@ -100,6 +125,18 @@ export function notePeopleOrMatches(segment: Pick<Segment, "part" | "text">, ind
   return findMatches(segment.text, index, true, segment.part !== "note").filter((hit) => !containsSpan(spans, hit.start, hit.length));
 }
 
+interface Draft {
+  segment: number;
+  part: "main" | "note";
+  start: number;
+  length: number;
+  text: string;
+  candidates: readonly Person[];
+  person: Person | null;
+  resolved: "catalog" | "confirmed" | "date" | "context" | null;
+  after: string;
+}
+
 export function buildInventory(
   segments: readonly Segment[],
   catalog: Catalog,
@@ -113,6 +150,7 @@ export function buildInventory(
     .map((segment, i) => ({ segment, i }))
     .sort((a, b) => a.segment.anchor - b.segment.anchor || a.segment.order - b.segment.order);
   const rows: InventoryRow[] = [];
+  const drafts: Draft[] = [];
   const seen = new Set<string>();
   const mains = ordered.filter((o) => o.segment.part === "main");
   const flags = bibliographyFlags(mains.map((o) => o.segment.text));
@@ -133,33 +171,84 @@ export function buildInventory(
       // document also writes in lower case is that word ("Hayatı ve Eserleri").
       if (title && !/\s/.test(nameQuery(hit.text).trim()) && lowerWords.has(words(nameQuery(hit.text)).trim())) continue;
       const candidates = hit.key ? index.rank(hit.key, nameQuery(hit.text)) : [];
-      let person = singleSafe(candidates, hit.text) ? (candidates[0] as Person) : null;
-      let confirmed = false;
-      if (!person) {
-        const key = mentionKey(hit.text, segment.text.slice(0, hit.start), segment.text.slice(hit.start + hit.length));
-        person = confirmedPerson(confirmations, key, candidates);
-        confirmed = person !== null;
-      }
       const after = segment.text.slice(hit.start + hit.length);
-      let date = followingDate(after);
-      if (!date && person && alreadyHasDate(after, person.deathDate)) date = person.deathDate;
-      let status: Status;
-      if (candidates.length === 0) status = "unknown";
-      else if (person) {
-        const preferred = spellings[personKey(person)];
-        const ok = preferred ? nameQuery(hit.text) === preferred : spellingMatches(person, hit.text);
-        status = ok ? "match" : "spelling";
+      let person: Person | null = null;
+      let resolved: Draft["resolved"] = null;
+      if (singleSafe(candidates, hit.text) || (candidates.length === 1 && wordsContained(candidates[0] as Person, hit.text))) {
+        person = candidates[0] as Person;
+        resolved = "catalog";
       }
-      else if (candidates.length === 1) status = "near";
-      else status = "choose";
-      let first = false;
-      if (person) {
-        const key = personKey(person);
-        first = !seen.has(key);
-        seen.add(key);
+      if (!person) {
+        const key = mentionKey(hit.text, segment.text.slice(0, hit.start), after);
+        person = confirmedPerson(confirmations, key, candidates);
+        if (person) resolved = "confirmed";
       }
-      rows.push({ id: rows.length, segment: i, part: segment.part, start: hit.start, length: hit.length, text: hit.text, candidates, person, date, status, first, confirmed });
+      if (!person && candidates.length > 1) {
+        // "Râzî (ö. 313/925)": the date written after the name picks the bearer.
+        const dated = candidates.filter((c) => isValidDate(c.deathDate) && alreadyHasDate(after, c.deathDate));
+        if (dated.length === 1) {
+          person = dated[0] as Person;
+          resolved = "date";
+        }
+      }
+      drafts.push({ segment: i, part: segment.part, start: hit.start, length: hit.length, text: hit.text, candidates, person, resolved, after });
     }
+  }
+  // Document context: among a mention's candidates, the only one the document
+  // names for certain elsewhere (full name, date or confirmation) is meant.
+  const known = new Set(drafts.filter((d) => d.person).map((d) => personKey(d.person as Person)));
+  const lastAt = new Map<string, number>(); // person key -> last draft index with that identity from the text itself
+  drafts.forEach((draft, at) => {
+    if (draft.person) {
+      lastAt.set(personKey(draft.person), at);
+      return;
+    }
+    if (draft.candidates.length === 0) return;
+    const inDocument = draft.candidates.filter((c) => known.has(personKey(c)));
+    if (inDocument.length === 1) {
+      draft.person = inDocument[0] as Person;
+      draft.resolved = "context";
+    } else if (inDocument.length > 1) {
+      // Several bearers in the document: the one named last before this
+      // mention first, then the others; the choice stays with the user.
+      const lastSeen = (c: Person) => lastAt.get(personKey(c)) ?? -1;
+      inDocument.sort((a, b) => lastSeen(b) - lastSeen(a));
+      draft.candidates = [...inDocument, ...draft.candidates.filter((c) => !known.has(personKey(c)))];
+    }
+  });
+  for (const draft of drafts) {
+    const person = draft.person;
+    let date = followingDate(draft.after);
+    if (!date && person && alreadyHasDate(draft.after, person.deathDate)) date = person.deathDate;
+    let status: Status;
+    if (draft.candidates.length === 0) status = "unknown";
+    else if (person) {
+      const preferred = spellings[personKey(person)];
+      const ok = preferred ? nameQuery(draft.text) === preferred : spellingMatches(person, draft.text);
+      status = ok ? "match" : "spelling";
+    } else if (draft.candidates.length === 1) status = "near";
+    else status = "choose";
+    let first = false;
+    if (person) {
+      const key = personKey(person);
+      first = !seen.has(key);
+      seen.add(key);
+    }
+    rows.push({
+      id: rows.length,
+      segment: draft.segment,
+      part: draft.part,
+      start: draft.start,
+      length: draft.length,
+      text: draft.text,
+      candidates: draft.candidates,
+      person,
+      date,
+      status,
+      first,
+      confirmed: draft.resolved === "confirmed",
+      resolved: draft.resolved,
+    });
   }
   return rows;
 }
@@ -183,6 +272,8 @@ export function statusLabel(row: InventoryRow): string {
   };
   let text = base[row.status];
   if (row.confirmed) text += " · onaylı kimlik";
+  if (row.resolved === "date") text += " · kimlik yazılı tarihten";
+  if (row.resolved === "context") text += " · kimlik belgedeki diğer geçişlerden";
   if (row.person && !isValidDate(row.person.deathDate)) text += " · Kaynakta tarih yok";
   else if (row.person && row.first && !row.date) text += " · İlk geçişte tarih yok";
   return text;

@@ -57,12 +57,15 @@ describe("buildInventory", () => {
   it("skips a name inside a footnote citation", () => {
     expect(rows.some((r) => r.part === "note" && r.text === "Gazzâlî")).toBe(false);
   });
-  it("weak spelling needs verification and is not counted as the first mention", () => {
-    expect(rows[0]).toMatchObject({ status: "near", person: null, first: false });
-    expect(catalogLabel(rows[0]!)).toBe("Gazzâlî (?)");
+  it("a variant spelling is settled by the certain mention later in the document", () => {
+    expect(rows[0]).toMatchObject({ status: "spelling", person: gazzali, first: true, resolved: "context" });
+    expect(statusLabel(rows[0]!)).toContain("kimlik belgedeki diğer geçişlerden");
+    const alone = buildInventory([main(0, "Gazali bu görüşü savunur.")], catalog);
+    expect(alone[0]).toMatchObject({ status: "near", person: null, first: false });
+    expect(catalogLabel(alone[0]!)).toBe("Gazzâlî (?)");
   });
-  it("first certain mention, its date and later mentions", () => {
-    expect(rows[1]).toMatchObject({ status: "match", first: true, date: "(ö. 505/1111)" });
+  it("certain mention, its date and later mentions", () => {
+    expect(rows[1]).toMatchObject({ status: "match", first: false, date: "(ö. 505/1111)", resolved: "catalog" });
     expect(rows[4]).toMatchObject({ status: "match", first: false, date: "" });
   });
   it("homonyms need a choice", () => {
@@ -74,7 +77,7 @@ describe("buildInventory", () => {
     expect(statusLabel(rows[3]!)).toBe("Kaynak yazımıyla uyumlu · Kaynakta tarih yok");
   });
   it("summary", () => {
-    expect(summarize(rows)).toEqual({ mentions: 5, people: 2, firstWithoutDate: 0, spelling: 0, uncertain: 2 });
+    expect(summarize(rows)).toEqual({ mentions: 5, people: 2, firstWithoutDate: 1, spelling: 1, uncertain: 1 });
   });
   it("first mention without date is reported", () => {
     const only = buildInventory([main(0, "Gazzâlî der ki.")], catalog);
@@ -106,5 +109,22 @@ describe("document exclusions", () => {
     const { exclusionKey } = await import("../src/addin/logic.js");
     const rows = buildInventory([main(0, "Gazzâlî der ki. Gazzâlî'nin talebeleri.")], catalog, undefined, {}, [exclusionKey("Gazzâlî")]);
     expect(rows).toEqual([]);
+  });
+});
+
+describe("identity from the document", () => {
+  const ebuBekir = catalog.people[2]!;
+  const fahreddin = catalog.people[1]!;
+  it("the date written after the name picks the bearer", () => {
+    const rows = buildInventory([main(0, "Râzî (ö. 313/925) bu görüşü savunur.")], catalog);
+    expect(rows[0]).toMatchObject({ person: ebuBekir, resolved: "date" });
+  });
+  it("two bearers in the document: the last one named comes first, the choice stays open", () => {
+    const rows = buildInventory(
+      [main(0, "Ebû Bekir er-Râzî tıpta meşhurdur."), main(1, "Fahreddin er-Râzî tefsir yazdı."), main(2, "Râzî burada farklı düşünür.")],
+      catalog,
+    );
+    expect(rows.map((r) => r.person?.shortName ?? null)).toEqual(["Ebû Bekir er-Râzî", "Fahreddin er-Râzî", null]);
+    expect(rows[2]!.candidates[0]).toBe(fahreddin);
   });
 });

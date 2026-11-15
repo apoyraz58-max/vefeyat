@@ -212,6 +212,27 @@ async function resetCatalog(): Promise<void> {
 
 // ---- Selected name ----
 
+let contextNote: string | null = null;
+
+/**
+ * The last Şahıs dökümü or denetim already read the whole document: use its
+ * reading of this mention (identity from the written date or from the other
+ * mentions; otherwise the order of the candidates).
+ */
+function applyDocumentContext(mention: string): void {
+  if (!state.found || state.rows.length === 0) return;
+  const row = state.rows.find((r) => rowKey(r, state.segments) === mention);
+  if (!row) return;
+  const order = new Map(row.candidates.map((c, k) => [personKey(c), k] as const));
+  const found = state.found;
+  const candidates = [...found.candidates].sort((a, b) => (order.get(personKey(a)) ?? 999) - (order.get(personKey(b)) ?? 999));
+  state.found = { ...found, candidates };
+  if (row.person && (row.resolved === "date" || row.resolved === "context")) {
+    state.chosen = candidates.find((c) => personKey(c) === personKey(row.person as Person)) ?? null;
+    if (state.chosen) contextNote = row.resolved === "date" ? "yazılı tarihe göre" : "belgedeki diğer geçişlere göre; doğrulayın";
+  }
+}
+
 function renderCandidates(): void {
   const list = $("candidates");
   list.replaceChildren();
@@ -243,8 +264,13 @@ function renderCandidates(): void {
     const title = document.createElement("strong");
     title.textContent = candidateLabel(person);
     text.append(title);
-    const confirmedHere = state.confirmed && state.chosen !== null && personKey(state.chosen) === personKey(person);
-    const note = confirmedHere ? "bu geçiş için onayladınız" : matchHint(found.scores.get(personKey(person)) ?? 0);
+    const chosenHere = state.chosen !== null && personKey(state.chosen) === personKey(person);
+    const note =
+      state.confirmed && chosenHere
+        ? "bu geçiş için onayladınız"
+        : contextNote && chosenHere
+          ? contextNote
+          : matchHint(found.scores.get(personKey(person)) ?? 0);
     if (note) {
       const hint = document.createElement("span");
       hint.className = "hint";
@@ -305,6 +331,7 @@ async function refresh(force = false): Promise<void> {
     state.found = null;
     state.chosen = null;
     state.confirmed = false;
+    contextNote = null;
     state.mention = alias ? mentionKey(alias, selection.preceding, selection.following) : null;
     $("selected-name").textContent = alias ?? "Metinde bir şahıs adı seçin.";
     if (alias && state.catalog) {
@@ -314,6 +341,7 @@ async function refresh(force = false): Promise<void> {
         state.chosen = confirmedPerson(readConfirmations(), state.mention, state.found.candidates);
         state.confirmed = state.chosen !== null;
       }
+      if (!state.chosen && state.mention) applyDocumentContext(state.mention);
     }
     renderCandidates();
     renderDetails();

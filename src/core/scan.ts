@@ -202,6 +202,24 @@ export class NameIndex {
         // names do not, except joined forms such as "Kıvâmü's-sünne".
         if ((j === 0 || compoundAlias(alias)) && independentAlias(alias, person.shortName) && !this.weakPart(alias, value)) this.add(alias, i);
       }
+      if (j === 1) {
+        // Künye + nisba, the usual short form of a long name:
+        // "Ebû Hâmid Muhammed b. Muhammed el-Gazzâlî" → "Ebû Hâmid el-Gazzâlî".
+        // Honorifics before it ("Hüccetü’l-İslâm") and a second nisba after it ("et-Tûsî") are allowed.
+        const words = value.trim().split(/\s+/);
+        const at = words.findIndex((w, k) => k < 4 && /^(Eb[ûüu]|Ebi|Ümm[üu]?)([’'‘]|$|-)/i.test(w));
+        if (at >= 0 && words.length > at + 3) {
+          const head = words[at] as string;
+          const kunya = /[’'‘-]/.test(head) ? head : `${head} ${words[at + 1] ?? ""}`;
+          const nisbas = words.slice(at + 2).filter((w) => /^(el|er|es|et|ez|en|ed|eş|ed)[-‐]\p{Lu}/iu.test(w));
+          for (let n = 0; n < Math.min(nisbas.length, 3); n++) {
+            const alias = `${kunya} ${nisbas[n]}`;
+            this.add(alias, i);
+            this.add(withoutArticles(alias), i);
+          }
+          if (nisbas.length >= 2) this.add(`${kunya} ${nisbas[0]} ${nisbas[1]}`, i);
+        }
+      }
       if (j === 0) {
         // An apostrophe inside a word does not split it: "Di‘bil" must not give "bil".
         for (const part of normalize(value.replace(/(\p{L})['’‘ʻʼʿ](\p{L})/gu, "$1$2")).split(" ")) {
@@ -297,6 +315,7 @@ export function findMatches(text: string, index: NameIndex, strict = false, cita
     const firstToken = tokens[i] as Token;
     const first = firstToken.start;
     let key = "";
+    let plainKey = ""; // the same without "el-/er-…": "Ebû Bekir er-Râzî" ~ "Ebû Bekir Râzî"
     let bestEnd = 0;
     let bestIndex = i;
     let bestKey = "";
@@ -317,11 +336,17 @@ export function findMatches(text: string, index: NameIndex, strict = false, cita
         inflected = true;
       }
       key = collapseLetters(key + tokenKey);
-      if (key.length >= 3 && !index.heads.has(key.slice(0, 3))) break;
+      const article = /^(el|er|es|et|ez|en|ed|eş)[-‐]/i.exec(raw);
+      plainKey = collapseLetters(plainKey + (article && j > i ? nameKey(nameQuery(raw.slice(article[0].length))) : tokenKey));
+      if (key.length >= 3 && !index.heads.has(key.slice(0, 3)) && !index.heads.has(plainKey.slice(0, 3))) break;
       if (index.has(key)) {
         bestEnd = finish;
         bestIndex = j;
         bestKey = key;
+      } else if (plainKey !== key && index.has(plainKey)) {
+        bestEnd = finish;
+        bestIndex = j;
+        bestKey = plainKey;
       }
       if (inflected) break;
     }
