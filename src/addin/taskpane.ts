@@ -10,6 +10,7 @@ import {
   type Lookup,
   type Settings,
   type View,
+  SOON,
   candidateLabel,
   dateTag,
   earlierSpellings,
@@ -58,6 +59,45 @@ function setMessage(text: string, kind: "info" | "warning" | "error" | "success"
   box.textContent = text;
   box.className = `message ${kind}`;
   box.hidden = text.length === 0;
+}
+
+function showSoon(key: string): void {
+  const entry = SOON[key];
+  if (!entry) return;
+  $("view-yakinda").dataset.title = entry[0];
+  $("soon-description").textContent = entry[1];
+}
+
+function runSearch(): void {
+  const query = $<HTMLInputElement>("search-query").value;
+  const list = $("search-results");
+  list.replaceChildren();
+  if (!state.catalog) {
+    $("search-status").textContent = "Katalog yüklenmedi.";
+    return;
+  }
+  const found = state.catalog.find(query, true);
+  $("search-status").textContent = query.trim() ? `${found.length} sonuç${found.length > 50 ? " (ilk 50 gösteriliyor)" : ""}` : "";
+  for (const person of found.slice(0, 50)) {
+    const item = document.createElement("li");
+    const title = document.createElement("strong");
+    title.textContent = candidateLabel(person);
+    item.append(title);
+    if (person.source.startsWith("https://islamansiklopedisi.org.tr/")) {
+      const link = document.createElement("a");
+      link.href = person.source;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "DİA";
+      item.append(link);
+    }
+    if (person.description) {
+      const description = document.createElement("small");
+      description.textContent = person.description.length > 160 ? `${person.description.slice(0, 160)}…` : person.description;
+      item.append(document.createElement("br"), description);
+    }
+    list.append(item);
+  }
 }
 
 function showView(view: View): void {
@@ -320,6 +360,16 @@ async function respell(): Promise<void> {
 async function launch(request: Launch): Promise<void> {
   showView(request.view);
   if (request.tool) document.getElementById(`tool-${request.tool}`)?.classList.add("focus");
+  if (request.view === "ara") $<HTMLInputElement>("search-query").focus();
+  if (request.action === "dia") {
+    const person = state.chosen;
+    if (person && person.source.startsWith("https://islamansiklopedisi.org.tr/")) {
+      setMessage("DİA maddesini açmak için aşağıdaki bağlantıya tıklayın.", "info");
+      $("detail-link").focus();
+    } else {
+      setMessage(quickInsertBlocker(state.catalog !== null, state.alias, state.found) ?? "Bu şahıs için DİA bağlantısı yok.", "info");
+    }
+  }
   if (request.action === "insert") {
     const blocker = quickInsertBlocker(state.catalog !== null, state.alias, state.found);
     if (blocker) setMessage(blocker, "info");
@@ -361,7 +411,12 @@ function initialise(): void {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => void refresh(), 250);
   });
+  $("search-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    runSearch();
+  });
   const request = parseLaunch(window.location.search);
+  if (request.soon) showSoon(request.soon);
   showView(request.view);
   void restoreCatalog()
     .then(refresh)

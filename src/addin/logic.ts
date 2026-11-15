@@ -124,14 +124,37 @@ export function candidateLabel(person: Person): string {
   return person.deathDate ? `${name} ${person.deathDate}` : name;
 }
 
-export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim";
+export type View = "secili" | "dokum" | "teslim" | "katalog" | "yardim" | "ara" | "yakinda";
 export type Tool = "tutarlilik" | "rapor" | "dizin" | "temizlik";
 
 export interface Launch {
   readonly view: View;
-  readonly action: "insert" | "spelling" | null;
+  readonly action: "insert" | "spelling" | "dia" | null;
   readonly tool: Tool | null;
+  /** Key of a VBA command that is not ported yet (view "yakinda"). */
+  readonly soon?: string;
 }
+
+/** VBA commands shown in the ribbon but not ported yet: title and what they do. */
+export const SOON: Readonly<Record<string, readonly [string, string]>> = {
+  resume: ["Denetime devam et", "Duraklatılmış belge denetimini kaldığı yerden sürdürür."],
+  bulk: ["Toplu düzeltme önizlemesi", "Belgedeki yazım ve tarih önerilerini tek listede gösterir; yalnız işaretlediklerinizi uygular."],
+  source: ["Tarihin kaynağı", "Seçili tarihin hangi katalog kaydından ve hangi kimlik onayıyla eklendiğini gösterir."],
+  health: ["Belge sağlığı", "Vefeyât tarihlerini denetler; bozuk veya değişmiş olanları onayla onarır."],
+  history: ["İşlem geçmişi", "Bu oturumdaki Vefeyât işlemlerini listeler; metindeki yerine gidebilirsiniz."],
+  refresh: ["Tarihleri güncelle", "Toplu önerileri önizlemede gösterir; mevcut tarihleri yeniden yazmaz."],
+  compare: ["Katalogla karşılaştır", "Belgedeki tarihleri güncel katalogla karşılaştırır."],
+  registry: ["Dinamik şahıs kayıtları", "Geçişleri kaynak kimliğine bağlar; katalog değişince öneri sunar."],
+  coverage: ["Denetim kapsamını göster", "Taranan ve taranmayan belge bölümlerini raporlar."],
+  identity: ["Kimlik eşleşmelerini düzelt", "Belirsiz adlar için verdiğiniz kimlik onaylarını yönetir."],
+  exclusions: ["Belge istisnaları", "\"Şahıs değil\" olarak işaretlediğiniz ifadeleri yönetir."],
+  indexRemove: ["Dizin işaretlerini kaldır", "Yalnız Vefeyât dizin işaretlerini ve dizinini siler."],
+  preferSpelling: ["Seçili yazımı tercih et", "Seçili yazımı bu şahıs için belgeye özgü tercih olarak kaydeder."],
+  clearSpelling: ["Yazım tercihlerini temizle", "Belgeye özgü yazım tercihlerini siler."],
+  exportPrefs: ["Tercihleri dışa aktar", "Ad biçimi ve yazım tercihlerini bir dosyaya kaydeder."],
+  importPrefs: ["Tercihleri al", "Dışa aktarılmış tercih dosyasını bu belgeye uygular."],
+  shading: ["Alan gölgelerini gizle", "Tarih alanlarının gri gölgesini gizler."],
+};
 
 /**
  * Which view and action a ribbon or context-menu button asked for, from the
@@ -143,12 +166,14 @@ export function parseLaunch(search: string): Launch {
   const action = query.get("action");
   const tool = query.get("tool");
   const view = query.get("view");
-  if (action === "insert" || action === "spelling") return { view: "secili", action, tool: null };
+  if (action === "insert" || action === "spelling" || action === "dia") return { view: "secili", action, tool: null };
+  const soon = query.get("soon");
+  if (soon && soon in SOON) return { view: "yakinda", action: null, tool: null, soon };
   if (tool === "tutarlilik" || tool === "rapor" || tool === "dizin" || tool === "temizlik") {
     return { view: "teslim", action: null, tool };
   }
   if (view === "dokum" || view === "denetim") return { view: "dokum", action: null, tool: null };
-  if (view === "teslim" || view === "katalog" || view === "yardim") return { view, action: null, tool: null };
+  if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara") return { view, action: null, tool: null };
   if (view === "ayarlar") return { view: "katalog", action: null, tool: null };
   return { view: "secili", action: null, tool: null };
 }

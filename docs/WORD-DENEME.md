@@ -28,16 +28,22 @@ yeniden başlatın → **Ekle → Eklentilerim → Paylaşılan Klasör → Vefe
 
 ## 3. Kullanım
 
-**Şerit.** Üstte **Vefeyât** sekmesi, VBA sürümündeki gibi beş grup:
+**Şerit.** Üstte **Vefeyât** sekmesi, VBA 0.3.41 ile aynı yedi grup:
 
-| Grup | Düğme | Ne yapar |
-| --- | --- | --- |
-| Ekle | **Ölüm tarihi ekle** | Seçili ad tek ve kesin eşleşiyorsa, ilk geçişse ve arkasında tarih yoksa tarihi hemen ekler; aksi hâlde Vefeyât penceresini açıp seçim veya onay ister. |
-| Ekle | **İsim yazımı** | Yazım önerilerini pencerede gösterir. |
-| Belge | **Şahıs dökümü**, **Belgeyi denetle** | (taşınıyor) |
-| Teslim | **Teslim araçları ▾** | Tutarlılık raporu, Şahıs raporu ve kronoloji, Şahıslar dizini, Teslim öncesi temizle (taşınıyor) |
-| Tercihler | **Kısaltma ▾**, **Tarih ekleme ▾**, **Ad biçimi ▾**, **Denetlenecek ▾** | Seçince hemen bu belgeye kaydedilir. Word, Office.js eklentilerinde seçili seçeneği işaretlemeye izin vermediği için geçerli değerler Vefeyât penceresinin üstünde yazar. |
-| Veri ve yardım | **Katalog**, **Kılavuz** | Yüklü kataloğu gösterir / değiştirir; kısa kılavuz. |
+| Grup | Komutlar |
+| --- | --- |
+| Ekle ve denetle | **Ölüm tarihi ekle**, Tüm belgeyi denetle*, **İsim yazımı** |
+| Denetim | **Tarih ekleme ▾**, **Denetlenecek ▾**, Denetime devam et*, Toplu düzeltme önizlemesi* |
+| Şahıs ve kaynak | **Şahıs ara**, **DİA maddesini aç**, Tarihin kaynağı* |
+| Belge | Şahıs dökümü*, Diğer araçlar ▾*, Belge sağlığı*, İşlem geçmişi* |
+| Teslim ve dizin | Tutarlılık raporu*, Şahıs raporu*, Şahıslar dizini ▾*, Teslim öncesi temizle* |
+| Tercihler | **Ad biçimi ▾**, **Kısaltma ▾**, Ayarlar ▾* |
+| Veri ve yardım | **Veri bilgisi**, **CSV seç**, **Kullanım kılavuzu** |
+
+Kalın olanlar çalışıyor; * işaretliler taşınıyor (basınca ne yapacağını anlatır, şimdilik VBA
+sürümündeki aynı komutu kullanın). VBA'daki değer gösteren açılır kutular (Tarih ekleme,
+Denetlenecek, Ad biçimi, Kısaltma) Word'ün Office.js eklentilerine izin vermediği için menüdür;
+seçili değerler Vefeyât penceresinin üstünde yazar.
 
 **Sağ tık.** Metinde bir adı seçip sağ tıklayın → **Vefeyât → Ölüm tarihi ekle / İsim yazımı**.
 

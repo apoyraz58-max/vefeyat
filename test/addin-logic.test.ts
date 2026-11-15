@@ -129,6 +129,10 @@ describe("ribbon launch", () => {
     ["?view=katalog", { view: "katalog", action: null, tool: null }],
     ["?view=yardim", { view: "yardim", action: null, tool: null }],
     ["?view=ayarlar", { view: "katalog", action: null, tool: null }],
+    ["?view=ara", { view: "ara", action: null, tool: null }],
+    ["?action=dia", { view: "secili", action: "dia", tool: null }],
+    ["?soon=health", { view: "yakinda", action: null, tool: null, soon: "health" }],
+    ["?soon=bilinmeyen", { view: "secili", action: null, tool: null }],
     ["", { view: "secili", action: null, tool: null }],
     ["?view=bilinmeyen&action=sil", { view: "secili", action: null, tool: null }],
   ])("%j", (search, expected) => {

@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const src = new URL("../assets/icon-src/", import.meta.url);
 const out = new URL("../assets/icons/", import.meta.url);
-const SETTINGS = new Set(["prefix", "scope", "nameform", "auditmode", "catalog", "help"]);
+const SETTINGS = new Set(["prefix", "scope", "nameform", "auditmode", "catalog", "help", "settings", "info", "csv", "more", "history", "source"]);
 const COLORS = { command: "#0f5ec2", setting: "#5b6470" };
 
 await mkdir(out, { recursive: true });
