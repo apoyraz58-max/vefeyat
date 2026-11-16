@@ -101,11 +101,12 @@ const FAKE_OFFICE = String.raw`
   };
   window.Word = {
     run: async (fn) => {
+      doc.runs = (doc.runs || 0) + 1;
       const items = [];
       let at = 0;
       for (const part of doc.text.split("\r")) {
         const range = new R(at, at + part.length);
-        items.push({ text: part, getRange: () => range });
+        items.push({ text: part, uniqueLocalId: "p" + items.length, getRange: () => range, load() { return this; } });
         at += part.length + 1;
       }
       const paragraphs = { items, load() { return this; } };
@@ -114,7 +115,10 @@ const FAKE_OFFICE = String.raw`
         return doc.fields.filter((f) => !f.gone).map((f) => ({ code: f.code, get result() { return new R(f.s, f.e); },
           delete() { doc.text = doc.text.slice(0, f.s) + doc.text.slice(f.e); const by = f.e - f.s, at = f.s; f.gone = true; shift(at + 1, -by); } }));
       }, load() { return this; } };
-      return fn({ document: { sections, getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs, fields, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
+      doc.handlers = doc.handlers || { changed: [], added: [], deleted: [] };
+      const events = (kind) => ({ add: (h) => { doc.handlers[kind].push(h); } });
+      return fn({ document: { sections, onParagraphChanged: events("changed"), onParagraphAdded: events("added"), onParagraphDeleted: events("deleted"),
+        getParagraphByUniqueLocalId: (id) => items[Number(id.slice(1))], getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs, fields, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
     },
   };
   window.Office = {
@@ -366,6 +370,28 @@ try {
   tab = await open("?view=dokum", "Gazzâlî (ö. 506/1112) der ki.");
   await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length > 0);
   check("a wrong written date is reported", (await tab.textContent("#inventory-summary")).includes("1 tarih uyarısı") && (await tab.textContent("#inventory-list")).includes("katalogdan farklı"), await tab.textContent("#inventory-summary"));
+  await tab.close();
+  // With paragraph events, a changed paragraph is read again by itself.
+  tab = await open("?view=dokum", "Gazzâlî der.\rFahreddin er-Râzî der.", "", { api: ["WordApi 1.6"] });
+  await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length === 2);
+  const runsBefore = await tab.evaluate(() => window.__doc.runs);
+  await tab.click("#inventory-refresh");
+  await tab.waitForTimeout(300);
+  check("an unchanged document is not read again", (await tab.evaluate(() => window.__doc.runs)) === runsBefore, `${runsBefore} → ${await tab.evaluate(() => window.__doc.runs)}`);
+  await tab.evaluate(() => {
+    window.__doc.text = "Gazzâlî der.\rFahreddin er-Râzî ve Ebû Bekir er-Râzî der.";
+    for (const h of window.__doc.handlers.changed) h({ uniqueLocalIds: ["p1"] });
+  });
+  await tab.click("#inventory-refresh");
+  await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length === 3);
+  check("a changed paragraph is read again", ((await tab.textContent("#inventory-list")) ?? "").includes("Ebû Bekir er-Râzî"));
+  await tab.evaluate(() => {
+    window.__doc.text = "Yeni giriş.\rGazzâlî der.\rFahreddin er-Râzî ve Ebû Bekir er-Râzî der.\rSonra Gazzâlî de.";
+    for (const h of window.__doc.handlers.added) h({ uniqueLocalIds: ["p3"] });
+  });
+  await tab.click("#inventory-refresh");
+  await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length === 4);
+  check("an added paragraph means a full read", ((await tab.textContent("#inventory-list")) ?? "").includes("Sonra") || (await tab.$$eval("#inventory-list li", (l) => l.length)) === 4);
   await tab.close();
   const book = "Gazali bu görüşü savunur.\rGazzâlî (ö. 505/1111) ise farklı düşünür. Râzî de katılır.\rSonra Gazzâlî'nin talebeleri gelir.";
   tab = await open("?view=dokum", book);

@@ -35,7 +35,7 @@ import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, ad
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
 import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canSkipProofing, skipProofing, firstMentionBefore, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canSkipProofing, skipProofing, firstMentionBefore, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readDocument, documentVersion, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -150,6 +150,7 @@ function describeCatalog(fileName: string, count: number, source: "user" | "embe
 
 function useCatalog(csv: string, fileName: string, source: "user" | "embedded", persisted: boolean): void {
   state.catalog = Catalog.fromCsv(csv);
+  identityVersion++;
   tagIndex = null;
   state.index = null; // rebuilt on the next inventory
   state.catalogSource = source;
@@ -512,18 +513,21 @@ async function addDate(force: boolean): Promise<void> {
 }
 
 let earlierRow: InventoryRow | null = null;
-let rowsReadAt = 0;
+/** Reading the inventory was built from: document version and identity settings version. */
+let rowsBuiltFor = "";
+let identityVersion = 0;
 
 /** The document read as a whole (cached for two minutes; inserting dates does not change identities). */
 async function documentRows(): Promise<InventoryRow[]> {
   if (!state.catalog) return [];
-  if (state.rows.length > 0 && Date.now() - rowsReadAt < 120_000) return state.rows;
-  const read = await readSegments();
+  const read = await readDocument();
+  // Confirmations, exclusions and preferred spellings change identities too.
+  const stamp = `${documentVersion()}|${identityVersion}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
+  if (state.rows.length > 0 && stamp === rowsBuiltFor) return state.rows;
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
-  rowsReadAt = Date.now();
-  rowsReadAt = Date.now();
+  rowsBuiltFor = stamp;
   return state.rows;
 }
 
@@ -546,13 +550,13 @@ async function earlierMention(person: Person): Promise<boolean> {
 
 /** Remembers the user's choice for an ambiguous mention in the document. */
 async function rememberChoice(): Promise<void> {
-  rowsReadAt = 0; // identities may change
+  identityVersion++; // identities may change
   if (!state.chosen || !state.mention || !state.found || state.found.automatic) return;
   await writeConfirmations(addConfirmation(readConfirmations(), state.mention, personKey(state.chosen)));
 }
 
 async function respell(): Promise<void> {
-  rowsReadAt = 0; // identities may change
+  identityVersion++; // identities may change
   const spelling = $<HTMLSelectElement>("spelling").value;
   if (!spelling) return;
   const selection = await readSelection();
@@ -591,11 +595,11 @@ async function prepareInventory(): Promise<void> {
     return;
   }
   $("inventory-summary").textContent = "Döküm hazırlanıyor…";
-  const read = await readSegments();
+  const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
-  rowsReadAt = Date.now();
+  rowsBuiltFor = `${documentVersion()}|${identityVersion}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.page = 0;
   state.selectedRow = null;
   const sum = summarize(state.rows);
@@ -665,11 +669,11 @@ async function startAudit(): Promise<void> {
     return;
   }
   setMessage("Belge taranıyor…", "info");
-  const read = await readSegments();
+  const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
-  rowsReadAt = Date.now();
+  rowsBuiltFor = `${documentVersion()}|${identityVersion}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.audit = auditRows(state.rows, state.settings);
   state.auditAt = 0;
   setMessage("", "info");
@@ -694,11 +698,11 @@ async function resumeAudit(): Promise<void> {
     setMessage("Katalog yüklenmedi; denetim sürdürülemez.", "warning");
     return;
   }
-  const read = await readSegments();
+  const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
-  rowsReadAt = Date.now();
+  rowsBuiltFor = `${documentVersion()}|${identityVersion}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.audit = auditRows(state.rows, state.settings);
   const at = resumeIndex(state.audit, state.segments, bookmark);
   if (at < 0) {
@@ -739,7 +743,7 @@ function renderAudit(): void {
 // ---- Teslim ve dizin ----
 
 async function showConsistency(): Promise<void> {
-  const { segments, footnotes } = await readSegments();
+  const { segments, footnotes } = await readDocument();
   const report = consistencyReport(segments);
   const out = $("consistency-out");
   out.hidden = false;
@@ -767,7 +771,7 @@ async function createPersonReport(): Promise<void> {
     setMessage("Katalog yüklenmedi.", "warning");
     return;
   }
-  const read = await readSegments();
+  const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   const rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
   await openNewDocument(toBase64(personReportDocx(documentName(), rows)));
@@ -783,7 +787,7 @@ async function createIndex(): Promise<void> {
     setMessage("Katalog yüklenmedi.", "warning");
     return;
   }
-  const read = await readSegments(progress("Belge okunuyor (dipnotlar)")).catch((error: unknown) => {
+  const read = await readDocument(progress("Belge okunuyor (dipnotlar)")).catch((error: unknown) => {
     throw new StepError("Belge okunamadı", error);
   });
   state.index ??= new NameIndex(state.catalog.people);
@@ -1061,11 +1065,11 @@ async function prepareBulk(): Promise<void> {
     return;
   }
   $("bulk-summary").textContent = "Öneriler hazırlanıyor…";
-  const read = await readSegments();
+  const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
   state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
-  rowsReadAt = Date.now();
+  rowsBuiltFor = `${documentVersion()}|${identityVersion}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   suggestions = bulkSuggestions(state.rows, state.settings, readSpellings());
   bulkChosen.clear();
   for (const s of suggestions) if (s.preselected) bulkChosen.add(s.id);
@@ -1151,7 +1155,7 @@ function renderExclusionToggle(): void {
 }
 
 async function toggleExclusion(): Promise<void> {
-  rowsReadAt = 0; // identities may change
+  identityVersion++; // identities may change
   if (!state.alias) return;
   const key = exclusionKey(state.alias);
   const list = readExclusions();
@@ -1252,7 +1256,7 @@ async function showCoverage(): Promise<void> {
 // ---- Tercihler ----
 
 async function preferSelection(): Promise<void> {
-  rowsReadAt = 0; // identities may change
+  identityVersion++; // identities may change
   const person = state.chosen;
   if (!state.alias || !person) {
     setMessage(quickInsertBlocker(state.catalog !== null, state.alias, state.found) ?? "Önce şahsı seçin.", "info");
@@ -1300,7 +1304,7 @@ function renderSpellings(): void {
 }
 
 async function clearSpellings(): Promise<void> {
-  rowsReadAt = 0; // identities may change
+  identityVersion++; // identities may change
   const count = Object.keys(readSpellings()).length;
   await writeSpellings({});
   renderSpellings();
@@ -1337,7 +1341,7 @@ async function copyPrefs(): Promise<void> {
 }
 
 async function applyPrefs(): Promise<void> {
-  rowsReadAt = 0; // identities may change
+  identityVersion++; // identities may change
   const parsed = parsePrefs($<HTMLTextAreaElement>("prefs-text").value);
   if (!parsed.ok) {
     setMessage(parsed.reason, "warning");

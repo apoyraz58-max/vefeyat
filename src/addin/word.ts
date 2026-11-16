@@ -1156,3 +1156,130 @@ export async function skipProofing(segments: readonly Segment[], rows: readonly 
     return marked;
   });
 }
+
+// ---- Belge okumasının saklanması (WordApi 1.6: paragraf olayları) ----
+
+interface ReadCache {
+  segments: Segment[];
+  footnotes: boolean;
+  /** uniqueLocalId of each main-text paragraph, by anchor. */
+  ids: string[];
+}
+
+let cache: ReadCache | null = null;
+let readAt = 0;
+/** A full read at least this often, in case a change raised no event (notes, other stories). */
+const MAX_AGE = 10 * 60_000;
+let watching = false;
+const dirty = new Set<string>();
+let structural = true;
+/** Bumped whenever the reading changes, so derived results (the inventory) know to recompute. */
+let readVersion = 0;
+
+export function documentVersion(): number {
+  return readVersion;
+}
+
+/** Forget the stored reading (the next read is a full one). */
+export function forgetDocument(): void {
+  structural = true;
+}
+
+/**
+ * Starts listening to paragraph changes. Returns false where Word has no
+ * such events: every read is then a full one.
+ */
+export async function watchDocument(): Promise<boolean> {
+  if (watching) return true;
+  if (!Office.context.requirements.isSetSupported("WordApi", "1.6")) return false;
+  try {
+    await Word.run(async (context) => {
+      context.document.onParagraphChanged.add(async (event) => {
+        for (const id of event.uniqueLocalIds) dirty.add(id);
+      });
+      context.document.onParagraphAdded.add(async () => {
+        structural = true;
+      });
+      context.document.onParagraphDeleted.add(async () => {
+        structural = true;
+      });
+      await context.sync();
+    });
+    watching = true;
+  } catch {
+    watching = false;
+  }
+  return watching;
+}
+
+async function fullRead(progress: Progress): Promise<ReadCache> {
+  const read = await readSegments(progress);
+  let ids: string[] = [];
+  if (watching) {
+    ids = await Word.run(async (context) => {
+      const paragraphs = context.document.body.paragraphs;
+      paragraphs.load("items/uniqueLocalId");
+      await context.sync();
+      return paragraphs.items.map((p) => p.uniqueLocalId);
+    });
+  }
+  return { segments: read.segments, footnotes: read.footnotes, ids };
+}
+
+/**
+ * The document's segments, read once and then kept up to date: only changed
+ * paragraphs (with their footnotes and endnotes) are read again; added or
+ * deleted paragraphs, or a change Vefeyât cannot place, mean a full read.
+ */
+export async function readDocument(progress: Progress = () => {}): Promise<{ segments: Segment[]; footnotes: boolean }> {
+  const live = await watchDocument();
+  if (!live || !cache || structural || cache.ids.length === 0 || Date.now() - readAt > MAX_AGE) {
+    dirty.clear();
+    structural = false;
+    cache = await fullRead(progress);
+    readAt = Date.now();
+    readVersion++;
+    return cache;
+  }
+  if (dirty.size === 0) return cache;
+  const changed = [...dirty];
+  dirty.clear();
+  const anchors = changed.map((id) => (cache as ReadCache).ids.indexOf(id));
+  if (anchors.some((a) => a < 0)) {
+    // A footnote paragraph or one Vefeyât has not seen: read everything again.
+    cache = await fullRead(progress);
+    readVersion++;
+    return cache;
+  }
+  const fresh = await Word.run(async (context) => {
+    const items = changed.map((id) => {
+      const paragraph = context.document.getParagraphByUniqueLocalId(id);
+      paragraph.load("text");
+      const foot = paragraph.getRange("Whole").footnotes;
+      const end = paragraph.getRange("Whole").endnotes;
+      if (cache?.footnotes) {
+        foot.load("items/body/text");
+        end.load("items/body/text");
+      }
+      return { paragraph, foot, end };
+    });
+    await context.sync();
+    return items.map(({ paragraph, foot, end }) => ({
+      text: paragraph.text,
+      foot: cache?.footnotes ? foot.items.map((n) => n.body.text) : [],
+      end: cache?.footnotes ? end.items.map((n) => n.body.text) : [],
+    }));
+  });
+  const replaced = new Set(anchors);
+  const kept = cache.segments.filter((s) => !replaced.has(s.anchor));
+  anchors.forEach((anchor, k) => {
+    const f = fresh[k] as { text: string; foot: string[]; end: string[] };
+    kept.push({ part: "main", anchor, order: 0, text: f.text });
+    f.foot.forEach((text, i) => kept.push({ part: "note", anchor, order: i + 1, text }));
+    f.end.forEach((text, i) => kept.push({ part: "note", anchor, order: ENDNOTE_BASE + i + 1, text }));
+  });
+  kept.sort((a, b) => a.anchor - b.anchor || a.order - b.order);
+  cache = { ...cache, segments: kept };
+  readVersion++;
+  return cache;
+}
