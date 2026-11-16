@@ -39,55 +39,80 @@ const base = `http://127.0.0.1:${server.address().port}/`;
 
 const FAKE_OFFICE = String.raw`
 (() => {
-  const doc = (window.__doc = Object.assign({ text: "", sel: [0, 0], controls: [], settings: {}, fields: [], api: [] }, window.__docInit || {}));
+  const doc = (window.__doc = Object.assign({ text: "", sel: [0, 0], controls: [], settings: {}, fields: [], api: [], notes: [] }, window.__docInit || {}));
   try { Object.assign(doc.settings, JSON.parse(sessionStorage.getItem("__fakeSettings") || "{}")); } catch {}
-  const shift = (at, by) => {
-    doc.controls.forEach((c) => { if (c.range.s >= at) { c.range.s += by; c.range.e += by; } });
-    doc.fields.forEach((f) => { if (f.s >= at) { f.s += by; f.e += by; } });
+  // Stories: the main text is doc itself; every footnote or endnote is its own story.
+  for (const note of doc.notes) { note.controls = note.controls || []; note.fields = note.fields || []; }
+  doc.selStory = doc;
+  const shift = (st, at, by) => {
+    st.controls.forEach((c) => { if (c.range.s >= at) { c.range.s += by; c.range.e += by; } });
+    st.fields.forEach((f) => { if (f.s >= at) { f.s += by; f.e += by; } });
   };
+  const paraOf = (offset) => doc.text.slice(0, offset).split("\r").length - 1;
+  const noteItem = (note) => {
+    const at = doc.text.split("\r").slice(0, note.para + 1).join("\r").length;
+    return { body: bodyOf(note), get reference() { return new R(at, at, doc); }, load() { return this; } };
+  };
+  const notesIn = (kind, from, to) => ({ items: doc.notes.filter((n) => n.kind === kind && n.para >= from && n.para <= to).map(noteItem), load() { return this; } });
+  const bodyOf = (st) => ({
+    get text() { return st.text; },
+    search: (needle, options) => new R(0, st.text.length, st).search(needle, options),
+    getRange: (loc) => new R(0, st.text.length, st).getRange(loc),
+    get contentControls() { return { items: st.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; },
+    get fields() { return { items: [], load() { return this; } }; },
+    type: st === doc ? "MainDoc" : st.kind === "end" ? "Endnote" : "Footnote",
+    load() { return this; },
+  });
   class R {
-    constructor(s, e) { this.s = s; this.e = e; }
+    constructor(s, e, st = doc) { this.s = s; this.e = e; this.st = st; }
     load() { return this; }
-    get text() { return doc.text.slice(this.s, this.e); }
+    get text() { return this.st.text.slice(this.s, this.e); }
     get paragraphs() {
-      const end = doc.text.indexOf("\r", this.e);
-      const start = doc.text.lastIndexOf("\r", this.s - 1) + 1;
-      const whole = () => new R(start, end < 0 ? doc.text.length : end);
+      const t = this.st.text;
+      const end = t.indexOf("\r", this.e);
+      const start = t.lastIndexOf("\r", this.s - 1) + 1;
+      const whole = () => new R(start, end < 0 ? t.length : end, this.st);
       return { getLast: whole, getFirst: whole };
     }
+    get footnotes() { return this.st === doc ? notesIn("foot", paraOf(this.s), paraOf(this.e)) : { items: [], load() { return this; } }; }
+    get endnotes() { return this.st === doc ? notesIn("end", paraOf(this.s), paraOf(this.e)) : { items: [], load() { return this; } }; }
+    get parentBody() { return bodyOf(this.st); }
     getRange(loc) {
-      if (loc === "End" || loc === "After") return new R(this.e, this.e);
-      if (loc === "Start" || loc === "Before") return new R(this.s, this.s);
-      return new R(this.s, this.e);
+      if (loc === "End" || loc === "After") return new R(this.e, this.e, this.st);
+      if (loc === "Start" || loc === "Before") return new R(this.s, this.s, this.st);
+      return new R(this.s, this.e, this.st);
     }
-    expandTo(r) { return new R(Math.min(this.s, r.s), Math.max(this.e, r.e)); }
+    expandTo(r) { return new R(Math.min(this.s, r.s), Math.max(this.e, r.e), this.st); }
     insertText(t, loc) {
-      if (loc === "After") { doc.text = doc.text.slice(0, this.e) + t + doc.text.slice(this.e); shift(this.e, t.length); return new R(this.e, this.e + t.length); }
-      if (loc === "Replace") { doc.text = doc.text.slice(0, this.s) + t + doc.text.slice(this.e); shift(this.e, t.length - (this.e - this.s)); return new R(this.s, this.s + t.length); }
+      const st = this.st;
+      if (loc === "After") { st.text = st.text.slice(0, this.e) + t + st.text.slice(this.e); shift(st, this.e, t.length); return new R(this.e, this.e + t.length, st); }
+      if (loc === "Replace") { st.text = st.text.slice(0, this.s) + t + st.text.slice(this.e); shift(st, this.e, t.length - (this.e - this.s)); return new R(this.s, this.s + t.length, st); }
       throw new Error("unsupported insert " + loc);
     }
     insertContentControl() {
       const range = this;
-      const control = { load() { return this; }, id: doc.controls.length + 1, tag: "", title: "", appearance: "", range, getRange: (loc) => (loc === "After" ? new R(range.e, range.e) : range),
-        get text() { return doc.text.slice(this.range.s, this.range.e); },
+      const st = this.st;
+      const control = { load() { return this; }, id: doc.controls.length + doc.notes.reduce((n, x) => n + x.controls.length, 0) + 1, tag: "", title: "", appearance: "", range,
+        getRange: (loc) => (loc === "After" ? new R(range.e, range.e, st) : range),
+        get text() { return st.text.slice(this.range.s, this.range.e); },
         insertText(t) { this.range = this.range.insertText(t, "Replace"); },
-        delete(keep) { if (!keep) new R(this.range.s, this.range.e).delete(); this.range = new R(-1, -1); },
-        select() { doc.sel = [this.range.s, this.range.e]; } };
-      doc.controls.push(control);
+        delete(keep) { if (!keep) new R(this.range.s, this.range.e, st).delete(); this.range = new R(-1, -1, st); },
+        select() { doc.sel = [this.range.s, this.range.e]; doc.selStory = st; } };
+      st.controls.push(control);
       return control;
     }
-    get contentControls() { return { items: doc.controls.filter((c) => c.range.s >= this.s && c.range.e <= this.e && c.range.e > c.range.s), load() { return this; } }; }
+    get contentControls() { return { items: this.st.controls.filter((c) => c.range.s >= this.s && c.range.e <= this.e && c.range.e > c.range.s), load() { return this; } }; }
     get parentContentControlOrNullObject() {
-      const c = doc.controls.find((c) => c.range.s <= this.s && this.e <= c.range.e && c.range.e > c.range.s);
+      const c = this.st.controls.find((c) => c.range.s <= this.s && this.e <= c.range.e && c.range.e > c.range.s);
       return c ? Object.assign(Object.create(c), { isNullObject: false, load() { return this; } }) : { isNullObject: true, load() { return this; } };
     }
-    delete() { doc.text = doc.text.slice(0, this.s) + doc.text.slice(this.e); shift(this.e, -(this.e - this.s)); doc.controls.forEach((c) => { if (c.range.s >= this.s && c.range.e <= this.e) { c.range.s = c.range.e = -1; } }); }
-    select(mode) { doc.sel = mode === "Start" ? [this.s, this.s] : [this.s, this.e]; }
+    delete() { const st = this.st; st.text = st.text.slice(0, this.s) + st.text.slice(this.e); shift(st, this.e, -(this.e - this.s)); st.controls.forEach((c) => { if (c.range.s >= this.s && c.range.e <= this.e) { c.range.s = c.range.e = -1; } }); }
+    select(mode) { doc.sel = mode === "Start" ? [this.s, this.s] : [this.s, this.e]; doc.selStory = this.st; }
     search(needle) {
       const items = [];
       const n = needle.replace(/\^\^/g, "^");
-      const hay = doc.text.slice(this.s, this.e);
-      for (let i = hay.indexOf(n); i >= 0; i = hay.indexOf(n, i + 1)) items.push(new R(this.s + i, this.s + i + n.length));
+      const hay = this.st.text.slice(this.s, this.e);
+      for (let i = hay.indexOf(n); i >= 0; i = hay.indexOf(n, i + 1)) items.push(new R(this.s + i, this.s + i + n.length, this.st));
       return { items, load() { return this; } };
     }
     compareLocationWith(o) {
@@ -116,12 +141,12 @@ const FAKE_OFFICE = String.raw`
       const sections = { items: [{ getHeader: () => ({ text: "", load() { return this; } }), getFooter: () => ({ text: "", load() { return this; } }) }], load() { return this; } };
       const fields = { get items() {
         return doc.fields.filter((f) => !f.gone).map((f) => ({ code: f.code, get result() { return new R(f.s, f.e); },
-          delete() { doc.text = doc.text.slice(0, f.s) + doc.text.slice(f.e); const by = f.e - f.s, at = f.s; f.gone = true; shift(at + 1, -by); } }));
+          delete() { doc.text = doc.text.slice(0, f.s) + doc.text.slice(f.e); const by = f.e - f.s, at = f.s; f.gone = true; shift(doc, at + 1, -by); } }));
       }, load() { return this; } };
       doc.handlers = doc.handlers || { changed: [], added: [], deleted: [] };
       const events = (kind) => ({ add: (h) => { doc.handlers[kind].push(h); } });
       return fn({ document: { sections, onParagraphChanged: events("changed"), onParagraphAdded: events("added"), onParagraphDeleted: events("deleted"),
-        getParagraphByUniqueLocalId: (id) => items[Number(id.slice(1))], getSelection: () => new R(doc.sel[0], doc.sel[1]), body: { search, paragraphs, fields, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
+        getParagraphByUniqueLocalId: (id) => items[Number(id.slice(1))], getSelection: () => new R(doc.sel[0], doc.sel[1], doc.selStory || doc), body: { search, paragraphs, fields, get footnotes() { return notesIn("foot", 0, 1e9); }, get endnotes() { return notesIn("end", 0, 1e9); }, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
     },
   };
   window.Office = {
@@ -167,6 +192,7 @@ try {
       sel: needle && at >= 0 ? [at, at + needle.length] : [0, 0],
       settings: options.settings ?? {},
       fields: options.fields ?? [],
+      notes: options.notes ?? [],
       api: options.api ?? [],
     });
     await tab.goto(`${base}${options.page ?? "taskpane.html"}${query}`);
@@ -385,6 +411,70 @@ try {
   await tab.waitForSelector("#firstuse-notice:not([hidden])", { timeout: 6000 }).catch(() => {});
   check("an edit that moves a first mention is reported", ((await tab.textContent("#firstuse-text")) ?? "").includes("Gazzâlî") && (await docText(tab)).includes("Sonra Gazzâlî (ö. 505/1111)"), await tab.textContent("#firstuse-text"));
   await tab.close();
+  // Footnotes and endnotes (WordApi 1.5): read, selected, kept apart, and dated in their own right.
+  {
+    const notes = [
+      { kind: "foot", para: 0, text: "Fahreddin er-Râzî de böyle der." },
+      { kind: "end", para: 1, text: "Gazzâlî'nin görüşü için bk. Gazzâlî, el-Mustasfâ, I, 45." },
+    ];
+    tab = await open("?view=dokum", "Gazzâlî der.\rSonra başka bir konu.", "", { api: ["WordApi 1.5"], notes });
+    await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length === 3);
+    const summary = await tab.textContent("#inventory-summary");
+    const badges = await tab.$$eval("#inventory-list .badge", (b) => b.map((x) => x.textContent));
+    check("footnotes and endnotes are read and labelled", summary.includes("okunan: 1 dipnot, 1 sonnot") && badges.join(",") === "Metin,Dipnot,Sonnot" && (await tab.textContent("#inventory-list")).includes("Gazzâlî'nin"), `${summary} | ${badges}`);
+    await tab.click("#inventory-list li:nth-child(2)");
+    await tab.waitForTimeout(300);
+    const picked = await tab.evaluate(() => (window.__doc.selStory === window.__doc ? "main" : window.__doc.selStory.kind) + ":" + window.__doc.selStory.text.slice(...window.__doc.sel));
+    check("a note row selects the name inside the note", picked === "foot:Fahreddin er-Râzî", picked);
+    await tab.close();
+  }
+  {
+    const notes = [
+      { kind: "foot", para: 0, text: "Gazzâlî der." },
+      { kind: "foot", para: 0, text: "Gazzâlî (ö. 505/1111) de der." },
+    ];
+    tab = await open("?view=toplu", "Gazzâlî (ö. 505/1111) metinde.", "", { api: ["WordApi 1.5"], notes });
+    await tab.waitForFunction(() => !document.getElementById("bulk-summary").textContent.includes("hazırlanıyor"));
+    const offered = (await tab.textContent("#bulk-summary")).includes("İlk geçiş değişikliği: 1");
+    await tab.click("#bulk-apply");
+    await tab.waitForFunction(() => window.__doc.notes[0].text.includes("505/1111"), null, { timeout: 5000 }).catch(() => {});
+    const texts = await tab.evaluate(() => [window.__doc.text, ...window.__doc.notes.map((n) => n.text)]);
+    check("notes keep their own first mention: the date moves inside the notes", offered && texts.join(" | ") === "Gazzâlî (ö. 505/1111) metinde. | Gazzâlî (ö. 505/1111) der. | Gazzâlî de der.", texts.join(" | "));
+    await tab.close();
+  }
+  {
+    const notes = [
+      { kind: "foot", para: 0, text: "Gazzâlî der." },
+      { kind: "foot", para: 0, text: "Sonra Gazzâlî de der." },
+    ];
+    tab = await open("", "Giriş paragrafı.", "", { api: ["WordApi 1.5"], notes });
+    await tab.evaluate(() => {
+      const note = window.__doc.notes[1];
+      window.__doc.selStory = note;
+      window.__doc.sel = [note.text.indexOf("Gazzâlî"), note.text.indexOf("Gazzâlî") + "Gazzâlî".length];
+      window.__fireSelection();
+    });
+    await tab.waitForSelector("#details:not([hidden])");
+    await tab.click("#insert");
+    await tab.waitForTimeout(600);
+    check("in a note, an earlier note mention is an earlier mention", (await tab.isVisible("#earlier")) && !(await tab.evaluate(() => window.__doc.notes[1].text.includes("("))));
+    await tab.close();
+  }
+  {
+    // A main-text mention before does not count for the first note mention: the date goes into the note.
+    tab = await open("", "Gazzâlî metinde.", "", { api: ["WordApi 1.5"], notes: [{ kind: "foot", para: 0, text: "Gazzâlî der." }] });
+    await tab.evaluate(() => {
+      const note = window.__doc.notes[0];
+      window.__doc.selStory = note;
+      window.__doc.sel = [0, "Gazzâlî".length];
+      window.__fireSelection();
+    });
+    await tab.waitForSelector("#details:not([hidden])");
+    await tab.click("#insert");
+    await tab.waitForFunction(() => window.__doc.notes[0].text.includes("505/1111"), null, { timeout: 5000 }).catch(() => {});
+    check("the first note mention is dated although the main text named him before", !(await tab.isVisible("#earlier")) && (await tab.evaluate(() => window.__doc.notes[0].text)) === "Gazzâlî (ö. 505/1111) der.", await tab.evaluate(() => window.__doc.notes[0].text));
+    await tab.close();
+  }
   // Şahıs değil: the phrase leaves the inventory and appears in Belge istisnaları.
   tab = await open("", "Gazzâlî der ki.", "Gazzâlî");
   await tab.waitForSelector("#not-person:not([hidden])");
