@@ -1185,7 +1185,7 @@
         <bt:String id="GetStarted.Title" DefaultValue="Vefeyât hazır"/>
         <bt:String id="Shortcuts" DefaultValue="Klavye kısayolları"/>
         <bt:String id="Insert.K" DefaultValue="Ölüm tarihi ekle (Alt+Shift+V)"/>
-        <bt:String id="Spelling.K" DefaultValue="İsim yazımı (Alt+Shift+Z)"/>
+        <bt:String id="Spelling.K" DefaultValue="İsim yazımı (Alt+Shift+W)"/>
         <bt:String id="Audit.K" DefaultValue="Tüm belgeyi denetle (Alt+Shift+B)"/>
         <bt:String id="Inventory.K" DefaultValue="Şahıs dökümü (Alt+Shift+G)"/>
         <bt:String id="Bulk.K" DefaultValue="Toplu düzeltme önizlemesi (Alt+Shift+U)"/>
@@ -1193,7 +1193,7 @@
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="Insert.Tip" DefaultValue="Kısayol: Alt+Shift+V. Seçili adın ölüm tarihini ekler. Tek ve kesin eşleşmede, ilk geçişte ve adın arkasında tarih yoksa doğrudan ekler; aksi hâlde Vefeyât penceresinde seçim veya onay ister."/>
-        <bt:String id="Spelling.Tip" DefaultValue="Kısayol: Alt+Shift+Z. Seçili adı kısa, tam ve orijinal adlarla karşılaştırır; Türkçe eki koruyarak yalnız seçili adı değiştirir."/>
+        <bt:String id="Spelling.Tip" DefaultValue="Kısayol: Alt+Shift+W. Seçili adı kısa, tam ve orijinal adlarla karşılaştırır; Türkçe eki koruyarak yalnız seçili adı değiştirir."/>
         <bt:String id="Audit.Tip" DefaultValue="Kısayol: Alt+Shift+B. Belgedeki adları sırayla gösterir; onaylayıp ilerlersiniz."/>
         <bt:String id="S.scope.Tip" DefaultValue="İlk kullanım (varsayılan), bütün kullanımlar veya yalnız denetim. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="S.auditMode.Tip" DefaultValue="Tüm belgeyi denetle komutunun hangi geçişleri göstereceği. Seçili değer Vefeyât penceresinin üstünde yazar."/>

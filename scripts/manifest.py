@@ -241,10 +241,10 @@ import json
 # Three-key shortcuts (Alt+Shift+letter): Ctrl+Alt+letter is AltGr on a Turkish
 # keyboard (@, €, ₺ …) and many Ctrl+Shift letters are Word's own. On a Mac,
 # Option+Shift types characters, so Cmd+Option there. Each is also written in
-# the button's hover text. Alt+Shift+H, L and Y are Word's own in Turkish Word.
+# the button's hover text. Alt+Shift+H, L, Y and Z are Word's own in Turkish Word.
 SHORTCUTS = [
     ("go_action_insert", "Ölüm tarihi ekle", "Insert.Tip", "V"),
-    ("go_action_spelling", "İsim yazımı", "Spelling.Tip", "Z"),
+    ("go_action_spelling", "İsim yazımı", "Spelling.Tip", "W"),
     ("go_view_denetim", "Tüm belgeyi denetle", "Audit.Tip", "B"),
     ("go_view_dokum", "Şahıs dökümü", "Inventory.Tip", "G"),
     ("go_view_toplu", "Toplu düzeltme önizlemesi", "Bulk.Tip", "U"),

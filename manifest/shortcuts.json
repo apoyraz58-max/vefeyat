@@ -42,8 +42,8 @@
     {
       "action": "go_action_spelling",
       "key": {
-        "default": "Alt+Shift+Z",
-        "mac": "Command+Option+Z"
+        "default": "Alt+Shift+W",
+        "mac": "Command+Option+W"
       }
     },
     {
