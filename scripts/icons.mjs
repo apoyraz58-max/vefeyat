@@ -24,4 +24,12 @@ for (const file of (await readdir(src)).filter((f) => f.endsWith(".svg"))) {
   }
   console.log(name);
 }
+// The Vefeyât logo itself, in colour, for the few places that stand for the add-in.
+const brand = await readFile(new URL("../assets/logo/vefeyat-mark.svg", import.meta.url), "utf8");
+for (const size of [16, 32, 80]) {
+  await page.setViewportSize({ width: size, height: size });
+  await page.setContent(`<html><body style="margin:0;background:transparent">${brand.replace("<svg", `<svg width="${size}" height="${size}"`)}</body></html>`);
+  await page.locator("svg").screenshot({ path: new URL(`brand-${size}.png`, out).pathname, omitBackground: true });
+}
+console.log("brand");
 await browser.close();

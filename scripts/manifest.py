@@ -81,7 +81,7 @@ spelling = button("Spelling", S("Spelling", "İsim yazımı"),
                   "spelling", pane(U("U.Spelling", "taskpane.html?action=spelling")))
 
 groups = [
-    group("Add", "Ekle ve denetle", "insert", [
+    group("Add", "Ekle ve denetle", "brand", [
         insert,
         button("Audit", S("Audit", "Tüm belgeyi denetle"), L("Audit.Tip", "Belgedeki adları sırayla gösterir; onaylayıp ilerlersiniz."), "audit", pane(U("U.Audit", "taskpane.html?view=denetim"))),
         spelling,
@@ -139,14 +139,14 @@ groups = [
     group("Data", "Veri ve yardım", "info", [
         button("Info", S("Info", "Veri bilgisi"), L("Info.Tip", "Yüklü kataloğu ve sürümü gösterir."), "info", pane(U("U.Info", "taskpane.html?view=katalog"))),
         button("Csv", S("Csv", "CSV seç"), L("Csv.Tip", "Bilgisayarınızdaki başka bir DİA CSV dosyasını kullanır."), "csv", pane(U("U.Csv", "taskpane.html?view=katalog"))),
-        button("Help", S("Help", "Kullanım kılavuzu"), L("Help.Tip", "Vefeyât komutlarının kısa kılavuzu."), "help", pane(U("U.Help", "taskpane.html?view=yardim"))),
+        button("Help", S("Help", "Kullanım kılavuzu"), L("Help.Tip", "Vefeyât komutlarının kısa kılavuzu ve Hakkında."), "brand", pane(U("U.Help", "taskpane.html?view=yardim"))),
     ]),
 ]
 
 ribbon = ("          <ExtensionPoint xsi:type=\"PrimaryCommandSurface\">\n            <CustomTab id=\"Vefeyat.Tab\">\n"
           + "".join(groups) + f'              <Label resid="{S("Tab", "Vefeyât")}"/>\n            </CustomTab>\n          </ExtensionPoint>\n')
 context = ("          <ExtensionPoint xsi:type=\"ContextMenu\">\n            <OfficeMenu id=\"ContextMenuText\">\n"
-           + menu("Context", S("Context", "Vefeyât"), L("Context.Tip", "Seçili şahıs adı için Vefeyât komutları."), "insert", [
+           + menu("Context", S("Context", "Vefeyât"), L("Context.Tip", "Seçili şahıs adı için Vefeyât komutları."), "brand", [
                item("C.Insert", "Insert", "Insert.Tip", "insert", pane("U.Insert")),
                item("C.Spelling", "Spelling", "Spelling.Tip", "spelling", pane("U.Spelling")),
                item("C.Dia", "Dia", "Dia.Tip", "dia", pane("U.Dia")),

@@ -44,9 +44,9 @@
               <Group id="Vefeyat.G.Add">
                 <Label resid="G.Add"/>
                 <Icon>
-                  <bt:Image size="16" resid="Ic.insert.16"/>
-                  <bt:Image size="32" resid="Ic.insert.32"/>
-                  <bt:Image size="80" resid="Ic.insert.80"/>
+                  <bt:Image size="16" resid="Ic.brand.16"/>
+                  <bt:Image size="32" resid="Ic.brand.32"/>
+                  <bt:Image size="80" resid="Ic.brand.80"/>
                 </Icon>
                 <Control xsi:type="Button" id="Vefeyat.Insert">
                   <Label resid="Insert"/>
@@ -922,9 +922,9 @@
                     <Description resid="Help.Tip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Ic.help.16"/>
-                    <bt:Image size="32" resid="Ic.help.32"/>
-                    <bt:Image size="80" resid="Ic.help.80"/>
+                    <bt:Image size="16" resid="Ic.brand.16"/>
+                    <bt:Image size="32" resid="Ic.brand.32"/>
+                    <bt:Image size="80" resid="Ic.brand.80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
@@ -944,9 +944,9 @@
                   <Description resid="Context.Tip"/>
                 </Supertip>
                 <Icon>
-                  <bt:Image size="16" resid="Ic.insert.16"/>
-                  <bt:Image size="32" resid="Ic.insert.32"/>
-                  <bt:Image size="80" resid="Ic.insert.80"/>
+                  <bt:Image size="16" resid="Ic.brand.16"/>
+                  <bt:Image size="32" resid="Ic.brand.32"/>
+                  <bt:Image size="80" resid="Ic.brand.80"/>
                 </Icon>
                 <Items>
                     <Item id="Vefeyat.C.Insert">
@@ -1031,6 +1031,9 @@
         <bt:Image id="Ic.audit.16" DefaultValue="{{BASE_URL}}assets/icons/audit-16.png"/>
         <bt:Image id="Ic.audit.32" DefaultValue="{{BASE_URL}}assets/icons/audit-32.png"/>
         <bt:Image id="Ic.audit.80" DefaultValue="{{BASE_URL}}assets/icons/audit-80.png"/>
+        <bt:Image id="Ic.brand.16" DefaultValue="{{BASE_URL}}assets/icons/brand-16.png"/>
+        <bt:Image id="Ic.brand.32" DefaultValue="{{BASE_URL}}assets/icons/brand-32.png"/>
+        <bt:Image id="Ic.brand.80" DefaultValue="{{BASE_URL}}assets/icons/brand-80.png"/>
         <bt:Image id="Ic.scope.16" DefaultValue="{{BASE_URL}}assets/icons/scope-16.png"/>
         <bt:Image id="Ic.scope.32" DefaultValue="{{BASE_URL}}assets/icons/scope-32.png"/>
         <bt:Image id="Ic.scope.80" DefaultValue="{{BASE_URL}}assets/icons/scope-80.png"/>
@@ -1094,9 +1097,6 @@
         <bt:Image id="Ic.csv.16" DefaultValue="{{BASE_URL}}assets/icons/csv-16.png"/>
         <bt:Image id="Ic.csv.32" DefaultValue="{{BASE_URL}}assets/icons/csv-32.png"/>
         <bt:Image id="Ic.csv.80" DefaultValue="{{BASE_URL}}assets/icons/csv-80.png"/>
-        <bt:Image id="Ic.help.16" DefaultValue="{{BASE_URL}}assets/icons/help-16.png"/>
-        <bt:Image id="Ic.help.32" DefaultValue="{{BASE_URL}}assets/icons/help-32.png"/>
-        <bt:Image id="Ic.help.80" DefaultValue="{{BASE_URL}}assets/icons/help-80.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="U.Insert" DefaultValue="{{BASE_URL}}taskpane.html?action=insert"/>
@@ -1238,7 +1238,7 @@
         <bt:String id="NoProof.Tip" DefaultValue="Bulunan şahıs adlarının kırmızı çizgisini kaldırır; sağ tıkta Vefeyât menüsü görünür."/>
         <bt:String id="Info.Tip" DefaultValue="Yüklü kataloğu ve sürümü gösterir."/>
         <bt:String id="Csv.Tip" DefaultValue="Bilgisayarınızdaki başka bir DİA CSV dosyasını kullanır."/>
-        <bt:String id="Help.Tip" DefaultValue="Vefeyât komutlarının kısa kılavuzu."/>
+        <bt:String id="Help.Tip" DefaultValue="Vefeyât komutlarının kısa kılavuzu ve Hakkında."/>
         <bt:String id="Context.Tip" DefaultValue="Seçili şahıs adı için Vefeyât komutları."/>
         <bt:String id="GetStarted.Description" DefaultValue="Metinde bir şahıs adı seçin ve üstteki Vefeyât sekmesinden Ölüm tarihi ekle düğmesine basın."/>
       </bt:LongStrings>
