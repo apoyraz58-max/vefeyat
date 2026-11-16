@@ -227,9 +227,12 @@ function applyDocumentContext(mention: string): void {
   const found = state.found;
   const candidates = [...found.candidates].sort((a, b) => (order.get(personKey(a)) ?? 999) - (order.get(personKey(b)) ?? 999));
   state.found = { ...found, candidates };
-  if (row.person && (row.resolved === "date" || row.resolved === "context")) {
+  if (row.person && (row.resolved === "date" || row.resolved === "context" || row.resolved === "topic")) {
     state.chosen = candidates.find((c) => personKey(c) === personKey(row.person as Person)) ?? null;
-    if (state.chosen) contextNote = row.resolved === "date" ? "yazılı tarihe göre" : "belgedeki diğer geçişlere göre; doğrulayın";
+    if (state.chosen) {
+      contextNote =
+        row.resolved === "date" ? "yazılı tarihe göre" : row.resolved === "topic" ? `cümlenin konusuna göre (${row.topic}); doğrulayın` : "belgedeki diğer geçişlere göre; doğrulayın";
+    }
   }
 }
 

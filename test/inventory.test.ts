@@ -168,3 +168,25 @@ describe("written dates in the text", () => {
     expect(hasDateIssue(rows[0]!)).toBe(false);
   });
 });
+
+describe("homonyms by the subject of the sentence", () => {
+  it("both bearers named: tefsir and tıp tell them apart; no subject keeps the choice", () => {
+    const rows = buildInventory(
+      [
+        main(0, "Fahreddin er-Râzî tefsir yazdı. Ebû Bekir er-Râzî hekimdi."),
+        main(1, "Râzî tefsirinde bu meseleyi tartışır."),
+        main(2, "Râzî tıpta deneysel yöntemi kullanmıştır."),
+        main(3, "Râzî burada farklı düşünür."),
+      ],
+      new Catalog([
+        p("Fahreddin er-Râzî", "", "(ö. 606/1210)", "fahreddin-er-razi"),
+        { ...p("Ebû Bekir er-Râzî", "", "(ö. 313/925)", "razi-ebu-bekir"), description: "Ünlü hekim ve filozof." },
+      ].map((x, k) => (k === 0 ? { ...x, description: "Kelâm, felsefe, tefsir ve usûl-i fıkıh alanlarında Eş‘arî âlimi." } : x))),
+    );
+    expect(rows.slice(2).map((r) => [r.person?.shortName ?? null, r.resolved, r.topic ?? null])).toEqual([
+      ["Fahreddin er-Râzî", "topic", "tefsir"],
+      ["Ebû Bekir er-Râzî", "topic", "tıp"],
+      [null, null, null],
+    ]);
+  });
+});

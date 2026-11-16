@@ -31,7 +31,7 @@ const vbaDate = (t) =>
 const check = [
   "KONTROL LİSTESİ (bu bölümde şahıs adı geçmez; denemeden sonra silebilirsiniz)",
   "1. Şahıs dökümü: GİRİŞ'teki 1.–4. paragraflardaki altı kişi ve 6. paragrafın son cümlesindeki imam listelenmeli; dipnot ve sonnottakiler 'Dipnot'/'Sonnot' etiketiyle. 5. paragraf, 6. paragrafın ilk iki cümlesi, 7. paragraftaki atıflar, başlıklar ve KAYNAKÇA listelenmemeli.",
-  "2. 1. paragraftaki kısa adlar 'kimlik belgedeki diğer geçişlerden'; 4. paragraftaki tarihli kısa ad 'kimlik yazılı tarihten' olmalı; 3. paragraftaki baş harfli ad tefsir müellifine bağlanmalı.",
+  "2. 1. paragraftaki kısa adlar 'kimlik belgedeki diğer geçişlerden'; 4. paragraftaki tarihli kısa ad 'kimlik yazılı tarihten' olmalı; 3. paragraftaki baş harfli ad ve konusuz kısa ad tefsir müellifine bağlanmalı (ikincisi 'kimlik konudan (tefsir)').",
   "3. Belge sağlığı: 1 VBA tarihi bulunmalı; 'VBA tarihlerini dönüştür' sonrası 2. paragraftaki tarih metinde aynen kalmalı ve listede sağlam görünmeli.",
   "4. 4. paragraftaki ilk tam adı seçip Ölüm tarihi ekle: 'daha önce geçti' uyarısı çıkmamalı. 4. paragraftaki tarihli kısa adı seçince doğru kişi işaretli gelmeli. Sonra Tarihin kaynağı; sonra Ayarlar → Tarih alanlarını göster/gizle.",
   "5. Şahıslar dizini → oluştur (süre ve [sayfa API] bilgisini not edin) → Dizin işaretlerini kaldır (dizin metin kalmalı) → Dizini tamamen kaldır (hiçbir iz kalmamalı).",

@@ -12,6 +12,9 @@ import {
   type Person,
   alreadyHasDate,
   bibliographyFlags,
+  fieldsOf,
+  sentenceAround,
+  sharedFields,
   calendarsAgree,
   checkWrittenDate,
   type DateCheck,
@@ -80,7 +83,9 @@ export interface InventoryRow {
    * the death date written after the name, or another certain mention of one
    * of the candidates in the document.
    */
-  readonly resolved: "catalog" | "confirmed" | "date" | "context" | null;
+  readonly resolved: "catalog" | "confirmed" | "date" | "context" | "topic" | null;
+  /** For "topic": the shared field(s), e.g. "tefsir". */
+  readonly topic?: string;
   /** The date written after the name against the catalog: "different", "inconsistent" (hijri vs Gregorian) or "ok". */
   readonly dateCheck: DateCheck;
 }
@@ -140,6 +145,12 @@ export function notePeopleOrMatches(segment: Pick<Segment, "part" | "text">, ind
   return findMatches(segment.text, index, true, segment.part !== "note").filter((hit) => !containsSpan(spans, hit.start, hit.length));
 }
 
+/** Fields of the mention's sentence; when it names none, of its paragraph. */
+function mentionFields(text: string, start: number, length: number): Set<string> {
+  const sentence = fieldsOf(sentenceAround(text, start, length));
+  return sentence.size > 0 ? sentence : fieldsOf(text);
+}
+
 interface Draft {
   segment: number;
   part: "main" | "note";
@@ -148,8 +159,11 @@ interface Draft {
   text: string;
   candidates: readonly Person[];
   person: Person | null;
-  resolved: "catalog" | "confirmed" | "date" | "context" | null;
+  resolved: "catalog" | "confirmed" | "date" | "context" | "topic" | null;
   after: string;
+  /** Fields of the sentence around the mention (tefsir, tıp …). */
+  fields: Set<string>;
+  topic?: string;
 }
 
 export function buildInventory(
@@ -233,7 +247,10 @@ export function buildInventory(
           resolved = "date";
         }
       }
-      drafts.push({ segment: i, part: segment.part, start, length: hit.start + hit.length - start, text: literal, candidates, person, resolved, after });
+      drafts.push({
+        segment: i, part: segment.part, start, length: hit.start + hit.length - start, text: literal, candidates, person, resolved, after,
+        fields: person || candidates.length < 2 ? new Set() : mentionFields(segment.text, hit.start, hit.length),
+      });
     }
   }
   // Document context: among a mention's candidates, the only one the document
@@ -255,7 +272,21 @@ export function buildInventory(
       // mention first, then the others; the choice stays with the user.
       const lastSeen = (c: Person) => lastAt.get(personKey(c)) ?? -1;
       inDocument.sort((a, b) => lastSeen(b) - lastSeen(a));
+      // The sentence's subject decides between bearers the document names: "Râzî tefsirinde…".
+      const scored = inDocument.map((c) => ({ c, shared: sharedFields(draft.fields, c.description) }));
+      const best = Math.max(0, ...scored.map((s) => s.shared.length));
+      const top = scored.filter((s) => s.shared.length === best);
+      if (best > 0 && top.length === 1) {
+        draft.person = (top[0] as { c: Person }).c;
+        draft.resolved = "topic";
+        draft.topic = (top[0] as { shared: string[] }).shared.join(", ");
+        inDocument.sort((a, b) => (a === draft.person ? -1 : b === draft.person ? 1 : 0));
+      }
       draft.candidates = [...inDocument, ...draft.candidates.filter((c) => !known.has(personKey(c)))];
+    } else if (draft.fields.size > 0) {
+      // No bearer named elsewhere: the subject only orders the candidates.
+      const score = (c: Person) => sharedFields(draft.fields, c.description).length;
+      draft.candidates = [...draft.candidates].sort((a, b) => score(b) - score(a));
     }
   });
   for (const draft of drafts) {
@@ -290,6 +321,7 @@ export function buildInventory(
       first,
       confirmed: draft.resolved === "confirmed",
       resolved: draft.resolved,
+      ...(draft.topic ? { topic: draft.topic } : {}),
       dateCheck: person && date && isValidDate(person.deathDate) ? checkWrittenDate(date, person.deathDate) : date ? (calendarsAgree(date) ? "ok" : "inconsistent") : null,
     });
   }
@@ -323,6 +355,7 @@ export function statusLabel(row: InventoryRow): string {
   if (row.dateCheck === "inconsistent") text += ` · Uyarı: yazılan hicrî ve milâdî yıl birbirini tutmuyor${row.person ? ` (katalog: ${row.person.deathDate})` : ""}`;
   if (row.resolved === "date") text += " · kimlik yazılı tarihten";
   if (row.resolved === "context") text += " · kimlik belgedeki diğer geçişlerden";
+  if (row.resolved === "topic") text += ` · kimlik konudan (${row.topic}); doğrulayın`;
   if (row.person && !isValidDate(row.person.deathDate)) text += " · Kaynakta tarih yok";
   else if (row.person && row.first && !row.date) text += " · İlk geçişte tarih yok";
   return text;
