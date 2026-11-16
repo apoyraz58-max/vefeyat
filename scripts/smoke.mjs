@@ -71,6 +71,7 @@ const FAKE_OFFICE = String.raw`
       const control = { load() { return this; }, id: doc.controls.length + 1, tag: "", title: "", appearance: "", range, getRange: (loc) => (loc === "After" ? new R(range.e, range.e) : range),
         get text() { return doc.text.slice(this.range.s, this.range.e); },
         insertText(t) { this.range = this.range.insertText(t, "Replace"); },
+        delete(keep) { if (!keep) new R(this.range.s, this.range.e).delete(); this.range = new R(-1, -1); },
         select() { doc.sel = [this.range.s, this.range.e]; } };
       doc.controls.push(control);
       return control;
@@ -80,6 +81,7 @@ const FAKE_OFFICE = String.raw`
       const c = doc.controls.find((c) => c.range.s <= this.s && this.e <= c.range.e && c.range.e > c.range.s);
       return c ? Object.assign(Object.create(c), { isNullObject: false, load() { return this; } }) : { isNullObject: true, load() { return this; } };
     }
+    delete() { doc.text = doc.text.slice(0, this.s) + doc.text.slice(this.e); shift(this.e, -(this.e - this.s)); doc.controls.forEach((c) => { if (c.range.s >= this.s && c.range.e <= this.e) { c.range.s = c.range.e = -1; } }); }
     select(mode) { doc.sel = mode === "Start" ? [this.s, this.s] : [this.s, this.e]; }
     search(needle) {
       const items = [];
@@ -137,7 +139,7 @@ const FAKE_OFFICE = String.raw`
           saveAsync: (cb) => { try { sessionStorage.setItem("__fakeSettings", JSON.stringify(doc.settings)); } catch {} cb({ status: "succeeded" }); },
           refreshAsync: (cb) => cb({ status: "succeeded" }),
         },
-        addHandlerAsync: (_type, handler) => { window.__select = (s, e) => { doc.sel = [s, e]; handler(); }; },
+        addHandlerAsync: (_type, handler) => { window.__select = (s, e) => { doc.sel = [s, e]; handler(); }; window.__fireSelection = () => handler(); },
       },
     },
   };
@@ -362,6 +364,26 @@ try {
   await tab.click("#bulk-apply");
   await tab.waitForFunction(() => window.__doc.text.includes("505/1111"));
   check("a wrong written date is offered unchecked and corrected", fixUnchecked && (await docText(tab)) === "Gazzâlî (ö. 505/1111) der ki.", await docText(tab));
+  await tab.close();
+  // İlk geçiş bakımı: a new earlier mention receives the date, the later one loses it (with approval).
+  tab = await open("?view=toplu", "Gazzâlî burada anılır.\rSonra Gazzâlî (ö. 505/1111) der ki.");
+  await tab.waitForFunction(() => !document.getElementById("bulk-summary").textContent.includes("hazırlanıyor"));
+  const moveOffered = (await tab.textContent("#bulk-summary")).includes("İlk geçiş değişikliği: 1") && (await tab.isChecked("#bulk-list li input"));
+  await tab.click("#bulk-apply");
+  await tab.waitForFunction(() => window.__doc.text.startsWith("Gazzâlî (ö."));
+  check("a date moves to the new first mention once approved", moveOffered && (await docText(tab)) === "Gazzâlî (ö. 505/1111) burada anılır.\rSonra Gazzâlî der ki.", await docText(tab));
+  await tab.close();
+  // After an edit the window tells that a first mention moved (paragraph events, WordApi 1.6).
+  tab = await open("", "Sonra Gazzâlî (ö. 505/1111) der ki.", "Gazzâlî", { api: ["WordApi 1.6"] });
+  await tab.evaluate(() => window.__fireSelection?.());
+  await tab.waitForTimeout(2600);
+  await tab.evaluate(() => {
+    window.__doc.text = "Gazzâlî burada anılır.\rSonra Gazzâlî (ö. 505/1111) der ki.";
+    for (const h of window.__doc.handlers.added) h({ uniqueLocalIds: ["p0"] });
+    window.__fireSelection?.();
+  });
+  await tab.waitForSelector("#firstuse-notice:not([hidden])", { timeout: 6000 }).catch(() => {});
+  check("an edit that moves a first mention is reported", ((await tab.textContent("#firstuse-text")) ?? "").includes("Gazzâlî") && (await docText(tab)).includes("Sonra Gazzâlî (ö. 505/1111)"), await tab.textContent("#firstuse-text"));
   await tab.close();
   // Şahıs değil: the phrase leaves the inventory and appears in Belge istisnaları.
   tab = await open("", "Gazzâlî der ki.", "Gazzâlî");

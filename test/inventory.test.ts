@@ -190,3 +190,15 @@ describe("homonyms by the subject of the sentence", () => {
     ]);
   });
 });
+
+describe("first mention per part", () => {
+  it("the main text and the notes each have their own first mention", () => {
+    const rows = buildInventory([note(0, 1, "Gazzâlî de böyle der."), main(0, "Gazzâlî der."), main(1, "Sonra Gazzâlî yine der."), note(1, 1, "Gazzâlî yine.")], catalog);
+    expect(rows.map((r) => [r.part, r.first])).toEqual([
+      ["main", true],
+      ["note", true],
+      ["main", false],
+      ["note", false],
+    ]);
+  });
+});

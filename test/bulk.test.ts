@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addHistory, applyOrder, bulkSuggestions, parseBookmark, parseHistory, resumeIndex, rowKey } from "../src/addin/bulk.js";
+import { addHistory, applyOrder, bulkSuggestions, firstUseSuggestions, parseBookmark, parseHistory, resumeIndex, rowKey } from "../src/addin/bulk.js";
 import { buildInventory, type Segment } from "../src/addin/inventory.js";
 import { DEFAULT_SETTINGS } from "../src/addin/logic.js";
 import { Catalog, type Person } from "../src/core/index.js";
@@ -60,5 +60,27 @@ describe("wrong written dates", () => {
     const rows2 = buildInventory([{ part: "main", anchor: 0, order: 0, text: "Gazzâlî (ö. 506/1112) der ki." }], catalog);
     const list = bulkSuggestions(rows2, { ...DEFAULT_SETTINGS, prefix: "o" });
     expect(list.map((s) => [s.kind, s.old ?? null, s.value, s.preselected])).toEqual([["fixdate", "(ö. 506/1112)", "(ö. 505/1111)", false]]);
+  });
+});
+
+describe("first-use upkeep (main text and notes apart)", () => {
+  const seg = (anchor: number, text: string, part: "main" | "note" = "main", order = 0) => ({ part, anchor, order, text });
+  it("a date on a later mention moves to the new first one; extra dates are dropped", () => {
+    const rows3 = buildInventory([seg(0, "Gazzâlî burada anılır."), seg(1, "Sonra Gazzâlî (ö. 505/1111) der ki."), seg(2, "Yine Gazzâlî (v. 505/1111) der.")], catalog);
+    const list = firstUseSuggestions(rows3, DEFAULT_SETTINGS);
+    expect(list.map((s) => [s.kind, s.row.segment, s.from?.segment, s.value])).toEqual([
+      ["move", 0, 1, "(ö. 505/1111)"],
+      ["drop", 2, 2, ""],
+    ]);
+    // The receiving first mention gets no separate "add a date".
+    expect(bulkSuggestions(rows3, DEFAULT_SETTINGS).filter((s) => s.kind === "date")).toEqual([]);
+  });
+  it("notes keep their own first mention; dates the catalog contradicts are left alone", () => {
+    const rows3 = buildInventory([seg(0, "Gazzâlî (ö. 505/1111) der."), seg(0, "Gazzâlî (ö. 505/1111) de böyle der.", "note", 1), seg(1, "Sonra Gazzâlî (ö. 506/1112) der.")], catalog);
+    expect(firstUseSuggestions(rows3, DEFAULT_SETTINGS)).toEqual([]);
+  });
+  it("only with Yalnız ilk kullanım", () => {
+    const rows3 = buildInventory([seg(0, "Gazzâlî der."), seg(1, "Gazzâlî (ö. 505/1111) der.")], catalog);
+    expect(firstUseSuggestions(rows3, { ...DEFAULT_SETTINGS, scope: "all" })).toEqual([]);
   });
 });

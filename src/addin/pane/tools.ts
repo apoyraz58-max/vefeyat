@@ -2,9 +2,9 @@
 import { NameIndex, personKey, textName } from "../../core/index.js";
 import { type SettingName, listConfirmations, dateTag } from "../logic.js";
 import { type InventoryRow, buildInventory } from "../inventory.js";
-import { HISTORY_LABEL, type Suggestion, applyOrder, bulkSuggestions, describeSuggestion } from "../bulk.js";
+import { HISTORY_LABEL, type Suggestion, applyOrder, bulkSuggestions, describeSuggestion, firstUseSuggestions } from "../bulk.js";
 import { exportPrefs, mergePrefs, parsePrefs } from "../prefs.js";
-import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, selectDateControl, replaceDateAfterSelection, canSkipProofing, skipProofing, insertDate, readConfirmations, readDocument, documentVersion, replaceSelection, selectMention, writeConfirmations, readLocalPersons, writeLocalPersons } from "../word.js";
+import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, selectDateControl, replaceDateAfterSelection, canSkipProofing, skipProofing, insertDate, readConfirmations, readDocument, documentVersion, replaceSelection, selectMention, writeConfirmations, readLocalPersons, writeLocalPersons, removeDateAfter, hasPendingChanges, documentRead, watchDocument } from "../word.js";
 
 import { applyLocalPersons } from "./catalog.js";
 import { $, documentRows, history, loadSettings, logHistory, markSelected, placeOfRow, progress, run, setMessage, state, versions } from "./core.js";
@@ -63,9 +63,11 @@ export async function prepareBulk(): Promise<void> {
 export function renderBulk(): void {
   const dates = suggestions.filter((s) => s.kind === "date").length;
   const fixes = suggestions.filter((s) => s.kind === "fixdate").length;
+  const upkeep = suggestions.filter((s) => s.kind === "move" || s.kind === "drop").length;
   const uncertain = state.rows.filter((r) => r.status === "near" || r.status === "choose").length;
   $("bulk-summary").textContent = suggestions.length
-    ? `${dates} tarih, ${suggestions.length - dates - fixes} yazım önerisi` +
+    ? (upkeep ? `İlk geçiş değişikliği: ${upkeep} öneri (taşı / fazlayı kaldır). ` : "") +
+      `${dates} tarih, ${suggestions.length - dates - fixes - upkeep} yazım önerisi` +
       (fixes ? `, ${fixes} yanlış tarih (işaretsiz; bilerek başka kaynak kullandıysanız dokunmayın)` : "") +
       ". Yalnız işaretliler uygulanır." +
       (uncertain ? ` Kimliği belirsiz ${uncertain} geçiş listede yok; onları Tüm belgeyi denetle ile tek tek seçin.` : "")
@@ -91,7 +93,11 @@ export function renderBulk(): void {
     const meta = document.createElement("span");
     meta.className = "meta";
     meta.textContent =
-      s.kind === "date"
+      s.kind === "move"
+        ? `İlk geçiş değişti: tarihi ilk geçişe taşı · ${textName(s.person.shortName)} · ${placeOfRow(s.row)}`
+        : s.kind === "drop"
+          ? `Fazla tarih: ilk geçişte zaten var · ${textName(s.person.shortName)} · ${placeOfRow(s.row)}`
+          : s.kind === "date"
         ? `Tarih ekle · ${textName(s.person.shortName)}`
         : s.kind === "fixdate"
           ? `Tarihi katalogdakiyle değiştir · ${textName(s.person.shortName)} · ${s.row.dateCheck === "inconsistent" ? "hicrî ve milâdî yıl tutmuyor" : "katalogdan farklı"}`
@@ -124,6 +130,24 @@ export async function applyBulk(): Promise<void> {
     if (s.kind === "date") {
       const control = await insertDate(s.value, dateTag(s.person), `Vefeyât: ${textName(s.person.shortName)}`);
       logHistory("date", `${s.row.text} ${s.value}`, control);
+    } else if (s.kind === "move" || s.kind === "drop") {
+      // Selecting the receiving mention above found it; take the date off the later one first (it stands after).
+      const from = s.from as InventoryRow;
+      const fromSegment = state.segments[from.segment];
+      if (!fromSegment || !(await removeDateAfter(fromSegment, from.start, from.text, s.old ?? ""))) {
+        missed++;
+        continue;
+      }
+      if (s.kind === "move") {
+        if (!(await selectMention(segment, s.row.start, s.row.text))) {
+          missed++;
+          continue;
+        }
+        const control = await insertDate(s.value, dateTag(s.person), `Vefeyât: ${textName(s.person.shortName)}`);
+        logHistory("date", `${s.row.text} ${s.value} (ilk geçişe taşındı)`, control);
+      } else {
+        logHistory("repair", `${from.text} ${s.old} kaldırıldı (ilk geçişte tarih var)`);
+      }
     } else if (s.kind === "fixdate") {
       if (!(await replaceDateAfterSelection(s.old ?? "", s.value))) {
         missed++;
@@ -344,4 +368,27 @@ export async function toggleFrames(): Promise<void> {
     result.count === 0 ? "Belgede Vefeyât tarihi yok." : result.visible ? `${result.count} tarih alanı çerçeveyle gösteriliyor.` : `${result.count} tarih alanının çerçevesi gizlendi.`,
     "success",
   );
+}
+
+// ---- İlk geçiş bakımı: the document changed ----
+
+/**
+ * After an edit, quietly re-reads the changed paragraphs and tells when a
+ * person's first mention moved (a new earlier mention, or a date left on a
+ * later one). Nothing changes until the user reviews and applies it.
+ */
+export async function checkFirstUse(): Promise<void> {
+  if (state.busy || !state.catalog || state.settings.scope !== "first") return;
+  // The first quiet read primes the stored reading; afterwards only edits trigger a look.
+  if (documentRead() && !hasPendingChanges()) return;
+  if (!(await watchDocument())) return; // without paragraph events every look would be a full read
+  const rows = await documentRows();
+  const found = firstUseSuggestions(rows, state.settings);
+  const notice = $("firstuse-notice");
+  notice.hidden = found.length === 0;
+  if (found.length === 0) return;
+  const names = [...new Set(found.map((s) => textName(s.person.shortName)))];
+  $("firstuse-text").textContent =
+    `İlk geçiş değişti: ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` ve ${names.length - 3} kişi daha` : ""}. ` +
+    `${found.filter((s) => s.kind === "move").length} tarih ilk geçişe taşınmalı, ${found.filter((s) => s.kind === "drop").length} fazla tarih var. Onayınız olmadan bir şey değişmez.`;
 }

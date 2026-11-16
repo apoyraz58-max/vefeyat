@@ -1321,3 +1321,75 @@ export async function replaceDateAfterSelection(old: string, value: string): Pro
     return true;
   });
 }
+
+/** Whether the selection is inside a footnote or an endnote (WordApi 1.3: Body.type). */
+export async function selectionInNote(): Promise<boolean> {
+  return Word.run(async (context) => {
+    const body = context.document.getSelection().parentBody;
+    body.load("type");
+    await context.sync();
+    return body.type === "Footnote" || body.type === "Endnote";
+  });
+}
+
+/**
+ * İlk geçiş bakımı: removes the date written right after one mention — a
+ * Vefeyât date with its control, a hand-written one with the space before it.
+ * Nothing is removed unless that exact date stands directly after the name.
+ */
+export async function removeDateAfter(segment: Segment, start: number, literal: string, dateText: string): Promise<boolean> {
+  if (!dateText || literal.length > 250) return false;
+  return Word.run(async (context) => {
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("items");
+    await context.sync();
+    const host = paragraphs.items[segment.anchor];
+    if (!host) return false;
+    let scope: Word.Body | Word.Range = host.getRange("Whole");
+    if (segment.part === "note") {
+      const foot = host.getRange("Whole").footnotes;
+      const end = host.getRange("Whole").endnotes;
+      foot.load("items");
+      end.load("items");
+      await context.sync();
+      const note = noteOf({ foot, end }, segment.order);
+      if (!note) return false;
+      scope = note.body;
+    }
+    const names = scope.search(searchText(literal), { matchCase: true, matchWholeWord: false });
+    names.load("items");
+    await context.sync();
+    const name = names.items[occurrenceBefore(segment.text, literal, start)];
+    if (!name) return false;
+    const rest = name.getRange("End").expandTo(scope.getRange("End"));
+    const dates = rest.search(searchText(dateText), { matchCase: true, matchWholeWord: false });
+    dates.load("items");
+    await context.sync();
+    const date = dates.items[0];
+    if (!date) return false;
+    const gap = name.getRange("End").expandTo(date.getRange("Start"));
+    gap.load("text");
+    const control = date.parentContentControlOrNullObject;
+    control.load("tag");
+    await context.sync();
+    if (gap.text.trim().length > 0) return false; // not directly after the name
+    if (!control.isNullObject && control.tag?.startsWith("vefeyat:date:")) {
+      control.cannotDelete = false;
+      control.delete(false);
+    } else {
+      gap.expandTo(date).delete();
+    }
+    await context.sync();
+    return true;
+  });
+}
+
+/** Whether the document changed since it was last read (only known with paragraph events). */
+export function hasPendingChanges(): boolean {
+  return watching && cache !== null && (dirty.size > 0 || structural);
+}
+
+/** Whether the document has been read once since the pane opened (with paragraph events). */
+export function documentRead(): boolean {
+  return watching && cache !== null;
+}

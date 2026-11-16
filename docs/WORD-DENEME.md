@@ -68,6 +68,21 @@ kendiliğinden çıkarılır.
 - *Bütün kullanımlar*: uyarı çıkmaz.
 - *Yalnız denetle*: tarih eklenmez.
 
+Ana metin ile dipnot/sonnotlar **ayrı** değerlendirilir: kişinin ana metindeki ilk
+geçişi de, notlardaki ilk geçişi de tarihi alır; "daha önce geçti" uyarısı yalnız aynı
+bölümdeki (metin ya da notlar) önceki geçişlere bakar.
+
+**İlk geçiş bakımı.** Tarihi ilk geçişe ekledikten sonra metnin önüne aynı kişiyi
+yazarsanız, ya da bir geçişte gereksiz bir tarih kalırsa, Vefeyât bunu fark eder ve
+pencerede "İlk geçiş değişti" bildirimi gösterir. **Gözden geçir** Toplu düzeltme
+önizlemesini açar: tarih yeni ilk geçişe *taşınır* (yazdığınız biçimiyle), sonraki
+geçişteki *kaldırılır*; ilk geçişte zaten tarih varken sonrakilerdeki fazla tarihler
+de kaldırılmak üzere önerilir. Elle yazılmış tarihler de tanınır; yalnız katalogla
+uyuşanlar taşınır ya da kaldırılır, kimliği tahmine dayananlar işaretsiz gelir.
+**Onayınız olmadan hiçbir şey değişmez.** (Bildirim, belgeyi değişiklik olaylarıyla
+izleyebilen güncel Microsoft 365 Word'de kendiliğinden çıkar; diğerlerinde Toplu
+düzeltme önizlemesini açtığınızda öneriler yine görünür.)
+
 Adın arkasında zaten tarih varsa ikinci tarih eklenmez. **Kısaltma** menüsü önek
 biçimini (ö. / öl. / v. / kaynaktaki gibi) belirler.
 

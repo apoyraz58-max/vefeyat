@@ -10,7 +10,7 @@ import { checkHealth, convertLegacy, repairHealth, repairSource, showSource } fr
 import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit } from "./pane/inventory.js";
 import { addDate, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
-import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames } from "./pane/tools.js";
+import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
 
 declare const __VERSION__: string;
 
@@ -178,12 +178,21 @@ export function initialise(): void {
   $("respell").addEventListener("click", () => void run(respell));
   $("spelling").addEventListener("change", renderSpellingChoice);
   let timer: number | undefined;
+  let upkeepTimer: number | undefined;
   onSelectionChanged(() => {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => {
       if (!$("view-kaynak").hidden) void run(showSource);
       else void refresh();
     }, 250);
+    // Typing moves the selection: once it rests, look whether a first mention moved.
+    window.clearTimeout(upkeepTimer);
+    upkeepTimer = window.setTimeout(() => void checkFirstUse().catch(() => {}), 2000);
+  });
+  $("firstuse-review").addEventListener("click", () => {
+    $("firstuse-notice").hidden = true;
+    showView("toplu");
+    void run(prepareBulk, "Öneriler hazırlanıyor");
   });
   $("inventory-refresh").addEventListener("click", () => void run(prepareInventory, "Şahıs dökümü hazırlanıyor"));
   $("inventory-act").addEventListener("click", () => void actOnRow());

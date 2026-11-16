@@ -6,7 +6,7 @@ import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLa
 import { type InventoryRow } from "../inventory.js";
 import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
-import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, writeConfirmations } from "../word.js";
+import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, writeConfirmations, selectionInNote } from "../word.js";
 
 import { $, documentRows, loadSettings, logHistory, setMessage, state, versions, showView } from "./core.js";
 
@@ -264,7 +264,15 @@ export async function earlierMention(person: Person): Promise<boolean> {
   if (!state.catalog) return state.alias ? findEarlier(earlierSpellings(person, state.alias)) : false;
   const rows = await documentRows();
   const target = personKey(person);
-  const same = rows.filter((r) => r.person !== null && personKey(r.person) === target);
+  // The main text and the notes are counted apart: only mentions in the same part count.
+  const inNote = await selectionInNote().catch(() => false);
+  const same = rows.filter((r) => r.person !== null && personKey(r.person) === target && r.part === (inNote ? "note" : "main"));
+  if (inNote) {
+    // Notes are other stories: find this mention in the reading, earlier notes come before it.
+    const here = state.mention ? rows.findIndex((r) => r.part === "note" && rowKey(r, state.segments) === state.mention) : -1;
+    earlierRow = here < 0 ? null : (same.find((r) => r.id < here) ?? null);
+    return earlierRow !== null;
+  }
   // Word itself tells which of them stands before the selection.
   earlierRow = await firstMentionBefore(state.segments, same);
   return earlierRow !== null;

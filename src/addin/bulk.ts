@@ -8,13 +8,15 @@ import { type Settings, mentionKey } from "./logic.js";
 
 export interface Suggestion {
   readonly id: string;
-  readonly kind: "date" | "spelling" | "fixdate";
+  readonly kind: "date" | "spelling" | "fixdate" | "move" | "drop";
   readonly row: InventoryRow;
   readonly person: Person;
   /** Date to insert, the replacement spelling (with the Turkish ending), or the corrected date. */
   readonly value: string;
-  /** For "fixdate": the date as written now. */
+  /** For "fixdate": the date as written now. For "move"/"drop": the date to take away. */
   readonly old?: string;
+  /** For "move" and "drop": the later mention that carries the date now (`row` is where it goes, for "move"). */
+  readonly from?: InventoryRow;
   /** Checked by default: safe changes only. */
   readonly preselected: boolean;
 }
@@ -24,8 +26,47 @@ export interface Suggestion {
  * and dates for first mentions without one (unless Tarih ekleme is
  * "Yalnız denetle"; with "Bütün kullanımlar", every undated certain mention).
  */
-export function bulkSuggestions(rows: readonly InventoryRow[], settings: Settings, spellings: Readonly<Record<string, string>> = {}): Suggestion[] {
+/** Identities the reading only guessed: their changes always wait for an explicit tick. */
+const guessed = (row: InventoryRow) => row.resolved === "context" || row.resolved === "topic";
+
+/**
+ * İlk geçiş bakımı ("Yalnız ilk kullanım"): in the main text and in the notes
+ * separately, a person's date belongs to the first mention. A date found on a
+ * later mention is moved to the first (kept as written) when the first has
+ * none, and dropped when the first already has one. Only dates that agree with
+ * the catalog are touched.
+ */
+export function firstUseSuggestions(rows: readonly InventoryRow[], settings: Settings): Suggestion[] {
+  if (settings.scope !== "first") return [];
+  const groups = new Map<string, InventoryRow[]>();
+  for (const row of rows) {
+    if (!row.person) continue;
+    const key = `${row.part}|${personKey(row.person)}`;
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  }
   const out: Suggestion[] = [];
+  for (const group of groups.values()) {
+    const first = group[0] as InventoryRow;
+    const person = first.person as Person;
+    const later = group.slice(1).filter((r) => r.date && r.dateCheck === "ok");
+    if (later.length === 0) continue;
+    let rest = later;
+    if (!first.date) {
+      const source = later[0] as InventoryRow;
+      out.push({ id: `m${source.id}`, kind: "move", row: first, from: source, person, value: source.date, old: source.date, preselected: !guessed(first) && !guessed(source) });
+      rest = later.slice(1);
+    }
+    for (const extra of rest) {
+      out.push({ id: `x${extra.id}`, kind: "drop", row: extra, from: extra, person, value: "", old: extra.date, preselected: !guessed(extra) });
+    }
+  }
+  return out;
+}
+
+export function bulkSuggestions(rows: readonly InventoryRow[], settings: Settings, spellings: Readonly<Record<string, string>> = {}): Suggestion[] {
+  const out: Suggestion[] = firstUseSuggestions(rows, settings);
+  // A first mention that receives a moved date needs no new one.
+  const receiving = new Set(out.filter((s) => s.kind === "move").map((s) => s.row.id));
   for (const row of rows) {
     const person = row.person;
     if (!person) continue;
@@ -40,7 +81,7 @@ export function bulkSuggestions(rows: readonly InventoryRow[], settings: Setting
       if (value !== row.date) out.push({ id: `f${row.id}`, kind: "fixdate", row, person, value, old: row.date, preselected: false });
     }
     const wantsDate = settings.scope === "all" || (settings.scope === "first" && row.first);
-    if (wantsDate && !row.date && isValidDate(person.deathDate)) {
+    if (wantsDate && !row.date && isValidDate(person.deathDate) && !receiving.has(row.id)) {
       out.push({ id: `d${row.id}`, kind: "date", row, person, value: formatDate(person.deathDate, settings.prefix), preselected: true });
     }
   }
@@ -49,6 +90,8 @@ export function bulkSuggestions(rows: readonly InventoryRow[], settings: Setting
 
 export function describeSuggestion(s: Suggestion): string {
   if (s.kind === "fixdate") return `${s.row.text} ${s.old} → ${s.row.text} ${s.value}`;
+  if (s.kind === "move") return `${s.row.text} → ${s.row.text} ${s.value} (sonraki "${s.from?.text} ${s.old}" geçişinden taşınır)`;
+  if (s.kind === "drop") return `${s.row.text} ${s.old} → ${s.row.text} (ilk geçişte tarih zaten var)`;
   return s.kind === "date" ? `${s.row.text} → ${s.row.text} ${s.value}` : `${s.row.text} → ${s.value}`;
 }
 
@@ -57,9 +100,12 @@ export function describeSuggestion(s: Suggestion): string {
  * mentions still to be found; a date goes in before its name is respelled.
  */
 export function applyOrder(chosen: readonly Suggestion[]): Suggestion[] {
-  // Dates (new or corrected) sit after the name: change them before the name is respelled.
+  // Last position first, so changes never shift mentions still to be found;
+  // a move counts at its later end (the date taken away). Dates sit after the
+  // name: change them before the name is respelled.
+  const at = (s: Suggestion) => Math.max(s.row.id, s.from?.id ?? -1);
   const rank = (s: Suggestion) => (s.kind === "spelling" ? 1 : 0);
-  return [...chosen].sort((a, b) => b.row.id - a.row.id || rank(a) - rank(b));
+  return [...chosen].sort((a, b) => at(b) - at(a) || rank(a) - rank(b));
 }
 
 // ---- Denetime devam et ----

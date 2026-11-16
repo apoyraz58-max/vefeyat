@@ -74,7 +74,7 @@ export interface InventoryRow {
   /** Date already written right after the name, or "". */
   readonly date: string;
   readonly status: Status;
-  /** First certain mention of this person in reading order. */
+  /** First certain mention of this person in its part (main text, or footnotes and endnotes), in reading order. */
   readonly first: boolean;
   /** Identity taken from a confirmation saved in the document. */
   readonly confirmed: boolean;
@@ -303,7 +303,8 @@ export function buildInventory(
     else status = "choose";
     let first = false;
     if (person) {
-      const key = personKey(person);
+      // The main text and the notes each have their own first mention.
+      const key = `${draft.part}|${personKey(person)}`;
       first = !seen.has(key);
       seen.add(key);
     }
