@@ -99,6 +99,10 @@ export function personNotes(person: Person, mentions: readonly InventoryRow[]): 
     const later = mentions.findIndex((row, i) => i > 0 && row.date);
     notes.push(later > 0 ? `Tarih ilk geçişte değil, ${later + 1}. geçişte.` : "İlk geçişte tarih yok.");
   }
+  for (const row of mentions) {
+    if (row.dateCheck === "different") notes.push(`Metindeki tarih katalogdan farklı: ${row.date} (katalog: ${person.deathDate}).`);
+    if (row.dateCheck === "inconsistent") notes.push(`Yazılan tarihte hicrî ve milâdî yıl tutmuyor: ${row.date}.`);
+  }
   return notes.join(" ");
 }
 

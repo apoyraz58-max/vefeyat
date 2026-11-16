@@ -177,3 +177,78 @@ export function chronoYear(raw: string): { year: number; certain: boolean } | nu
   if (` ${normalize(raw)} `.includes(" m o ")) return { year: -year, certain: true };
   return { year, certain: slash >= 0 };
 }
+
+// ---- Metindeki tarihin denetimi ----
+
+export interface DeathYears {
+  /** Possible hijri death years, when the date has the "H/G" form ("60-64/680-683"). */
+  readonly hijri: readonly number[];
+  /** Possible Gregorian death years ("917-18" → 917, 918). */
+  readonly gregorian: readonly number[];
+  /** A lone year that may be either calendar ("ö. 569"). */
+  readonly single?: number;
+  readonly bc: boolean;
+}
+
+/** "917", "18" → 918: a shortened second year shares the first one's leading digits. */
+function expand(first: string, second: string | undefined): number[] {
+  const a = Number(first);
+  if (!second) return [a];
+  const b = Number(second.length < first.length ? first.slice(0, first.length - second.length) + second : second);
+  if (b <= a || b - a > 15) return [a];
+  return Array.from({ length: b - a + 1 }, (_, k) => a + k);
+}
+
+/** The death year(s) a date text gives, or null when it has none. */
+export function deathYears(raw: string): DeathYears | null {
+  const text = raw.replace(/\[[^\]]*\]/g, " ");
+  const bc = /m\.\s?ö\./i.test(text);
+  const slash = /(\d{1,4})(?:\s*-\s*(\d{1,4}))?\s*\/\s*(\d{1,4})(?:\s*-\s*(\d{1,4}))?/.exec(text);
+  if (slash) return { hijri: expand(slash[1]!, slash[2]), gregorian: expand(slash[3]!, slash[4]), bc };
+  const span = /(\d{3,4})\s*-\s*(\d{2,4})/.exec(text);
+  if (span) {
+    // A life span "1844-1921" (or "m.ö. 384-322"): the death year is the second.
+    const a = span[1]!;
+    const b = span[2]!.length < a.length ? a.slice(0, a.length - span[2]!.length) + span[2] : span[2]!;
+    return { hijri: [], gregorian: [Number(b)], bc };
+  }
+  const single = /(\d{1,4})/.exec(text);
+  return single ? { hijri: [], gregorian: [], single: Number(single[1]), bc } : null;
+}
+
+/** Approximate Gregorian year of a hijri year. */
+export function hijriToGregorian(hijri: number): number {
+  return hijri * 0.970229 + 621.5643;
+}
+
+export type DateCheck = "ok" | "different" | "inconsistent" | null;
+
+/** Whether the hijri and Gregorian years written in a date fit each other (true when only one is given). */
+export function calendarsAgree(written: string): boolean {
+  const w = deathYears(written);
+  if (!w || w.hijri.length === 0 || w.gregorian.length === 0 || w.bc) return true;
+  return w.hijri.some((h) => w.gregorian.some((g) => Math.abs(g - hijriToGregorian(h)) <= 1.5));
+}
+
+/**
+ * Compares a date written in the text with the catalog's. "different":
+ * the years disagree; "inconsistent": the written hijri and Gregorian years
+ * do not fit each other; null: nothing to compare.
+ */
+export function checkWrittenDate(written: string, catalog: string): DateCheck {
+  const w = deathYears(written);
+  if (!w) return null;
+  const numbers = (value: string) => (value.match(/\d+/g) ?? []).join(" ");
+  if (numbers(written) === numbers(catalog)) return "ok"; // the catalog's own date, however odd
+  if (!calendarsAgree(written)) return "inconsistent";
+  const c = deathYears(catalog);
+  if (!c) return null;
+  if (w.bc !== c.bc) return "different";
+  const overlap = (a: readonly number[], b: readonly number[]) => a.some((x) => b.includes(x));
+  if (w.hijri.length > 0 && c.hijri.length > 0 && !overlap(w.hijri, c.hijri)) return "different";
+  if (w.gregorian.length > 0 && c.gregorian.length > 0 && !overlap(w.gregorian, c.gregorian)) return "different";
+  const cAll = [...c.hijri, ...c.gregorian, ...(c.single !== undefined ? [c.single] : [])];
+  if (w.single !== undefined && !cAll.includes(w.single)) return "different";
+  if (c.single !== undefined && w.single === undefined && ![...w.hijri, ...w.gregorian].includes(c.single)) return "different";
+  return "ok";
+}

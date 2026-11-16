@@ -363,6 +363,10 @@ try {
   await tab.close();
 
   // Şahıs dökümü and Tüm belgeyi denetle on a whole document.
+  tab = await open("?view=dokum", "Gazzâlî (ö. 506/1112) der ki.");
+  await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length > 0);
+  check("a wrong written date is reported", (await tab.textContent("#inventory-summary")).includes("1 tarih uyarısı") && (await tab.textContent("#inventory-list")).includes("katalogdan farklı"), await tab.textContent("#inventory-summary"));
+  await tab.close();
   const book = "Gazali bu görüşü savunur.\rGazzâlî (ö. 505/1111) ise farklı düşünür. Râzî de katılır.\rSonra Gazzâlî'nin talebeleri gelir.";
   tab = await open("?view=dokum", book);
   await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length > 0);

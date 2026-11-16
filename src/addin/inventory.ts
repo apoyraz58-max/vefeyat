@@ -12,6 +12,9 @@ import {
   type Person,
   alreadyHasDate,
   bibliographyFlags,
+  calendarsAgree,
+  checkWrittenDate,
+  type DateCheck,
   isAdjectiveUse,
   isTitleLike,
   words,
@@ -78,6 +81,8 @@ export interface InventoryRow {
    * of the candidates in the document.
    */
   readonly resolved: "catalog" | "confirmed" | "date" | "context" | null;
+  /** The date written after the name against the catalog: "different", "inconsistent" (hijri vs Gregorian) or "ok". */
+  readonly dateCheck: DateCheck;
 }
 
 const LINK_WORDS = new Set(["b", "bin", "bint", "ibn", "ibni", "el", "er", "es", "et", "ez", "en", "ed", "es", "ebu", "ebul", "ebi"]);
@@ -285,9 +290,14 @@ export function buildInventory(
       first,
       confirmed: draft.resolved === "confirmed",
       resolved: draft.resolved,
+      dateCheck: person && date && isValidDate(person.deathDate) ? checkWrittenDate(date, person.deathDate) : date ? (calendarsAgree(date) ? "ok" : "inconsistent") : null,
     });
   }
   return rows;
+}
+
+export function hasDateIssue(row: Pick<InventoryRow, "dateCheck">): boolean {
+  return row.dateCheck === "different" || row.dateCheck === "inconsistent";
 }
 
 /** Catalog column text for a row. */
@@ -309,6 +319,8 @@ export function statusLabel(row: InventoryRow): string {
   };
   let text = base[row.status];
   if (row.confirmed) text += " · onaylı kimlik";
+  if (row.dateCheck === "different" && row.person) text += ` · Uyarı: metindeki tarih katalogdan farklı (katalog: ${row.person.deathDate})`;
+  if (row.dateCheck === "inconsistent") text += ` · Uyarı: yazılan hicrî ve milâdî yıl birbirini tutmuyor${row.person ? ` (katalog: ${row.person.deathDate})` : ""}`;
   if (row.resolved === "date") text += " · kimlik yazılı tarihten";
   if (row.resolved === "context") text += " · kimlik belgedeki diğer geçişlerden";
   if (row.person && !isValidDate(row.person.deathDate)) text += " · Kaynakta tarih yok";
@@ -322,6 +334,8 @@ export interface InventorySummary {
   readonly firstWithoutDate: number;
   readonly spelling: number;
   readonly uncertain: number;
+  /** Written dates that differ from the catalog or whose two calendars disagree. */
+  readonly dateIssues: number;
 }
 
 export function summarize(rows: readonly InventoryRow[]): InventorySummary {
@@ -332,5 +346,6 @@ export function summarize(rows: readonly InventoryRow[]): InventorySummary {
     firstWithoutDate: rows.filter((r) => r.first && !r.date && r.person && isValidDate(r.person.deathDate)).length,
     spelling: rows.filter((r) => r.status === "spelling").length,
     uncertain: rows.filter((r) => r.status === "near" || r.status === "choose").length,
+    dateIssues: rows.filter((r) => hasDateIssue(r)).length,
   };
 }

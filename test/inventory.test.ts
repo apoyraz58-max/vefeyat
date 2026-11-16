@@ -77,7 +77,7 @@ describe("buildInventory", () => {
     expect(statusLabel(rows[3]!)).toBe("Kaynak yazımıyla uyumlu · Kaynakta tarih yok");
   });
   it("summary", () => {
-    expect(summarize(rows)).toEqual({ mentions: 5, people: 2, firstWithoutDate: 1, spelling: 1, uncertain: 1 });
+    expect(summarize(rows)).toEqual({ mentions: 5, people: 2, firstWithoutDate: 1, spelling: 1, uncertain: 1, dateIssues: 0 });
   });
   it("first mention without date is reported", () => {
     const only = buildInventory([main(0, "Gazzâlî der ki.")], catalog);
@@ -152,5 +152,19 @@ describe("lookups ignore the Arabic article", () => {
     ]);
     expect(lookup(inverted, "Ebû Bekir er-Râzî").automatic?.source).toBe(DIA + "razi-ebu-bekir");
     expect(lookup(inverted, "İbn Sînâ'nın").automatic?.source).toBe(DIA + "ibn-sina");
+  });
+});
+
+describe("written dates in the text", () => {
+  it("a date that differs from the catalog, or whose calendars disagree, is reported and audited", async () => {
+    const { hasDateIssue } = await import("../src/addin/inventory.js");
+    const { auditRows, DEFAULT_SETTINGS } = await import("../src/addin/logic.js");
+    const rows = buildInventory([main(0, "Gazzâlî (ö. 505/1111) der. Sonra Gazzâlî (ö. 506/1112) yine der."), main(1, "Ebû Bekir er-Râzî (ö. 313/1025) hekimdi.")], catalog);
+    expect(rows.map((r) => r.dateCheck)).toEqual(["ok", "different", "inconsistent"]);
+    expect(statusLabel(rows[1]!)).toContain("metindeki tarih katalogdan farklı (katalog: (ö. 505/1111))");
+    expect(statusLabel(rows[2]!)).toContain("hicrî ve milâdî yıl birbirini tutmuyor");
+    expect(summarize(rows).dateIssues).toBe(2);
+    expect(auditRows(rows, DEFAULT_SETTINGS).map((r) => r.text)).toEqual(["Gazzâlî", "Gazzâlî", "Ebû Bekir er-Râzî"]);
+    expect(hasDateIssue(rows[0]!)).toBe(false);
   });
 });

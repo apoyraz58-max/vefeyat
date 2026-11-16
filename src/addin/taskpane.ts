@@ -29,7 +29,7 @@ import {
   scopeRule,
   settingsSummary,
 } from "./logic.js";
-import { type InventoryRow, type Segment, buildInventory, catalogLabel, placeOf, statusLabel, summarize } from "./inventory.js";
+import { type InventoryRow, type Segment, buildInventory, catalogLabel, hasDateIssue, placeOf, statusLabel, summarize } from "./inventory.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "./store.js";
 import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, addHistory, applyOrder, bulkSuggestions, describeSuggestion, parseBookmark, parseHistory, resumeIndex, rowKey } from "./bulk.js";
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
@@ -598,6 +598,7 @@ async function prepareInventory(): Promise<void> {
   const sum = summarize(state.rows);
   $("inventory-summary").textContent =
     `${sum.mentions} geçiş · ${sum.people} kesin şahıs · ${sum.uncertain} doğrulanacak · ${sum.firstWithoutDate} ilk geçişte tarih yok · ${sum.spelling} yazım uyarısı` +
+    (sum.dateIssues ? ` · ${sum.dateIssues} tarih uyarısı` : "") +
     (read.footnotes ? ` · okunan: ${noteCounts(read.segments)}` : " · Bu Word sürümünde dipnot ve sonnotlar okunamıyor");
   renderInventory();
 }
@@ -620,7 +621,7 @@ function renderInventory(): void {
     meta.className = "meta";
     meta.textContent = `${catalogLabel(row)} · ${row.date || "tarih yok"}`;
     const status = document.createElement("span");
-    status.className = row.status === "match" ? "meta" : "meta warn";
+    status.className = row.status === "match" && !hasDateIssue(row) ? "meta" : "meta warn";
     status.textContent = statusLabel(row);
     item.append(name, badge, meta, status);
     item.addEventListener("click", () => void run(() => chooseRow(row)));
