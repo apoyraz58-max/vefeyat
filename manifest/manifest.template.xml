@@ -55,9 +55,9 @@
                     <Description resid="Insert.Tip"/>
                   </Supertip>
                   <Icon>
-                    <bt:Image size="16" resid="Ic.insert.16"/>
-                    <bt:Image size="32" resid="Ic.insert.32"/>
-                    <bt:Image size="80" resid="Ic.insert.80"/>
+                    <bt:Image size="16" resid="Ic.insertbrand.16"/>
+                    <bt:Image size="32" resid="Ic.insertbrand.32"/>
+                    <bt:Image size="80" resid="Ic.insertbrand.80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>VefeyatPane</TaskpaneId>
@@ -956,9 +956,9 @@
                         <Description resid="Insert.Tip"/>
                       </Supertip>
                       <Icon>
-                        <bt:Image size="16" resid="Ic.insert.16"/>
-                        <bt:Image size="32" resid="Ic.insert.32"/>
-                        <bt:Image size="80" resid="Ic.insert.80"/>
+                        <bt:Image size="16" resid="Ic.insertbrand.16"/>
+                        <bt:Image size="32" resid="Ic.insertbrand.32"/>
+                        <bt:Image size="80" resid="Ic.insertbrand.80"/>
                       </Icon>
                       <Action xsi:type="ShowTaskpane">
                         <TaskpaneId>VefeyatPane</TaskpaneId>
@@ -1022,9 +1022,9 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Ic.insert.16" DefaultValue="{{BASE_URL}}assets/icons/insert-16.png"/>
-        <bt:Image id="Ic.insert.32" DefaultValue="{{BASE_URL}}assets/icons/insert-32.png"/>
-        <bt:Image id="Ic.insert.80" DefaultValue="{{BASE_URL}}assets/icons/insert-80.png"/>
+        <bt:Image id="Ic.insertbrand.16" DefaultValue="{{BASE_URL}}assets/icons/insertbrand-16.png"/>
+        <bt:Image id="Ic.insertbrand.32" DefaultValue="{{BASE_URL}}assets/icons/insertbrand-32.png"/>
+        <bt:Image id="Ic.insertbrand.80" DefaultValue="{{BASE_URL}}assets/icons/insertbrand-80.png"/>
         <bt:Image id="Ic.spelling.16" DefaultValue="{{BASE_URL}}assets/icons/spelling-16.png"/>
         <bt:Image id="Ic.spelling.32" DefaultValue="{{BASE_URL}}assets/icons/spelling-32.png"/>
         <bt:Image id="Ic.spelling.80" DefaultValue="{{BASE_URL}}assets/icons/spelling-80.png"/>

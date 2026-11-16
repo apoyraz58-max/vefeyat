@@ -75,7 +75,7 @@ def setting_menu(key, label, tip, ic, choices):
 
 insert = button("Insert", S("Insert", "Ölüm tarihi ekle"),
                 L("Insert.Tip", "Seçili adın ölüm tarihini ekler. Tek ve kesin eşleşmede, ilk geçişte ve adın arkasında tarih yoksa doğrudan ekler; aksi hâlde Vefeyât penceresinde seçim veya onay ister."),
-                "insert", pane(U("U.Insert", "taskpane.html?action=insert")))
+                "insertbrand", pane(U("U.Insert", "taskpane.html?action=insert")))
 spelling = button("Spelling", S("Spelling", "İsim yazımı"),
                   L("Spelling.Tip", "Seçili adı kısa, tam ve orijinal adlarla karşılaştırır; Türkçe eki koruyarak yalnız seçili adı değiştirir."),
                   "spelling", pane(U("U.Spelling", "taskpane.html?action=spelling")))
@@ -147,7 +147,7 @@ ribbon = ("          <ExtensionPoint xsi:type=\"PrimaryCommandSurface\">\n      
           + "".join(groups) + f'              <Label resid="{S("Tab", "Vefeyât")}"/>\n            </CustomTab>\n          </ExtensionPoint>\n')
 context = ("          <ExtensionPoint xsi:type=\"ContextMenu\">\n            <OfficeMenu id=\"ContextMenuText\">\n"
            + menu("Context", S("Context", "Vefeyât"), L("Context.Tip", "Seçili şahıs adı için Vefeyât komutları."), "brand", [
-               item("C.Insert", "Insert", "Insert.Tip", "insert", pane("U.Insert")),
+               item("C.Insert", "Insert", "Insert.Tip", "insertbrand", pane("U.Insert")),
                item("C.Spelling", "Spelling", "Spelling.Tip", "spelling", pane("U.Spelling")),
                item("C.Dia", "Dia", "Dia.Tip", "dia", pane("U.Dia")),
                item("C.Source", "SourceInfo", "SourceInfo.Tip", "source", pane("U.SourceInfo")),
