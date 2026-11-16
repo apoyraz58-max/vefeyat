@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 128" role="img" aria-label="Vefeyât — biyografik referans yöneticisi">
   <g><defs>
-    <linearGradient id="ld-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E1B4B"/><stop offset="1" stop-color="#4338CA"/></linearGradient>
-    <linearGradient id="ld-v" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E0E7FF"/></linearGradient>
+    <linearGradient id="ld-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0F172A"/><stop offset="1" stop-color="#1E3A8A"/></linearGradient>
   </defs>
   <rect width="128" height="128" rx="30" fill="url(#ld-bg)"/>
-  <!-- A person whose body is the V: biography and Vefeyât in one figure. -->
-  <circle cx="64" cy="34" r="11" fill="#FB923C"/>
-  <path d="M30 52 H49 L64 79 L79 52 H98 L72 100 H56 Z" fill="url(#ld-v)"/>
+  <!-- A life line from birth (blue) to death (orange), dipping into the V of Vefeyât. -->
+  <path d="M18 50 H34 L64 92 L94 50 H110" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="18" cy="50" r="9" fill="#38BDF8"/>
+  <circle cx="110" cy="50" r="9" fill="#F97316"/>
 </g>
   <text x="152" y="74" font-family="'Inter Display', Inter, 'Segoe UI', sans-serif" font-weight="700" font-size="60" letter-spacing="-1.6" fill="#FFFFFF">Vefeyât</text>
-  <text x="154" y="104" font-family="Inter, 'Segoe UI', sans-serif" font-weight="500" font-size="19" letter-spacing="0.1" fill="#A5B4FC">Biyografik referans yöneticisi</text>
+  <text x="154" y="104" font-family="Inter, 'Segoe UI', sans-serif" font-weight="500" font-size="19" letter-spacing="0.1" fill="#7DD3FC">Biyografik referans yöneticisi</text>
 </svg>
