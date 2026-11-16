@@ -1,14 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Vefeyât">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0E4D5C"/>
-      <stop offset="1" stop-color="#13243F"/>
-    </linearGradient>
+    <linearGradient id="vf-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E1B4B"/><stop offset="1" stop-color="#4338CA"/></linearGradient>
+    <linearGradient id="vf-v" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E0E7FF"/></linearGradient>
   </defs>
-  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
-  <!-- Parentheses: every date Vefeyât writes stands in them, "(ö. 505/1111)". -->
-  <path d="M33 29 Q17 64 33 99" fill="none" stroke="#D9A441" stroke-width="6.5" stroke-linecap="round"/>
-  <path d="M95 29 Q111 64 95 99" fill="none" stroke="#D9A441" stroke-width="6.5" stroke-linecap="round"/>
-  <!-- V: a cut, bookish letter -->
-  <path d="M39 37 H54.5 L64 66.5 L73.5 37 H89 L71.5 91 H56.5 Z" fill="#F6F0E2"/>
+  <rect width="128" height="128" rx="30" fill="url(#vf-bg)"/>
+  <!-- A person whose body is the V: biography and Vefeyât in one figure. -->
+  <circle cx="64" cy="34" r="11" fill="#FB923C"/>
+  <path d="M30 52 H49 L64 79 L79 52 H98 L72 100 H56 Z" fill="url(#vf-v)"/>
 </svg>

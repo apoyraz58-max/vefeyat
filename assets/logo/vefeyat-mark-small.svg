@@ -1,12 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Vefeyât">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Vefeyât">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0E4D5C"/>
-      <stop offset="1" stop-color="#13243F"/>
-    </linearGradient>
+    <linearGradient id="vf-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E1B4B"/><stop offset="1" stop-color="#4338CA"/></linearGradient>
+    <linearGradient id="vf-v" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E0E7FF"/></linearGradient>
   </defs>
-  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
-  <path d="M7.6 6.5 Q3.4 16 7.6 25.5" fill="none" stroke="#D9A441" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M24.4 6.5 Q28.6 16 24.4 25.5" fill="none" stroke="#D9A441" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M9.6 9 H13.7 L16 16.4 L18.3 9 H22.4 L17.9 23 H14.1 Z" fill="#F6F0E2"/>
+  <rect width="128" height="128" rx="30" fill="url(#vf-bg)"/>
+  <!-- A person whose body is the V: biography and Vefeyât in one figure. -->
+  <circle cx="64" cy="34" r="11" fill="#FB923C"/>
+  <path d="M30 52 H49 L64 79 L79 52 H98 L72 100 H56 Z" fill="url(#vf-v)"/>
 </svg>
