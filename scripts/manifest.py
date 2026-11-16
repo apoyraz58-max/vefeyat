@@ -178,7 +178,7 @@ xml = f"""<?xml version="1.0" encoding="UTF-8"?>
            xsi:type="TaskPaneApp">
   <Id>6f3c2a4e-8b1d-4c7a-9e52-0d9a7b3e5f21</Id>
   <Version>{{{{VERSION}}}}</Version>
-  <ProviderName>Vefeyât</ProviderName>
+  <ProviderName>Abdurrahman Poyraz</ProviderName>
   <DefaultLocale>tr-TR</DefaultLocale>
   <DisplayName DefaultValue="Vefeyât"/>
   <Description DefaultValue="Şahıs adlarını DİA kataloğuyla denetler, doğru yazımı önerir ve vefat tarihini ekler."/>

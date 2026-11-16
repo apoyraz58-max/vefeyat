@@ -192,3 +192,9 @@ dosyasını açın; ilk sayfadaki kontrol listesini izleyin.
 
 Sorun görürseniz: panelin altındaki sürüm numarası, ne yaptığınız ve paneldeki
 mesajın ekran görüntüsü.
+
+## Hakkında
+
+**Vefeyât** — Geliştiren: **Abdurrahman Poyraz**, Sivas Cumhuriyet Üniversitesi
+İlahiyat Fakültesi. Şahıs bilgileri ve ölüm tarihleri TDV İslâm Ansiklopedisi (DİA)
+kataloğundan alınır. Simgeler: Fluent UI System Icons (MIT).

@@ -86,6 +86,7 @@ export async function checkForUpdate(): Promise<void> {
 export function initialise(): void {
   void checkForUpdate();
   $("version").textContent = __VERSION__;
+  $("about-version").textContent = __VERSION__;
   const file = $<HTMLInputElement>("catalog-file");
   $("choose-catalog").addEventListener("click", () => file.click());
   $("choose-catalog-inline").addEventListener("click", () => file.click());
