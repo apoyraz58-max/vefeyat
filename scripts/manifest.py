@@ -236,6 +236,20 @@ print(f"{len(used_icons)} icons, {len(urls)} urls, {len(short)} labels")
 # (src/addin/actions.ts). A separate add-in (own Id and name) so it can be tried
 # without touching the regular one.
 import re
+import json
+
+# Three-key shortcuts (Alt+Shift+letter): Ctrl+Alt+letter is AltGr on a Turkish
+# keyboard (@, €, ₺ …) and many Ctrl+Shift letters are Word's own. On a Mac,
+# Option+Shift types characters, so Cmd+Option there. Each is also written in
+# the button's hover text.
+SHORTCUTS = [
+    ("go_action_insert", "Ölüm tarihi ekle", "Insert.Tip", "V"),
+    ("go_action_spelling", "İsim yazımı", "Spelling.Tip", "Y"),
+    ("go_view_denetim", "Tüm belgeyi denetle", "Audit.Tip", "B"),
+    ("go_view_dokum", "Şahıs dökümü", "Inventory.Tip", "L"),
+    ("go_view_toplu", "Toplu düzeltme önizlemesi", "Bulk.Tip", "U"),
+    ("go_view_ara", "Şahıs ara", "Search.Tip", "H"),
+]
 
 def go(match):
     query = urls[match.group(2)].split("?", 1)[1]
@@ -253,6 +267,16 @@ trial = (trial
     .replace('        <bt:Url id="Commands.Url"', f'        <bt:Url id="Taskpane.Url" DefaultValue="{B}taskpane.html"/>\n        <bt:Url id="Commands.Url"')
     .replace('<bt:String id="Tab" DefaultValue="Vefeyât"/>', '<bt:String id="Tab" DefaultValue="Vefeyât (deneme)"/>')
     .replace("  </VersionOverrides>\n", f'  </VersionOverrides>\n  <ExtendedOverrides Url="{B}shortcuts.json"/>\n'))
+for action, name, tip, key in SHORTCUTS:
+    assert f"<FunctionName>{action}</FunctionName>" in trial, action
+    old = f'<bt:String id="{tip}" DefaultValue="{esc(long_[tip])}"/>'
+    assert old in trial, tip
+    trial = trial.replace(old, f'<bt:String id="{tip}" DefaultValue="{esc(long_[tip])} Kısayol: Alt+Shift+{key}"/>')
+shortcuts = {
+    "actions": [{"id": a, "type": "ExecuteFunction", "name": n} for a, n, _, _ in SHORTCUTS],
+    "shortcuts": [{"action": a, "key": {"default": f"Alt+Shift+{k}", "mac": f"Command+Option+{k}"}} for a, _, _, k in SHORTCUTS],
+}
+root.joinpath("manifest/shortcuts.json").write_text(json.dumps(shortcuts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 for needle in ("5f22", "SharedRuntime", "<Runtimes>", 'FunctionFile resid="Taskpane.Url"', 'id="Taskpane.Url"', "(deneme)", "ExtendedOverrides"):
     assert needle in trial, needle
 root.joinpath("manifest/manifest-kisayol.template.xml").write_text(trial, encoding="utf-8")

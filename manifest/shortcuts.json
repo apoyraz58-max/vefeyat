@@ -1,13 +1,77 @@
 {
   "actions": [
-    { "id": "go_action_insert", "type": "ExecuteFunction", "name": "Ölüm tarihi ekle" }
+    {
+      "id": "go_action_insert",
+      "type": "ExecuteFunction",
+      "name": "Ölüm tarihi ekle"
+    },
+    {
+      "id": "go_action_spelling",
+      "type": "ExecuteFunction",
+      "name": "İsim yazımı"
+    },
+    {
+      "id": "go_view_denetim",
+      "type": "ExecuteFunction",
+      "name": "Tüm belgeyi denetle"
+    },
+    {
+      "id": "go_view_dokum",
+      "type": "ExecuteFunction",
+      "name": "Şahıs dökümü"
+    },
+    {
+      "id": "go_view_toplu",
+      "type": "ExecuteFunction",
+      "name": "Toplu düzeltme önizlemesi"
+    },
+    {
+      "id": "go_view_ara",
+      "type": "ExecuteFunction",
+      "name": "Şahıs ara"
+    }
   ],
   "shortcuts": [
     {
       "action": "go_action_insert",
       "key": {
-        "default": "Ctrl+Alt+Shift+V",
-        "mac": "Command+Option+Shift+V"
+        "default": "Alt+Shift+V",
+        "mac": "Command+Option+V"
+      }
+    },
+    {
+      "action": "go_action_spelling",
+      "key": {
+        "default": "Alt+Shift+Y",
+        "mac": "Command+Option+Y"
+      }
+    },
+    {
+      "action": "go_view_denetim",
+      "key": {
+        "default": "Alt+Shift+B",
+        "mac": "Command+Option+B"
+      }
+    },
+    {
+      "action": "go_view_dokum",
+      "key": {
+        "default": "Alt+Shift+L",
+        "mac": "Command+Option+L"
+      }
+    },
+    {
+      "action": "go_view_toplu",
+      "key": {
+        "default": "Alt+Shift+U",
+        "mac": "Command+Option+U"
+      }
+    },
+    {
+      "action": "go_view_ara",
+      "key": {
+        "default": "Alt+Shift+H",
+        "mac": "Command+Option+H"
       }
     }
   ]
