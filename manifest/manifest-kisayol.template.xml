@@ -1185,24 +1185,24 @@
         <bt:String id="GetStarted.Title" DefaultValue="Vefeyât hazır"/>
         <bt:String id="Shortcuts" DefaultValue="Klavye kısayolları"/>
         <bt:String id="Insert.K" DefaultValue="Ölüm tarihi ekle (Alt+Shift+V)"/>
-        <bt:String id="Spelling.K" DefaultValue="İsim yazımı (Alt+Shift+Y)"/>
+        <bt:String id="Spelling.K" DefaultValue="İsim yazımı (Alt+Shift+Z)"/>
         <bt:String id="Audit.K" DefaultValue="Tüm belgeyi denetle (Alt+Shift+B)"/>
-        <bt:String id="Inventory.K" DefaultValue="Şahıs dökümü (Alt+Shift+L)"/>
+        <bt:String id="Inventory.K" DefaultValue="Şahıs dökümü (Alt+Shift+G)"/>
         <bt:String id="Bulk.K" DefaultValue="Toplu düzeltme önizlemesi (Alt+Shift+U)"/>
-        <bt:String id="Search.K" DefaultValue="Şahıs ara (Alt+Shift+H)"/>
+        <bt:String id="Search.K" DefaultValue="Şahıs ara (Alt+Shift+J)"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="Insert.Tip" DefaultValue="Kısayol: Alt+Shift+V. Seçili adın ölüm tarihini ekler. Tek ve kesin eşleşmede, ilk geçişte ve adın arkasında tarih yoksa doğrudan ekler; aksi hâlde Vefeyât penceresinde seçim veya onay ister."/>
-        <bt:String id="Spelling.Tip" DefaultValue="Kısayol: Alt+Shift+Y. Seçili adı kısa, tam ve orijinal adlarla karşılaştırır; Türkçe eki koruyarak yalnız seçili adı değiştirir."/>
+        <bt:String id="Spelling.Tip" DefaultValue="Kısayol: Alt+Shift+Z. Seçili adı kısa, tam ve orijinal adlarla karşılaştırır; Türkçe eki koruyarak yalnız seçili adı değiştirir."/>
         <bt:String id="Audit.Tip" DefaultValue="Kısayol: Alt+Shift+B. Belgedeki adları sırayla gösterir; onaylayıp ilerlersiniz."/>
         <bt:String id="S.scope.Tip" DefaultValue="İlk kullanım (varsayılan), bütün kullanımlar veya yalnız denetim. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="S.auditMode.Tip" DefaultValue="Tüm belgeyi denetle komutunun hangi geçişleri göstereceği. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="Resume.Tip" DefaultValue="Duraklatılmış belge denetimini kaldığı geçişten sürdürür."/>
         <bt:String id="Bulk.Tip" DefaultValue="Kısayol: Alt+Shift+U. Yazım ve tarih önerilerini tek listede gösterir; yalnız seçtiklerinizi uygular."/>
-        <bt:String id="Search.Tip" DefaultValue="Kısayol: Alt+Shift+H. Yerel katalogda ad arar; sonuçları DİA bağlantısıyla gösterir."/>
+        <bt:String id="Search.Tip" DefaultValue="Kısayol: Alt+Shift+J. Yerel katalogda ad arar; sonuçları DİA bağlantısıyla gösterir."/>
         <bt:String id="Dia.Tip" DefaultValue="Seçili şahsın DİA maddesinin bağlantısını gösterir."/>
         <bt:String id="SourceInfo.Tip" DefaultValue="Seçili Vefeyât tarihinin hangi katalog kaydından eklendiğini ve güncel olup olmadığını gösterir."/>
-        <bt:String id="Inventory.Tip" DefaultValue="Kısayol: Alt+Shift+L. Metindeki şahıs adlarını ve tarihleri listeler."/>
+        <bt:String id="Inventory.Tip" DefaultValue="Kısayol: Alt+Shift+G. Metindeki şahıs adlarını ve tarihleri listeler."/>
         <bt:String id="More.Tip" DefaultValue="Tarih ve katalog araçları, kimlik eşleşmeleri ve belge istisnaları."/>
         <bt:String id="Refresh.Tip" DefaultValue="Tarih ve yazım önerilerini toplu önizlemede gösterir; mevcut tarihleri kendiliğinden yeniden yazmaz."/>
         <bt:String id="Compare.Tip" DefaultValue="Belgedeki Vefeyât tarihlerini güncel katalogla karşılaştırır (Belge sağlığı)."/>

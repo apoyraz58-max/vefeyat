@@ -31,9 +31,9 @@ indirip paylaşılan klasördekinin yerine koyun, Word'ü kapatın,
 
 **Klavye kısayolları (deneme).** Ayrı bir manifest sık kullanılan komutlara üç tuşlu
 kısayol verir: `https://apoyraz58-max.github.io/vefeyat/manifest-kisayol.xml`.
-Ölüm tarihi ekle **Alt+Shift+V**, İsim yazımı **Alt+Shift+Y**, Tüm belgeyi denetle
-**Alt+Shift+B**, Şahıs dökümü **Alt+Shift+L**, Toplu düzeltme **Alt+Shift+U**, Şahıs ara
-**Alt+Shift+H** (Mac'te Alt+Shift yerine Cmd+Option). Kısayol, fareyle düğmenin üzerine
+Ölüm tarihi ekle **Alt+Shift+V**, İsim yazımı **Alt+Shift+Z**, Tüm belgeyi denetle
+**Alt+Shift+B**, Şahıs dökümü **Alt+Shift+G**, Toplu düzeltme **Alt+Shift+U**, Şahıs ara
+**Alt+Shift+J** (Mac'te Alt+Shift yerine Cmd+Option). Kısayol, fareyle düğmenin üzerine
 gelince çıkan açıklamanın başlığında yazar. Türkçe Word'ün kendi kısayollarıyla çakışan
 olursa **Ayarlar → Klavye kısayolları** (Tercihler penceresi) Word'e hangi tuşların dolu
 olduğunu sorar, çakışanı gösterir ve komutu boştaki bir tuşa almanızı sağlar; seçiminizi

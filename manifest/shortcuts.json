@@ -42,8 +42,8 @@
     {
       "action": "go_action_spelling",
       "key": {
-        "default": "Alt+Shift+Y",
-        "mac": "Command+Option+Y"
+        "default": "Alt+Shift+Z",
+        "mac": "Command+Option+Z"
       }
     },
     {
@@ -56,8 +56,8 @@
     {
       "action": "go_view_dokum",
       "key": {
-        "default": "Alt+Shift+L",
-        "mac": "Command+Option+L"
+        "default": "Alt+Shift+G",
+        "mac": "Command+Option+G"
       }
     },
     {
@@ -70,8 +70,8 @@
     {
       "action": "go_view_ara",
       "key": {
-        "default": "Alt+Shift+H",
-        "mac": "Command+Option+H"
+        "default": "Alt+Shift+J",
+        "mac": "Command+Option+J"
       }
     }
   ]
