@@ -52,7 +52,8 @@ const FAKE_OFFICE = String.raw`
     get paragraphs() {
       const end = doc.text.indexOf("\r", this.e);
       const start = doc.text.lastIndexOf("\r", this.s - 1) + 1;
-      return { getLast: () => new R(this.s, end < 0 ? doc.text.length : end), getFirst: () => new R(start, this.e) };
+      const whole = () => new R(start, end < 0 ? doc.text.length : end);
+      return { getLast: whole, getFirst: whole };
     }
     getRange(loc) {
       if (loc === "End" || loc === "After") return new R(this.e, this.e);
@@ -336,6 +337,15 @@ try {
   await tab.reload();
   await tab.waitForSelector("#view-gecmis:not([hidden])");
   check("İşlem geçmişi lists the change after reopening", ((await tab.textContent("#history-list")) ?? "").includes("Gazzâlî (ö. 505/1111)"));
+  await tab.close();
+  // Toplu düzeltme offers a wrong written date unchecked and corrects it once checked.
+  tab = await open("?view=toplu", "Gazzâlî (ö. 506/1112) der ki.");
+  await tab.waitForFunction(() => !document.getElementById("bulk-summary").textContent.includes("hazırlanıyor"));
+  const fixUnchecked = !(await tab.isChecked("#bulk-list li input"));
+  await tab.check("#bulk-list li input");
+  await tab.click("#bulk-apply");
+  await tab.waitForFunction(() => window.__doc.text.includes("505/1111"));
+  check("a wrong written date is offered unchecked and corrected", fixUnchecked && (await docText(tab)) === "Gazzâlî (ö. 505/1111) der ki.", await docText(tab));
   await tab.close();
   // Şahıs değil: the phrase leaves the inventory and appears in Belge istisnaları.
   tab = await open("", "Gazzâlî der ki.", "Gazzâlî");

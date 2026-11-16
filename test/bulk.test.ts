@@ -54,3 +54,11 @@ describe("history", () => {
     expect(parseHistory("nope")).toEqual([]);
   });
 });
+
+describe("wrong written dates", () => {
+  it("offered unchecked, applied before a respelling of the same name", () => {
+    const rows2 = buildInventory([{ part: "main", anchor: 0, order: 0, text: "Gazzâlî (ö. 506/1112) der ki." }], catalog);
+    const list = bulkSuggestions(rows2, { ...DEFAULT_SETTINGS, prefix: "o" });
+    expect(list.map((s) => [s.kind, s.old ?? null, s.value, s.preselected])).toEqual([["fixdate", "(ö. 506/1112)", "(ö. 505/1111)", false]]);
+  });
+});

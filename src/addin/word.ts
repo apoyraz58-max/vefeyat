@@ -1283,3 +1283,28 @@ export async function readDocument(progress: Progress = () => {}): Promise<{ seg
   readVersion++;
   return cache;
 }
+
+/**
+ * Toplu düzeltme: replaces the date written right after the selected name
+ * (`old`, as the inventory read it) with `value`. The selection must be the
+ * name. Returns false when the date is not found right after it.
+ */
+export async function replaceDateAfterSelection(old: string, value: string): Promise<boolean> {
+  return Word.run(async (context) => {
+    const selection = context.document.getSelection();
+    const rest = selection.getRange("End").expandTo(selection.paragraphs.getFirst().getRange("End"));
+    const found = rest.search(searchText(old), { matchCase: true, matchWholeWord: false });
+    found.load("items/text");
+    await context.sync();
+    const target = found.items[0];
+    if (!target) return false;
+    // Only the date directly after the name, not one later in the paragraph.
+    const gap = selection.getRange("End").expandTo(target.getRange("Start"));
+    gap.load("text");
+    await context.sync();
+    if (gap.text.trim().length > 0) return false;
+    target.insertText(value, "Replace");
+    await context.sync();
+    return true;
+  });
+}

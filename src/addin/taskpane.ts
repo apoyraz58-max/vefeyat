@@ -35,7 +35,7 @@ import { HISTORY_LABEL, type HistoryEntry, type HistoryKind, type Suggestion, ad
 import { exportPrefs, mergePrefs, parsePrefs, preferenceOf, preferredSpelling, withPreferred } from "./prefs.js";
 import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "./health.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "./submit.js";
-import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, canSkipProofing, skipProofing, firstMentionBefore, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readDocument, documentVersion, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
+import { buildPageIndex, canReadPages, selectionPage, StepError, writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, readAuditBookmark, writeAuditBookmark, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, buildIndex, replaceDateAfterSelection, canSkipProofing, skipProofing, firstMentionBefore, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, findEarlier, insertDate, openNewDocument, onSelectionChanged, readConfirmations, readSegments, readDocument, documentVersion, readSelection, readSettings, refreshSettings, replaceSelection, selectMention, writeConfirmations } from "./word.js";
 
 declare const __VERSION__: string;
 
@@ -1078,9 +1078,12 @@ async function prepareBulk(): Promise<void> {
 
 function renderBulk(): void {
   const dates = suggestions.filter((s) => s.kind === "date").length;
+  const fixes = suggestions.filter((s) => s.kind === "fixdate").length;
   const uncertain = state.rows.filter((r) => r.status === "near" || r.status === "choose").length;
   $("bulk-summary").textContent = suggestions.length
-    ? `${dates} tarih, ${suggestions.length - dates} yazım önerisi. Yalnız işaretliler uygulanır.` +
+    ? `${dates} tarih, ${suggestions.length - dates - fixes} yazım önerisi` +
+      (fixes ? `, ${fixes} yanlış tarih (işaretsiz; bilerek başka kaynak kullandıysanız dokunmayın)` : "") +
+      ". Yalnız işaretliler uygulanır." +
       (uncertain ? ` Kimliği belirsiz ${uncertain} geçiş listede yok; onları Tüm belgeyi denetle ile tek tek seçin.` : "")
     : "Uygulanacak öneri yok." + (uncertain ? ` Kimliği belirsiz ${uncertain} geçiş için Tüm belgeyi denetle'yi kullanın.` : "");
   const list = $("bulk-list");
@@ -1103,7 +1106,12 @@ function renderBulk(): void {
     badge.textContent = placeOfRow(s.row);
     const meta = document.createElement("span");
     meta.className = "meta";
-    meta.textContent = s.kind === "date" ? `Tarih ekle · ${textName(s.person.shortName)}` : `Kaynak yazımı · ${textName(s.person.shortName)}${s.row.confirmed ? " · onaylı kimlik" : ""}`;
+    meta.textContent =
+      s.kind === "date"
+        ? `Tarih ekle · ${textName(s.person.shortName)}`
+        : s.kind === "fixdate"
+          ? `Tarihi katalogdakiyle değiştir · ${textName(s.person.shortName)} · ${s.row.dateCheck === "inconsistent" ? "hicrî ve milâdî yıl tutmuyor" : "katalogdan farklı"}`
+          : `Kaynak yazımı · ${textName(s.person.shortName)}${s.row.confirmed ? " · onaylı kimlik" : ""}`;
     item.append(box, name, badge, meta);
     item.addEventListener("click", () => {
       markSelected(item);
@@ -1132,6 +1140,12 @@ async function applyBulk(): Promise<void> {
     if (s.kind === "date") {
       const control = await insertDate(s.value, dateTag(s.person), `Vefeyât: ${textName(s.person.shortName)}`);
       logHistory("date", `${s.row.text} ${s.value}`, control);
+    } else if (s.kind === "fixdate") {
+      if (!(await replaceDateAfterSelection(s.old ?? "", s.value))) {
+        missed++;
+        continue;
+      }
+      logHistory("repair", `${s.row.text} ${s.old} → ${s.value}`);
     } else {
       await replaceSelection(s.value);
       logHistory("spelling", `${s.row.text} → ${s.value}`);

@@ -8,11 +8,13 @@ import { type Settings, mentionKey } from "./logic.js";
 
 export interface Suggestion {
   readonly id: string;
-  readonly kind: "date" | "spelling";
+  readonly kind: "date" | "spelling" | "fixdate";
   readonly row: InventoryRow;
   readonly person: Person;
-  /** Date to insert, or the replacement spelling (with the Turkish ending). */
+  /** Date to insert, the replacement spelling (with the Turkish ending), or the corrected date. */
   readonly value: string;
+  /** For "fixdate": the date as written now. */
+  readonly old?: string;
   /** Checked by default: safe changes only. */
   readonly preselected: boolean;
 }
@@ -32,6 +34,11 @@ export function bulkSuggestions(rows: readonly InventoryRow[], settings: Setting
       const value = spelling ? withEnding(row.text, spelling) : "";
       if (value && value !== row.text) out.push({ id: `s${row.id}`, kind: "spelling", row, person, value, preselected: !row.confirmed });
     }
+    // A written date that the catalog contradicts: offered, never preselected (another source may be meant).
+    if (row.date && (row.dateCheck === "different" || row.dateCheck === "inconsistent") && isValidDate(person.deathDate)) {
+      const value = formatDate(person.deathDate, settings.prefix);
+      if (value !== row.date) out.push({ id: `f${row.id}`, kind: "fixdate", row, person, value, old: row.date, preselected: false });
+    }
     const wantsDate = settings.scope === "all" || (settings.scope === "first" && row.first);
     if (wantsDate && !row.date && isValidDate(person.deathDate)) {
       out.push({ id: `d${row.id}`, kind: "date", row, person, value: formatDate(person.deathDate, settings.prefix), preselected: true });
@@ -41,6 +48,7 @@ export function bulkSuggestions(rows: readonly InventoryRow[], settings: Setting
 }
 
 export function describeSuggestion(s: Suggestion): string {
+  if (s.kind === "fixdate") return `${s.row.text} ${s.old} → ${s.row.text} ${s.value}`;
   return s.kind === "date" ? `${s.row.text} → ${s.row.text} ${s.value}` : `${s.row.text} → ${s.value}`;
 }
 
@@ -49,7 +57,9 @@ export function describeSuggestion(s: Suggestion): string {
  * mentions still to be found; a date goes in before its name is respelled.
  */
 export function applyOrder(chosen: readonly Suggestion[]): Suggestion[] {
-  return [...chosen].sort((a, b) => b.row.id - a.row.id || (a.kind === "date" ? -1 : 1));
+  // Dates (new or corrected) sit after the name: change them before the name is respelled.
+  const rank = (s: Suggestion) => (s.kind === "spelling" ? 1 : 0);
+  return [...chosen].sort((a, b) => b.row.id - a.row.id || rank(a) - rank(b));
 }
 
 // ---- Denetime devam et ----
