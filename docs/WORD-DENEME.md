@@ -1,108 +1,194 @@
-# Office.js sürümünü Word'de deneme (0.4 geliştirme)
+# Vefeyât kullanım kılavuzu (Word eklentisi, 0.4)
 
-Bu sürüm VBA eklentisinden bağımsızdır; ikisi aynı anda kurulu olabilir.
-Önce bir tez **kopyasında** deneyin.
+Vefeyât, metinde geçen şahıs adlarını DİA kataloğunda bulur, ilk geçişlerine ölüm
+tarihini ekler, yazımlarını denetler ve teslimden önce belgeyi toparlar. Bu sürüm
+VBA eklentisinden bağımsızdır; VBA sekmesindeki bütün komutları içerir.
 
-## 1. Yayını açın (bir kez)
+Yeni bir özelliği önce bir tez **kopyasında** deneyin.
 
-GitHub'da depo → **Settings → Pages → Build and deployment → Source: GitHub
-Actions**. `main` dalına her birleştirmede eklenti
-`https://apoyraz58-max.github.io/vefeyat/` adresine yayımlanır. Manifest dosyası
-`https://apoyraz58-max.github.io/vefeyat/manifest.xml` adresindedir.
+## 1. Kurulum ve güncelleme
 
-## 2. Manifesti Word'e yükleyin
+Manifest: `https://apoyraz58-max.github.io/vefeyat/manifest.xml`
 
-**Word Online (en kolay):** Bir belge açın → **Giriş → Eklentiler** (veya
-**Ekle → Eklentiler**) → **Eklentilerim → Eklentimi Karşıya Yükle** →
-`manifest.xml` dosyasını seçin.
+**Windows masaüstü Word:** Manifesti bir klasöre koyun ve klasörü paylaşın (sağ tık →
+Özellikler → Paylaşım). Word → **Dosya → Seçenekler → Güven Merkezi → Güven Merkezi
+Ayarları → Güvenilen Eklenti Katalogları** → paylaşılan klasörün `\\BILGISAYAR\klasor`
+yolunu ekleyin, "Menüde göster"i işaretleyin, Word'ü yeniden başlatın → **Ekle →
+Eklentilerim → Paylaşılan Klasör → Vefeyât**.
 
-**Windows masaüstü Word:** Manifesti bir klasöre koyun ve klasörü paylaşın
-(sağ tık → Özellikler → Paylaşım). Word → **Dosya → Seçenekler → Güven Merkezi
-→ Güven Merkezi Ayarları → Güvenilen Eklenti Katalogları** → paylaşılan klasörün
-`\\BILGISAYAR\klasor` yolunu ekleyin, "Menüde göster"i işaretleyin, Word'ü
-yeniden başlatın → **Ekle → Eklentilerim → Paylaşılan Klasör → Vefeyât**.
+**Mac Word:** Manifesti `~/Library/Containers/com.microsoft.Word/Data/Documents/wef`
+klasörüne kopyalayın (yoksa oluşturun), Word'ü yeniden başlatın → **Ekle → Eklentilerim**.
 
-**Mac Word:** Manifesti
-`~/Library/Containers/com.microsoft.Word/Data/Documents/wef` klasörüne kopyalayın
-(klasör yoksa oluşturun), Word'ü yeniden başlatın → **Ekle → Eklentilerim**.
+**Word Online:** **Giriş → Eklentiler → Eklentilerim → Eklentimi Karşıya Yükle** →
+`manifest.xml`.
 
-## 3. Kullanım
+**Güncelleme.** Panelin içindeki değişiklikler kendiliğinden gelir: panel her açılışta
+yayındaki sürümü kontrol eder, elindeki kopya eskiyse kendini yeniden yükler. Panelin
+altında sürüm numarası yazar (örnek: 0.4.0.47). Şeride ya da sağ tık menüsüne yeni
+düğme eklendiğinde manifesti bir kez yenilemek gerekir: yeni `manifest.xml` dosyasını
+indirip paylaşılan klasördekinin yerine koyun, Word'ü kapatın,
+`%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\` klasörünü silin, Word'ü açın.
 
-**Şerit.** Üstte **Vefeyât** sekmesi, VBA 0.3.41 ile aynı yedi grup:
+## 2. Hızlı başlangıç
+
+1. Metinde bir şahıs adını seçin (çift tıklama yeter; Türkçe ek sorun değildir).
+2. **Vefeyât → Ölüm tarihi ekle**. Ad tek ve kesin eşleşiyorsa, ilk geçişse ve
+   arkasında tarih yoksa tarih hemen eklenir. Aksi hâlde sağdaki pencere ne
+   yapılacağını sorar.
+3. Bütün belge için **Şahıs dökümü** ya da **Tüm belgeyi denetle**.
+
+## 3. Şerit
 
 | Grup | Komutlar |
 | --- | --- |
-| Ekle ve denetle | **Ölüm tarihi ekle**, **Tüm belgeyi denetle**, **İsim yazımı** |
-| Denetim | **Tarih ekleme ▾**, **Denetlenecek ▾**, **Denetime devam et**, **Toplu düzeltme önizlemesi** |
-| Şahıs ve kaynak | **Şahıs ara**, **DİA maddesini aç**, **Tarihin kaynağı** |
-| Belge | **Şahıs dökümü**, **Diğer araçlar ▾**, **Belge sağlığı**, **İşlem geçmişi** |
-| Teslim ve dizin | **Tutarlılık raporu**, **Şahıs raporu** (yeni belge açar), **Şahıslar dizini ▾** (oluştur/güncelle; işaretleri kaldır, dizin kalsın; dizini tamamen kaldır), **Teslim öncesi temizle** |
-| Tercihler | **Ad biçimi ▾**, **Kısaltma ▾**, **Ayarlar ▾** (yazım tercihi, tercihleri dışa aktar/al, tarih alanlarını göster/gizle) |
-| Veri ve yardım | **Veri bilgisi**, **CSV seç**, **Kullanım kılavuzu** |
+| Ekle ve denetle | Ölüm tarihi ekle, Tüm belgeyi denetle, İsim yazımı |
+| Denetim | Tarih ekleme ▾, Denetlenecek ▾, Denetime devam et, Toplu düzeltme önizlemesi |
+| Şahıs ve kaynak | Şahıs ara, DİA maddesini aç, Tarihin kaynağı |
+| Belge | Şahıs dökümü, Diğer araçlar ▾, Belge sağlığı, İşlem geçmişi |
+| Teslim ve dizin | Tutarlılık raporu, Şahıs raporu, Şahıslar dizini ▾, Teslim öncesi temizle |
+| Tercihler | Ad biçimi ▾, Kısaltma ▾, Ayarlar ▾ |
+| Veri ve yardım | Veri bilgisi, CSV seç, Kullanım kılavuzu |
 
-VBA sekmesindeki bütün komutlar bu sürümde çalışıyor; VBA eklentisini kaldırabilirsiniz
-(önce aşağıdaki "VBA belgeleri" notuna bakın). VBA'daki değer gösteren açılır kutular (Tarih ekleme,
-Denetlenecek, Ad biçimi, Kısaltma) Word'ün Office.js eklentilerine izin vermediği için menüdür;
-seçili değerler Vefeyât penceresinin üstünde yazar.
+Şeritteki menüler seçili değeri gösteremez (Office eklentilerine izin verilmez);
+geçerli ayarlar panelin en üstünde yazar.
 
-**Sağ tık.** Metinde bir adı seçip sağ tıklayın → **Vefeyât → Ölüm tarihi ekle / İsim yazımı / DİA maddesini aç / Tarihin kaynağı**.
-Kırmızı çizgili (yazım hatası sanılan) bir kelimede Word kendi yazım menüsünü açar ve eklentiler
-o menüye komut ekleyemez. **Tercihler → Ayarlar → Şahıs adlarını yazım denetiminden çıkar** ile
-adların çizgisi kalkar ve sağ tık menüsü görünür; tarih eklenen adlar kendiliğinden çıkarılır.
+**Sağ tık:** Seçili adda **Vefeyât → Ölüm tarihi ekle / İsim yazımı / DİA maddesini
+aç / Tarihin kaynağı**. Kırmızı çizgili (yazım hatası sanılan) kelimede Word kendi
+yazım menüsünü açar ve eklentiler oraya komut ekleyemez. **Tercihler → Ayarlar →
+Şahıs adlarını yazım denetiminden çıkar** ile çizgi kalkar; tarih eklediğiniz adlar
+kendiliğinden çıkarılır.
 
-**Pencere.** Sağdaki Vefeyât penceresi, VBA'daki pencereler gibi yalnız düğmenin istediği işi
-gösterir (aday seçimi, onay, katalog, kılavuz). Ayar içermez.
+## 4. Tarih ekleme
 
-**Kendi şahıslarım.** Katalogda olmayan kişileri (modern yazarlar, DİA'da maddesi olmayanlar)
-**Veri ve yardım → Veri bilgisi** penceresindeki *Kendi şahıslarım* bölümünden ya da seçili ad
-katalogda yoksa çıkan **Kendi şahıslarıma ekle** düğmesiyle ekleyin (kısa ad, ölüm tarihi; isteğe
-bağlı tam ad ve açıklama). Kayıtlar belgeye kaydedilir, katalog kayıtları gibi kullanılır ("kendi
-kaydınız" notuyla) ve Tercihleri dışa aktar/al ile taşınır.
+**Tarih ekleme menüsü:**
+- *Yalnız ilk kullanım* (varsayılan): kişi metinde daha önce geçtiyse uyarı çıkar
+  (**Önceki geçişe git** / **Yine de ekle**). Uyarı yazıma değil kimliğe bakar:
+  önceki "Fahreddin er-Râzî", Ebû Bekir er-Râzî için önceki geçiş sayılmaz; önce
+  "Gazali" diye yazılmış geçiş Gazzâlî için sayılır.
+- *Bütün kullanımlar*: uyarı çıkmaz.
+- *Yalnız denetle*: tarih eklenmez.
 
-**Katalog.** Eklentiyle yayımlanan DİA kataloğu kendiliğinden yüklenir. **Katalog → Başka bir
-CSV seç** ile kendi dosyanızı kullanabilirsiniz; **Eklentinin kataloğuna dön** ile geri
-dönersiniz.
+Adın arkasında zaten tarih varsa ikinci tarih eklenmez. **Kısaltma** menüsü önek
+biçimini (ö. / öl. / v. / kaynaktaki gibi) belirler.
 
-**Tarih ekleme kuralları.** "Yalnız ilk kullanım" (varsayılan): ad metinde daha önce
-geçiyorsa uyarı çıkar (**Önceki geçişe git** / **Yine de ekle**). "Bütün kullanımlar": uyarı
-çıkmaz. "Yalnız denetle": tarih eklenmez. Her durumda adın arkasında zaten tarih varsa
-ikinci tarih eklenmez.
+**Eş adlılar.** Bir ad birden çok kişiye uyuyorsa pencere adayları gösterir; seçili
+olan renkli ve "seçili" etiketlidir. Seçiminiz o geçiş için belgeye kaydedilir
+(Diğer araçlar → Kimlik eşleşmelerini düzelt). Vefeyât önce şunlara bakar ve
+satırda nereden bildiğini yazar:
+- **yazılı tarih:** "Râzî (ö. 313/925)" → Ebû Bekir er-Râzî;
+- **belgedeki diğer geçişler:** belgede yalnız bir Gazzâlî tam adıyla geçiyorsa kısa
+  "Gazzâlî"ler ona bağlanır;
+- **cümlenin konusu:** belgede iki Râzî de geçiyorsa "Râzî tefsirinde…" → Fahreddin,
+  "Râzî tıpta…" → Ebû Bekir (cümlede konu yoksa paragrafın konusu);
+- **baş harf:** "F. er-Râzî" → Fahreddin er-Râzî.
 
-Panel açıkken şerit düğmesine yeniden basıldığında Word pencereyi yeniden yüklemeyebilir;
-bu durumda penceredeki düğmeyi kullanın.
+"Doğrulayın" yazan satırlar tahmindir; tarih eklediğinizde onaylanmış olur.
+Benzer yazılışlılar arasında tek bir tam eşleşme varsa ("İbn Sînâ" ile
+"İbn Sinân Hafâcî") tam eşleşen kendiliğinden seçilir. Arapça takı (el-/er-/eş-)
+karşılaştırmada yok sayılır: "Ebû Bekir er-Râzî" ile "Ebû Bekir Râzî" aynıdır.
 
-## Bu sürümün sınırları
+**İsim yazımı.** Liste metindeki yazımla başlar ve o seçilidir; başka bir yazım
+seçince altında ne yazılacağı görünür ("Gazali'nin → Gazzâlî'nin"). Türkçe ek korunur.
+**Ayarlar → Seçili yazımı tercih et** bir kişinin yazımını bu belge için sabitler.
 
-- Tarih, gizli görünümlü ve `vefeyat:date:…` etiketli bir içerik denetimine
-  yazılır (VBA sürümündeki gibi Word alanı değil). Zotero ile birlikte nasıl
-  davrandığını not edin.
-- "Daha önce geçti" denetimi dipnotları WordApi 1.5 olan Word'de arar.
-  Katalogdaki yazılışları ve seçili yazılışı arar; bunların dışında bir
-  transkripsiyonla yazılmış önceki geçişi bulamaz.
-- Bağlam: mezhep, tarikat ve hanedan sıfatları ("Nakşibendî tarikatı",
-  "Sünnî ve Şiî müellifler", "Abbâsî halifesi") şahıs sayılmaz. Atıflar
-  ("bk. Gazzâlî, el-Mustasfâ, I, 45", "(Gazzâlî, 1993: 45)") hem metinde hem
-  dipnotta atlanır; dipnotun geri kalanı okunur. "Kaynakça/Bibliyografya"
-  başlığından sonraki bölüm ("Ekler", "Dizin" gibi bir başlığa kadar) ve
-  kaynakça girdisi biçimindeki paragraflar taranmaz.
-- Şahıslar dizini: Word sayfa bilgisini okuyabiliyorsa (güncel Microsoft 365
-  masaüstü, WordApiDesktop 1.2) dizin belgeye işaret konmadan sayfa
-  numaralarından hazırlanır; numaralar sabittir, metin değişince yeniden
-  oluşturun. Panelde "1 numaralı sayfa"yı ayarlayın (öncesi Roma rakamı).
-  Sayfa bilgisi okunamayan Word'de dizin gizli XE işaretleriyle hazırlanır;
-  büyük belgede bu uzun sürer.
-- Üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz
-  (Diğer araçlar → Denetim kapsamını göster).
-- **VBA belgeleri:** VBA sürümünün eklediği tarihler Word alanıdır
-  (`ADDIN Vefeyat.Date`). Belge sağlığı bunları sayar ve **VBA tarihlerini
-  dönüştür** ile aynı metni taşıyan Vefeyât tarihlerine çevirir; kişi, tarihin
-  önündeki addan (eş adlılarda tarihten) bulunur, önündeki ad bulunamayan
-  alana dokunulmaz. VBA'nın belge değişkenleri Office.js'ten silinemez;
-  görünmezdirler ve teslim kopyasına zarar vermezler.
-- Şahıs raporu yeni belge açar; Word Online'da açılır pencere engelleyicisi
-  buna izin vermeyebilir.
+## 5. Bütün belge
 
-## Geri bildirim
+- **Şahıs dökümü:** metin, dipnot ve sonnotlardaki bütün geçişler; her satırda
+  katalog kaydı, yazılı tarih ve durum. Özet satırı kaç dipnot ve sonnot
+  okunduğunu da yazar. Satıra tıklayınca geçiş belgede seçilir.
+- **Tüm belgeyi denetle:** geçişleri tek tek gezer; **Denetimi bitir** duraklatır,
+  **Denetime devam et** kaldığı yerden sürdürür. *Yalnız ilk kullanım* ayarında
+  tekrarlar atlanır; yanlış yazılmış tarih olan geçişte her zaman durur.
+- **Toplu düzeltme önizlemesi:** eksik ilk geçiş tarihleri, katalogdan farklı
+  yazımlar ve katalogla çelişen tarihler tek listede. Yalnız işaretliler uygulanır;
+  tarih düzeltmeleri işaretsiz gelir.
+- **İşlem geçmişi:** bu oturumdaki ekleme, düzeltme ve onarımlar.
 
-Bir sorun görürseniz: Word sürümü (Online / Windows / Mac), ne yaptığınız ve
-paneldeki mesajın ekran görüntüsü. Hata mesajlarının sonunda sürüm yazar.
+Büyük belgede belge bir kez okunur; sonra yalnız değişen paragraflar yeniden okunur
+(güncel Microsoft 365). Uzun işlemlerde çalışma çubuğu, geçen süre ve **İptal** görünür.
+
+## 6. Neler şahıs sayılmaz
+
+- Mezhep, tarikat, hanedan ve bölge sıfatları: "Nakşibendî tarikatı", "Sünnî ve Şiî
+  müellifler", "Abbâsî halifesi", "Hanefî fıkhı", "Osmanlı âlimleri Mâtürîdî idi".
+  Tek başına Şâfiî, Eş‘arî ve Mâtürîdî imamın kendisidir.
+- Sıfat olarak kullanılan adlar: "Usûlî açıdan", "Lügavî anlamı"; belgede küçük
+  harfle de geçen kelime cümle başında ya da başlıkta.
+- Uzun adlardan kopan yer, unvan ve kelime parçaları: "Irak", "Arap", "Has", "Cem",
+  "Hocası" (tam ad "Cem Sultan" yine bulunur).
+- Atıflar: "bk. Gazzâlî, el-Mustasfâ, I, 45", "(Gazzâlî, 1993: 45)", "Gazzâlî, age,
+  II, 45" — metinde de dipnotta da; dipnotun anlatım kısmı okunur.
+- Kaynakça: "Kaynakça/Bibliyografya/Kaynaklar" başlığından "Ekler/Dizin/Özgeçmiş"
+  gibi bir başlığa kadar, ve kaynakça girdisi biçimindeki paragraflar.
+
+Yine de yanlış sayılan bir ifade için seçili ad penceresinde **Şahıs değil olarak
+işaretle**; o belgede bir daha listelenmez (Diğer araçlar → Belge istisnaları).
+
+## 7. Tarih denetimi
+
+- **Elle yazılmış tarihler:** adın arkasındaki tarih katalogdakinden farklıysa ya da
+  hicrî ve milâdî yıl birbirini tutmuyorsa (505/1111 doğru, 505/1211 yanlış) dökümde,
+  denetimde ve şahıs raporunda uyarı çıkar. Önek farkı, yalnız bir takvim ya da
+  kısaltılmış yıl ("917-18") uyarı vermez.
+- **Belge sağlığı:** Vefeyât'ın eklediği tarihleri katalog ve önek ayarıyla
+  karşılaştırır; seçtiklerinizi onarır. Önek değiştirdiyseniz eski önekli tarihler
+  burada hazır işaretli gelir.
+- **Tarihin kaynağı:** imleçteki Vefeyât tarihinin hangi kayıttan geldiğini gösterir.
+- **Tutarlılık raporu:** ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerler.
+
+## 8. Teslim
+
+- **Şahıs raporu:** şahıslar ilk geçiş sırasıyla, notlarla ve milâdî yıla göre
+  kronoloji; yeni bir Word belgesi olarak açılır.
+- **Şahıslar dizini:**
+  - Word sayfa bilgisini okuyabiliyorsa (güncel Microsoft 365 masaüstü) dizin,
+    belgeye işaret konmadan sayfa numaralarından hızlıca hazırlanır. Panelde
+    "1 numaralı sayfa"yı ayarlayın ya da imleci o sayfaya koyup **İmlecin olduğu
+    sayfa**ya basın; öncesi Roma rakamıyla yazılır. Numaralar sabittir; metin
+    değişince yeniden oluşturun.
+  - Aksi hâlde gizli dizin işaretleriyle hazırlanır; büyük belgede uzun sürer.
+    "Dipnotları da kat" kutusunu kapatmak süreyi kısaltır.
+  - **Dizin işaretlerini kaldır:** dizin güncel hâliyle metin olarak kalır.
+    **Dizini tamamen kaldır:** dizin, başlığı ve işaretler birlikte gider.
+- **Teslim öncesi temizle** (kopyada!): tarihler ve dizin metin olarak kalır;
+  Vefeyât denetimleri, gizli dizin işaretleri, onaylar, istisnalar, tercihler ve
+  kendi şahıs kayıtlarınız belgeden kaldırılır.
+
+## 9. Kendi şahıslarım ve tercihler
+
+**Kendi şahıslarım:** katalogda olmayan kişiler (modern yazarlar, DİA'da maddesi
+olmayanlar). **Veri bilgisi** penceresindeki bölümden ya da seçili ad katalogda yoksa
+çıkan **Kendi şahıslarıma ekle** düğmesiyle ekleyin: kısa ad ve ölüm tarihi ("1998",
+"ö. 505/1111", "1913-1998"), isteğe bağlı tam ad ve açıklama. Katalog kaydı gibi
+kullanılır ("kendi kaydınız" notuyla).
+
+**Tercihleri dışa aktar / al:** ayarlar, yazım tercihleri, istisnalar, kimlik
+onayları ve kendi şahıslarınız bir dosyada; başka bir tezde aynen kullanılabilir.
+
+**Katalog:** eklentiyle gelen DİA kataloğu kendiliğinden yüklenir; **CSV seç** ile
+kendi dosyanızı kullanabilirsiniz.
+
+## 10. VBA sürümünden geçiş
+
+VBA sürümünün eklediği tarihler Word alanıdır. **Belge sağlığı** bunları sayar ve
+**VBA tarihlerini dönüştür** ile aynı metni taşıyan Vefeyât tarihlerine çevirir. Kişi
+tarihin önündeki addan, eş adlılarda tarihin kendisinden bulunur; önündeki ad
+bulunamayan alana dokunulmaz. Dönüştürdükten sonra VBA eklentisini kaldırabilirsiniz.
+
+## 11. Bilinen sınırlar
+
+- Üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz (Diğer araçlar → Denetim
+  kapsamını göster).
+- Küçük harfle yazılmış adlar ("gazali") bulunmaz.
+- Panel açıkken şerit düğmesine yeniden basmak paneli yenilemeyebilir; o zaman
+  penceredeki düğmeyi kullanın.
+- Şahıs raporu yeni belge açar; Word Online'da açılır pencere engelleyicisi buna
+  izin vermeyebilir.
+
+## 12. Deneme tezi ve geri bildirim
+
+Bütün komutları denemek için `https://apoyraz58-max.github.io/vefeyat/vefeyat-deneme.docx`
+dosyasını açın; ilk sayfadaki kontrol listesini izleyin.
+
+Sorun görürseniz: panelin altındaki sürüm numarası, ne yaptığınız ve paneldeki
+mesajın ekran görüntüsü.
