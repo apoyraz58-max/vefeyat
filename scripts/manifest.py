@@ -256,7 +256,9 @@ def go(match):
     key, value = query.split("=")
     return f'{match.group(1)}<Action xsi:type="ExecuteFunction">\n{match.group(1)}  <FunctionName>go_{key}_{value}</FunctionName>\n{match.group(1)}</Action>'
 
-trial = re.sub(r'( *)<Action xsi:type="ShowTaskpane">\s*<TaskpaneId>VefeyatPane</TaskpaneId>\s*<SourceLocation resid="([\w.]+)"/>\s*</Action>', go, xml)
+shortcut_item = item("Shortcuts", S("Shortcuts", "Klavye kısayolları"), L("Shortcuts.Tip", "Vefeyât kısayollarını gösterir; çakışan bir kısayolu boştaki bir tuşa alır."), "settings", pane(U("U.Shortcuts", "taskpane.html?view=kisayol")))
+noproof_end = xml.index("</Item>\n", xml.index('id="Vefeyat.NoProof"')) + len("</Item>\n")
+trial = re.sub(r'( *)<Action xsi:type="ShowTaskpane">\s*<TaskpaneId>VefeyatPane</TaskpaneId>\s*<SourceLocation resid="([\w.]+)"/>\s*</Action>', go, xml[:noproof_end] + shortcut_item + xml[noproof_end:])
 assert "ShowTaskpane" not in trial
 trial = (trial
     .replace("<Id>6f3c2a4e-8b1d-4c7a-9e52-0d9a7b3e5f21</Id>", "<Id>6f3c2a4e-8b1d-4c7a-9e52-0d9a7b3e5f22</Id>")
@@ -267,11 +269,16 @@ trial = (trial
     .replace('        <bt:Url id="Commands.Url"', f'        <bt:Url id="Taskpane.Url" DefaultValue="{B}taskpane.html"/>\n        <bt:Url id="Commands.Url"')
     .replace('<bt:String id="Tab" DefaultValue="Vefeyât"/>', '<bt:String id="Tab" DefaultValue="Vefeyât (deneme)"/>')
     .replace("  </VersionOverrides>\n", f'  </VersionOverrides>\n  <ExtendedOverrides Url="{B}shortcuts.json"/>\n'))
+trial = trial.replace("      </bt:ShortStrings>", f'        <bt:String id="Shortcuts" DefaultValue="{esc(short["Shortcuts"])}"/>\n      </bt:ShortStrings>')
+trial = trial.replace("      </bt:LongStrings>", f'        <bt:String id="Shortcuts.Tip" DefaultValue="{esc(long_["Shortcuts.Tip"])}"/>\n      </bt:LongStrings>')
 for action, name, tip, key in SHORTCUTS:
     assert f"<FunctionName>{action}</FunctionName>" in trial, action
     old = f'<bt:String id="{tip}" DefaultValue="{esc(long_[tip])}"/>'
     assert old in trial, tip
-    trial = trial.replace(old, f'<bt:String id="{tip}" DefaultValue="{esc(long_[tip])} Kısayol: Alt+Shift+{key}"/>')
+    trial = trial.replace(old, f'<bt:String id="{tip}" DefaultValue="Kısayol: Alt+Shift+{key}. {esc(long_[tip])}"/>')
+    label = tip.removesuffix(".Tip")
+    trial = trial.replace(f'<Title resid="{label}"/>', f'<Title resid="{label}.K"/>')
+    trial = trial.replace("      </bt:ShortStrings>", f'        <bt:String id="{label}.K" DefaultValue="{esc(short[label])} (Alt+Shift+{key})"/>\n      </bt:ShortStrings>')
 shortcuts = {
     "actions": [{"id": a, "type": "ExecuteFunction", "name": n} for a, n, _, _ in SHORTCUTS],
     "shortcuts": [{"action": a, "key": {"default": f"Alt+Shift+{k}", "mac": f"Command+Option+{k}"}} for a, _, _, k in SHORTCUTS],

@@ -154,6 +154,7 @@ export function parseLaunch(search: string): Launch {
   if (view === "dokum") return { view: "dokum", action: null, tool: null };
   if (view === "teslim" || view === "katalog" || view === "yardim" || view === "ara" || view === "saglik" || view === "kaynak" || view === "gecmis" || view === "toplu" || view === "kimlik" || view === "istisna" || view === "kapsam" || view === "tercihler") return { view, action: null, tool: null };
   if (view === "ayarlar") return { view: "katalog", action: null, tool: null };
+  if (view === "kisayol") return { view: "tercihler", action: null, tool: null };
   return { view: "secili", action: null, tool: null };
 }
 

@@ -34,7 +34,10 @@ kısayol verir: `https://apoyraz58-max.github.io/vefeyat/manifest-kisayol.xml`.
 Ölüm tarihi ekle **Alt+Shift+V**, İsim yazımı **Alt+Shift+Y**, Tüm belgeyi denetle
 **Alt+Shift+B**, Şahıs dökümü **Alt+Shift+L**, Toplu düzeltme **Alt+Shift+U**, Şahıs ara
 **Alt+Shift+H** (Mac'te Alt+Shift yerine Cmd+Option). Kısayol, fareyle düğmenin üzerine
-gelince çıkan açıklamada da yazar. Word kısayola yalnız
+gelince çıkan açıklamanın başlığında yazar. Türkçe Word'ün kendi kısayollarıyla çakışan
+olursa **Ayarlar → Klavye kısayolları** (Tercihler penceresi) Word'e hangi tuşların dolu
+olduğunu sorar, çakışanı gösterir ve komutu boştaki bir tuşa almanızı sağlar; seçiminizi
+Word saklar (Microsoft 365 oturumu gerekir). Açıklamalarda varsayılan tuşlar yazmaya devam eder. Word kısayola yalnız
 "paylaşılan çalışma ortamı"nda izin verir; bu yüzden bu sürümde bütün şerit düğmeleri
 paneli yeniden yüklemek yerine açık panele komut gönderir. Ayrı bir eklenti olarak
 görünür ("Vefeyât (kısayol denemesi)", sekmesi "Vefeyât (deneme)"); asıl eklentiye

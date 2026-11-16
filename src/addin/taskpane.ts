@@ -10,6 +10,7 @@ import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, sh
 import { checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { addDate, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
+import { renderShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
 import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
 
@@ -26,7 +27,10 @@ export async function launch(request: Launch): Promise<void> {
   if (request.view === "gecmis") renderHistory();
   if (request.view === "kimlik") renderIdentities();
   if (request.view === "katalog") renderLocals();
-  if (request.view === "tercihler") renderSpellings();
+  if (request.view === "tercihler") {
+    renderSpellings();
+    void renderShortcuts();
+  }
   if (request.action === "prefer") await run(preferSelection);
   if (request.action === "clearSpelling") await run(clearSpellings);
   if (request.action === "shading") await run(toggleFrames);
@@ -96,6 +100,7 @@ export function initialise(): void {
   $("run-rapor").addEventListener("click", () => void run(createPersonReport, "Şahıs raporu hazırlanıyor"));
   $("spellings-clear").addEventListener("click", () => void run(clearSpellings));
   $("prefs-download").addEventListener("click", downloadPrefs);
+  $("shortcuts-save").addEventListener("click", () => void run(saveShortcuts));
   $("prefs-copy").addEventListener("click", () => void copyPrefs());
   $("prefs-apply").addEventListener("click", () => void run(applyPrefs));
   $("local-add").addEventListener("click", () => void run(addLocal));

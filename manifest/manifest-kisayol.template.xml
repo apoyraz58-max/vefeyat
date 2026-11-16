@@ -55,7 +55,7 @@
                 <Control xsi:type="Button" id="Vefeyat.Insert">
                   <Label resid="Insert"/>
                   <Supertip>
-                    <Title resid="Insert"/>
+                    <Title resid="Insert.K"/>
                     <Description resid="Insert.Tip"/>
                   </Supertip>
                   <Icon>
@@ -70,7 +70,7 @@
                 <Control xsi:type="Button" id="Vefeyat.Audit">
                   <Label resid="Audit"/>
                   <Supertip>
-                    <Title resid="Audit"/>
+                    <Title resid="Audit.K"/>
                     <Description resid="Audit.Tip"/>
                   </Supertip>
                   <Icon>
@@ -85,7 +85,7 @@
                 <Control xsi:type="Button" id="Vefeyat.Spelling">
                   <Label resid="Spelling"/>
                   <Supertip>
-                    <Title resid="Spelling"/>
+                    <Title resid="Spelling.K"/>
                     <Description resid="Spelling.Tip"/>
                   </Supertip>
                   <Icon>
@@ -241,7 +241,7 @@
                 <Control xsi:type="Button" id="Vefeyat.Bulk">
                   <Label resid="Bulk"/>
                   <Supertip>
-                    <Title resid="Bulk"/>
+                    <Title resid="Bulk.K"/>
                     <Description resid="Bulk.Tip"/>
                   </Supertip>
                   <Icon>
@@ -264,7 +264,7 @@
                 <Control xsi:type="Button" id="Vefeyat.Search">
                   <Label resid="Search"/>
                   <Supertip>
-                    <Title resid="Search"/>
+                    <Title resid="Search.K"/>
                     <Description resid="Search.Tip"/>
                   </Supertip>
                   <Icon>
@@ -317,7 +317,7 @@
                 <Control xsi:type="Button" id="Vefeyat.Inventory">
                   <Label resid="Inventory"/>
                   <Supertip>
-                    <Title resid="Inventory"/>
+                    <Title resid="Inventory.K"/>
                     <Description resid="Inventory.Tip"/>
                   </Supertip>
                   <Icon>
@@ -848,6 +848,21 @@
                         <FunctionName>go_action_noproof</FunctionName>
                       </Action>
                     </Item>
+                    <Item id="Vefeyat.Shortcuts">
+                      <Label resid="Shortcuts"/>
+                      <Supertip>
+                        <Title resid="Shortcuts"/>
+                        <Description resid="Shortcuts.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.settings.16"/>
+                        <bt:Image size="32" resid="Ic.settings.32"/>
+                        <bt:Image size="80" resid="Ic.settings.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>go_view_kisayol</FunctionName>
+                      </Action>
+                    </Item>
                   </Items>
                 </Control>
               </Group>
@@ -924,7 +939,7 @@
                     <Item id="Vefeyat.C.Insert">
                       <Label resid="Insert"/>
                       <Supertip>
-                        <Title resid="Insert"/>
+                        <Title resid="Insert.K"/>
                         <Description resid="Insert.Tip"/>
                       </Supertip>
                       <Icon>
@@ -939,7 +954,7 @@
                     <Item id="Vefeyat.C.Spelling">
                       <Label resid="Spelling"/>
                       <Supertip>
-                        <Title resid="Spelling"/>
+                        <Title resid="Spelling.K"/>
                         <Description resid="Spelling.Tip"/>
                       </Supertip>
                       <Icon>
@@ -1168,19 +1183,26 @@
         <bt:String id="Tab" DefaultValue="Vefeyât (deneme)"/>
         <bt:String id="Context" DefaultValue="Vefeyât"/>
         <bt:String id="GetStarted.Title" DefaultValue="Vefeyât hazır"/>
+        <bt:String id="Shortcuts" DefaultValue="Klavye kısayolları"/>
+        <bt:String id="Insert.K" DefaultValue="Ölüm tarihi ekle (Alt+Shift+V)"/>
+        <bt:String id="Spelling.K" DefaultValue="İsim yazımı (Alt+Shift+Y)"/>
+        <bt:String id="Audit.K" DefaultValue="Tüm belgeyi denetle (Alt+Shift+B)"/>
+        <bt:String id="Inventory.K" DefaultValue="Şahıs dökümü (Alt+Shift+L)"/>
+        <bt:String id="Bulk.K" DefaultValue="Toplu düzeltme önizlemesi (Alt+Shift+U)"/>
+        <bt:String id="Search.K" DefaultValue="Şahıs ara (Alt+Shift+H)"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Insert.Tip" DefaultValue="Seçili adın ölüm tarihini ekler. Tek ve kesin eşleşmede, ilk geçişte ve adın arkasında tarih yoksa doğrudan ekler; aksi hâlde Vefeyât penceresinde seçim veya onay ister. Kısayol: Alt+Shift+V"/>
-        <bt:String id="Spelling.Tip" DefaultValue="Seçili adı kısa, tam ve orijinal adlarla karşılaştırır; Türkçe eki koruyarak yalnız seçili adı değiştirir. Kısayol: Alt+Shift+Y"/>
-        <bt:String id="Audit.Tip" DefaultValue="Belgedeki adları sırayla gösterir; onaylayıp ilerlersiniz. Kısayol: Alt+Shift+B"/>
+        <bt:String id="Insert.Tip" DefaultValue="Kısayol: Alt+Shift+V. Seçili adın ölüm tarihini ekler. Tek ve kesin eşleşmede, ilk geçişte ve adın arkasında tarih yoksa doğrudan ekler; aksi hâlde Vefeyât penceresinde seçim veya onay ister."/>
+        <bt:String id="Spelling.Tip" DefaultValue="Kısayol: Alt+Shift+Y. Seçili adı kısa, tam ve orijinal adlarla karşılaştırır; Türkçe eki koruyarak yalnız seçili adı değiştirir."/>
+        <bt:String id="Audit.Tip" DefaultValue="Kısayol: Alt+Shift+B. Belgedeki adları sırayla gösterir; onaylayıp ilerlersiniz."/>
         <bt:String id="S.scope.Tip" DefaultValue="İlk kullanım (varsayılan), bütün kullanımlar veya yalnız denetim. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="S.auditMode.Tip" DefaultValue="Tüm belgeyi denetle komutunun hangi geçişleri göstereceği. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="Resume.Tip" DefaultValue="Duraklatılmış belge denetimini kaldığı geçişten sürdürür."/>
-        <bt:String id="Bulk.Tip" DefaultValue="Yazım ve tarih önerilerini tek listede gösterir; yalnız seçtiklerinizi uygular. Kısayol: Alt+Shift+U"/>
-        <bt:String id="Search.Tip" DefaultValue="Yerel katalogda ad arar; sonuçları DİA bağlantısıyla gösterir. Kısayol: Alt+Shift+H"/>
+        <bt:String id="Bulk.Tip" DefaultValue="Kısayol: Alt+Shift+U. Yazım ve tarih önerilerini tek listede gösterir; yalnız seçtiklerinizi uygular."/>
+        <bt:String id="Search.Tip" DefaultValue="Kısayol: Alt+Shift+H. Yerel katalogda ad arar; sonuçları DİA bağlantısıyla gösterir."/>
         <bt:String id="Dia.Tip" DefaultValue="Seçili şahsın DİA maddesinin bağlantısını gösterir."/>
         <bt:String id="SourceInfo.Tip" DefaultValue="Seçili Vefeyât tarihinin hangi katalog kaydından eklendiğini ve güncel olup olmadığını gösterir."/>
-        <bt:String id="Inventory.Tip" DefaultValue="Metindeki şahıs adlarını ve tarihleri listeler. Kısayol: Alt+Shift+L"/>
+        <bt:String id="Inventory.Tip" DefaultValue="Kısayol: Alt+Shift+L. Metindeki şahıs adlarını ve tarihleri listeler."/>
         <bt:String id="More.Tip" DefaultValue="Tarih ve katalog araçları, kimlik eşleşmeleri ve belge istisnaları."/>
         <bt:String id="Refresh.Tip" DefaultValue="Tarih ve yazım önerilerini toplu önizlemede gösterir; mevcut tarihleri kendiliğinden yeniden yazmaz."/>
         <bt:String id="Compare.Tip" DefaultValue="Belgedeki Vefeyât tarihlerini güncel katalogla karşılaştırır (Belge sağlığı)."/>
@@ -1210,6 +1232,7 @@
         <bt:String id="Help.Tip" DefaultValue="Vefeyât komutlarının kısa kılavuzu ve Hakkında."/>
         <bt:String id="Context.Tip" DefaultValue="Seçili şahıs adı için Vefeyât komutları."/>
         <bt:String id="GetStarted.Description" DefaultValue="Metinde bir şahıs adı seçin ve üstteki Vefeyât sekmesinden Ölüm tarihi ekle düğmesine basın."/>
+        <bt:String id="Shortcuts.Tip" DefaultValue="Vefeyât kısayollarını gösterir; çakışan bir kısayolu boştaki bir tuşa alır."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

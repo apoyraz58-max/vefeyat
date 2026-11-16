@@ -152,6 +152,12 @@ const FAKE_OFFICE = String.raw`
   window.Office = {
     HostType: { Word: "Word" },
     addin: { showAsTaskpane: async () => { window.__shown = (window.__shown || 0) + 1; } },
+    actions: doc.api.includes("KeyboardShortcuts 1.1") ? {
+      associate: () => {},
+      getShortcuts: async () => ({ go_action_insert: null, go_action_spelling: "Alt+Shift+Y", ...(window.__keys || {}) }),
+      areShortcutsInUse: async (keys) => keys.map((k) => ({ shortcut: k, inUse: k === "Alt+Shift+A" })),
+      replaceShortcuts: async (m) => { window.__keys = { ...(window.__keys || {}), ...m }; },
+    } : undefined,
     EventType: { DocumentSelectionChanged: "selection" },
     AsyncResultStatus: { Succeeded: "succeeded" },
     onReady: (cb) => setTimeout(() => cb({ host: "Word" }), 0),
@@ -329,6 +335,18 @@ try {
   check("ribbon function switches the open pane to Şahıs dökümü", await tab.isVisible("#view-dokum"));
   await tab.evaluate(() => new Promise((resolve) => window.set_prefix_v({ completed: resolve })));
   check("Tercihler functions also live in the pane", (await tab.evaluate(() => window.__doc.settings["vefeyat.prefix"])) === "v");
+  await tab.close();
+  tab = await open("?view=kisayol", "Metin.", "", { api: ["KeyboardShortcuts 1.1"] });
+  await tab.waitForSelector("#shortcuts:not([hidden])", { timeout: 3000 }).catch(() => {});
+  const keyOptions = await tab.$$eval("#shortcuts-list select[data-action=go_action_insert] option", (o) => o.map((x) => x.value));
+  check("Klavye kısayolları lists conflicts and only free keys", (await tab.textContent("#shortcuts-summary")).includes("1 kısayol kullanılamıyor") && !keyOptions.includes("Alt+Shift+A") && !keyOptions.includes("Alt+Shift+Y") && keyOptions.includes("Alt+Shift+B"), keyOptions.slice(0, 5).join(","));
+  await tab.selectOption("#shortcuts-list select[data-action=go_action_insert]", "Alt+Shift+B");
+  await tab.click("#shortcuts-save");
+  await tab.waitForTimeout(300);
+  check("chosen shortcut is saved in Word", (await tab.evaluate(() => window.__keys?.go_action_insert)) === "Alt+Shift+B");
+  await tab.close();
+  tab = await open("?view=tercihler", "Metin.");
+  check("no shortcut section without shortcut support", await tab.isHidden("#shortcuts"));
   await tab.close();
   tab = await open("?action=insert", "Râzî der ki.", "Râzî");
   check("ribbon insert asks for a choice with homonyms", (await tab.textContent("#message")).includes("Birden fazla aday") && (await docText(tab)) === "Râzî der ki.");

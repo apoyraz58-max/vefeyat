@@ -46,6 +46,6 @@ export function goQuery(name: string): string | null {
 export const GO_FUNCTIONS = [
   "action_insert", "action_spelling", "action_dia", "action_prefer", "action_clearSpelling", "action_shading", "action_noproof",
   "view_denetim", "view_devam", "view_toplu", "view_ara", "view_kaynak", "view_dokum", "view_saglik", "view_kimlik", "view_kapsam",
-  "view_istisna", "view_gecmis", "view_tercihler", "view_katalog", "view_yardim", "view_teslim",
+  "view_istisna", "view_gecmis", "view_tercihler", "view_kisayol", "view_katalog", "view_yardim", "view_teslim",
   "tool_tutarlilik", "tool_rapor", "tool_dizin", "tool_dizinkaldir", "tool_dizinsil", "tool_temizlik",
 ].map((k) => `go_${k}`);
