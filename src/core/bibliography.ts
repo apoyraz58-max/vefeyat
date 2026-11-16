@@ -71,3 +71,19 @@ export function bibliographyFlags(paragraphs: readonly string[]): boolean[] {
     return inside || isBibliographyEntry(text);
   });
 }
+
+const ORDINALS = "birinci|ikinci|ucuncu|dorduncu|besinci|altinci|yedinci|sekizinci|dokuzuncu|onuncu";
+
+/**
+ * A chapter heading: Word's Heading 1, or a line like "BİRİNCİ BÖLÜM",
+ * "2. Bölüm: …", "GİRİŞ", "SONUÇ". Chapters restart first mentions under
+ * "Her bölümde ilk kullanım".
+ */
+export function isChapterHeading(text: string, style = ""): boolean {
+  if (/^(heading ?1|başlık ?1)$/i.test(style.trim())) return true;
+  const value = text.trim();
+  if (value.length === 0 || value.length > 120) return false;
+  const key = normalize(value);
+  if (new RegExp(`^((\\d+|[ivxlc]+)\\s+)?(${ORDINALS}|\\d+)\\s+bolum(\\s|$)`).test(key)) return true;
+  return /^((\d+|[ivxlc]+)\s+)?(giris|sonuc|sonuc ve degerlendirme)$/.test(key);
+}

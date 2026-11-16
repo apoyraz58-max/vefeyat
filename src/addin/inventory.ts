@@ -12,6 +12,7 @@ import {
   type Person,
   alreadyHasDate,
   bibliographyFlags,
+  isChapterHeading,
   fieldsOf,
   sentenceAround,
   sharedFields,
@@ -55,6 +56,8 @@ export interface Segment {
   /** Position inside the anchor: 0 for the main paragraph, 1.. for its footnotes. */
   readonly order: number;
   readonly text: string;
+  /** Word style of a main-text paragraph (for chapter headings). */
+  readonly style?: string;
 }
 
 export type Status = "match" | "spelling" | "near" | "choose" | "unknown";
@@ -76,6 +79,10 @@ export interface InventoryRow {
   readonly status: Status;
   /** First certain mention of this person in its part (main text, or footnotes and endnotes), in reading order. */
   readonly first: boolean;
+  /** Chapter number (0 before the first chapter heading). */
+  readonly chapter: number;
+  /** First certain mention of this person in its part within its chapter ("Her bölümde ilk kullanım"). */
+  readonly firstInChapter: boolean;
   /** Identity taken from a confirmation saved in the document. */
   readonly confirmed: boolean;
   /**
@@ -164,6 +171,7 @@ interface Draft {
   /** Fields of the sentence around the mention (tefsir, tıp …). */
   fields: Set<string>;
   topic?: string;
+  chapter: number;
 }
 
 export function buildInventory(
@@ -185,7 +193,9 @@ export function buildInventory(
   const flags = bibliographyFlags(mains.map((o) => o.segment.text));
   const bibliography = new Set(mains.filter((_, k) => flags[k]).map((o) => o.segment.anchor));
   const lowerWords = lowerCaseWords(segments.map((s) => s.text));
+  let chapter = 0;
   for (const { segment, i } of ordered) {
+    if (segment.part === "main" && isChapterHeading(segment.text, segment.style)) chapter++;
     if (bibliography.has(segment.anchor)) continue;
     const known = notePeopleOrMatches(segment, index);
     const unknown = findUnknownPeople(segment.text, index).filter(
@@ -250,6 +260,7 @@ export function buildInventory(
       drafts.push({
         segment: i, part: segment.part, start, length: hit.start + hit.length - start, text: literal, candidates, person, resolved, after,
         fields: person || candidates.length < 2 ? new Set() : mentionFields(segment.text, hit.start, hit.length),
+        chapter,
       });
     }
   }
@@ -302,11 +313,15 @@ export function buildInventory(
     } else if (draft.candidates.length === 1) status = "near";
     else status = "choose";
     let first = false;
+    let firstInChapter = false;
     if (person) {
       // The main text and the notes each have their own first mention.
       const key = `${draft.part}|${personKey(person)}`;
       first = !seen.has(key);
       seen.add(key);
+      const inChapter = `${draft.part}|${draft.chapter}|${personKey(person)}`;
+      firstInChapter = !seen.has(inChapter);
+      seen.add(inChapter);
     }
     rows.push({
       id: rows.length,
@@ -320,6 +335,8 @@ export function buildInventory(
       date,
       status,
       first,
+      chapter: draft.chapter,
+      firstInChapter,
       confirmed: draft.resolved === "confirmed",
       resolved: draft.resolved,
       ...(draft.topic ? { topic: draft.topic } : {}),
@@ -333,6 +350,11 @@ export function hasDateIssue(row: Pick<InventoryRow, "dateCheck">): boolean {
   return row.dateCheck === "different" || row.dateCheck === "inconsistent";
 }
 
+/** First mention under the scope setting: per chapter with "Her bölümde ilk kullanım". */
+export function isFirstUse(row: Pick<InventoryRow, "first" | "firstInChapter">, scope: string): boolean {
+  return scope === "chapter" ? row.firstInChapter : row.first;
+}
+
 /** Catalog column text for a row. */
 export function catalogLabel(row: InventoryRow): string {
   if (row.person) return textName(row.person.shortName);
@@ -342,7 +364,7 @@ export function catalogLabel(row: InventoryRow): string {
 }
 
 /** Status text for a row, with date hints as in the VBA inventory. */
-export function statusLabel(row: InventoryRow): string {
+export function statusLabel(row: InventoryRow, scope = "first"): string {
   const base: Record<Status, string> = {
     match: "Kaynak yazımıyla uyumlu",
     spelling: "Uyarı: kaynak yazımı farklı",
@@ -358,7 +380,7 @@ export function statusLabel(row: InventoryRow): string {
   if (row.resolved === "context") text += " · kimlik belgedeki diğer geçişlerden";
   if (row.resolved === "topic") text += ` · kimlik konudan (${row.topic}); doğrulayın`;
   if (row.person && !isValidDate(row.person.deathDate)) text += " · Kaynakta tarih yok";
-  else if (row.person && row.first && !row.date) text += " · İlk geçişte tarih yok";
+  else if (row.person && isFirstUse(row, scope) && !row.date) text += scope === "chapter" ? " · Bölümdeki ilk geçişte tarih yok" : " · İlk geçişte tarih yok";
   return text;
 }
 
@@ -372,12 +394,12 @@ export interface InventorySummary {
   readonly dateIssues: number;
 }
 
-export function summarize(rows: readonly InventoryRow[]): InventorySummary {
+export function summarize(rows: readonly InventoryRow[], scope = "first"): InventorySummary {
   const people = new Set(rows.filter((r) => r.person).map((r) => personKey(r.person as Person)));
   return {
     mentions: rows.length,
     people: people.size,
-    firstWithoutDate: rows.filter((r) => r.first && !r.date && r.person && isValidDate(r.person.deathDate)).length,
+    firstWithoutDate: rows.filter((r) => isFirstUse(r, scope) && !r.date && r.person && isValidDate(r.person.deathDate)).length,
     spelling: rows.filter((r) => r.status === "spelling").length,
     uncertain: rows.filter((r) => r.status === "near" || r.status === "choose").length,
     dateIssues: rows.filter((r) => hasDateIssue(r)).length,

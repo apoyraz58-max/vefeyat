@@ -84,3 +84,19 @@ describe("first-use upkeep (main text and notes apart)", () => {
     expect(firstUseSuggestions(rows3, { ...DEFAULT_SETTINGS, scope: "all" })).toEqual([]);
   });
 });
+
+describe("Her bölümde ilk kullanım", () => {
+  const seg = (anchor: number, text: string) => ({ part: "main" as const, anchor, order: 0, text });
+  it("each chapter's first mention gets the date; upkeep stays inside a chapter", () => {
+    const rows4 = buildInventory([seg(0, "BİRİNCİ BÖLÜM"), seg(1, "Gazzâlî (ö. 505/1111) der."), seg(2, "İKİNCİ BÖLÜM"), seg(3, "Gazzâlî yine der."), seg(4, "Gazzâlî (ö. 505/1111) bir daha der.")], catalog);
+    expect(rows4.map((r) => [r.chapter, r.first, r.firstInChapter])).toEqual([
+      [1, true, true],
+      [2, false, true],
+      [2, false, false],
+    ]);
+    const chapterWise = firstUseSuggestions(rows4, { ...DEFAULT_SETTINGS, scope: "chapter" });
+    expect(chapterWise.map((s) => [s.kind, s.row.segment, s.from?.segment])).toEqual([["move", 3, 4]]);
+    // Whole document: the second chapter's dates are both extra.
+    expect(firstUseSuggestions(rows4, DEFAULT_SETTINGS).map((s) => s.kind)).toEqual(["drop"]);
+  });
+});

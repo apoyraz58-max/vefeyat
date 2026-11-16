@@ -378,7 +378,7 @@ export async function toggleFrames(): Promise<void> {
  * later one). Nothing changes until the user reviews and applies it.
  */
 export async function checkFirstUse(): Promise<void> {
-  if (state.busy || !state.catalog || state.settings.scope !== "first") return;
+  if (state.busy || !state.catalog || (state.settings.scope !== "first" && state.settings.scope !== "chapter")) return;
   // The first quiet read primes the stored reading; afterwards only edits trigger a look.
   if (documentRead() && !hasPendingChanges()) return;
   if (!(await watchDocument())) return; // without paragraph events every look would be a full read

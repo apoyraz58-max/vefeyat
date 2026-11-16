@@ -21,7 +21,7 @@ export async function prepareInventory(): Promise<void> {
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.page = 0;
   state.selectedRow = null;
-  const sum = summarize(state.rows);
+  const sum = summarize(state.rows, state.settings.scope);
   $("inventory-summary").textContent =
     `${sum.mentions} geçiş · ${sum.people} kesin şahıs · ${sum.uncertain} doğrulanacak · ${sum.firstWithoutDate} ilk geçişte tarih yok · ${sum.spelling} yazım uyarısı` +
     (sum.dateIssues ? ` · ${sum.dateIssues} tarih uyarısı` : "") +
@@ -48,7 +48,7 @@ export function renderInventory(): void {
     meta.textContent = `${catalogLabel(row)} · ${row.date || "tarih yok"}`;
     const status = document.createElement("span");
     status.className = row.status === "match" && !hasDateIssue(row) ? "meta" : "meta warn";
-    status.textContent = statusLabel(row);
+    status.textContent = statusLabel(row, state.settings.scope);
     item.append(name, badge, meta, status);
     item.addEventListener("click", () => void run(() => chooseRow(row)));
     item.addEventListener("dblclick", () => void actOnRow());
@@ -153,7 +153,7 @@ export function renderAudit(): void {
   bar.hidden = state.audit === null;
   if (!state.audit) return;
   const row = state.audit[state.auditAt];
-  $("audit-position").textContent = `Denetim: ${state.auditAt + 1} / ${state.audit.length}` + (row ? ` · ${placeOfRow(row)} · ${statusLabel(row)}` : "");
+  $("audit-position").textContent = `Denetim: ${state.auditAt + 1} / ${state.audit.length}` + (row ? ` · ${placeOfRow(row)} · ${statusLabel(row, state.settings.scope)}` : "");
   $<HTMLButtonElement>("audit-prev").disabled = state.auditAt === 0;
   $<HTMLButtonElement>("audit-next").textContent = state.auditAt + 1 >= state.audit.length ? "Bitir" : "Sonraki ▶";
 }

@@ -278,9 +278,9 @@ export type Progress = (done: number, total: number) => void;
 export async function readSegments(progress: Progress = () => {}): Promise<{ segments: Segment[]; footnotes: boolean }> {
   return Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
-    paragraphs.load("items/text");
+    paragraphs.load("items/text,items/styleBuiltIn");
     await context.sync();
-    const segments: Segment[] = paragraphs.items.map((p, i) => ({ part: "main", anchor: i, order: 0, text: p.text }));
+    const segments: Segment[] = paragraphs.items.map((p, i) => ({ part: "main", anchor: i, order: 0, text: p.text, style: p.styleBuiltIn }));
     const footnotes = Office.context.requirements.isSetSupported("WordApi", "1.5");
     if (footnotes) {
       // In chunks: one request per paragraph of a 500-page thesis is too much for one sync.
@@ -1267,7 +1267,7 @@ export async function readDocument(progress: Progress = () => {}): Promise<{ seg
   const fresh = await Word.run(async (context) => {
     const items = changed.map((id) => {
       const paragraph = context.document.getParagraphByUniqueLocalId(id);
-      paragraph.load("text");
+      paragraph.load("text,styleBuiltIn");
       const foot = paragraph.getRange("Whole").footnotes;
       const end = paragraph.getRange("Whole").endnotes;
       if (cache?.footnotes) {
@@ -1279,6 +1279,7 @@ export async function readDocument(progress: Progress = () => {}): Promise<{ seg
     await context.sync();
     return items.map(({ paragraph, foot, end }) => ({
       text: paragraph.text,
+      style: paragraph.styleBuiltIn as string,
       foot: cache?.footnotes ? foot.items.map((n) => n.body.text) : [],
       end: cache?.footnotes ? end.items.map((n) => n.body.text) : [],
     }));
@@ -1286,8 +1287,8 @@ export async function readDocument(progress: Progress = () => {}): Promise<{ seg
   const replaced = new Set(anchors);
   const kept = cache.segments.filter((s) => !replaced.has(s.anchor));
   anchors.forEach((anchor, k) => {
-    const f = fresh[k] as { text: string; foot: string[]; end: string[] };
-    kept.push({ part: "main", anchor, order: 0, text: f.text });
+    const f = fresh[k] as { text: string; style: string; foot: string[]; end: string[] };
+    kept.push({ part: "main", anchor, order: 0, text: f.text, style: f.style });
     f.foot.forEach((text, i) => kept.push({ part: "note", anchor, order: i + 1, text }));
     f.end.forEach((text, i) => kept.push({ part: "note", anchor, order: ENDNOTE_BASE + i + 1, text }));
   });

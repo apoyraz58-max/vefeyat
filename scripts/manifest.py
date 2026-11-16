@@ -88,7 +88,7 @@ groups = [
     ]),
     group("Review", "Denetim", "scope", [
         setting_menu("scope", "Tarih ekleme", "İlk kullanım (varsayılan), bütün kullanımlar veya yalnız denetim.", "scope",
-                     [("first", "Yalnız ilk kullanım"), ("all", "Bütün kullanımlar"), ("none", "Yalnız denetle")]),
+                     [("first", "Yalnız ilk kullanım"), ("chapter", "Her bölümde ilk kullanım"), ("all", "Bütün kullanımlar"), ("none", "Yalnız denetle")]),
         setting_menu("auditMode", "Denetlenecek", "Tüm belgeyi denetle komutunun hangi geçişleri göstereceği.", "auditmode",
                      [("all", "Tüm geçişler"), ("undated", "Tarihi olmayanlar")]),
         button("Resume", S("Resume", "Denetime devam et"), L("Resume.Tip", "Duraklatılmış belge denetimini kaldığı geçişten sürdürür."), "resume", pane(U("U.Resume", "taskpane.html?view=devam"))),

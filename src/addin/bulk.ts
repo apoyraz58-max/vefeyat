@@ -3,7 +3,7 @@
  * Word-independent helpers (VBA 0.3.41 `VfbPreview`, `VfwResume`, `VfgLog`).
  */
 import { type Person, personKey, formatDate, isValidDate, nameQuery, sourceName, textName, withEnding } from "../core/index.js";
-import type { InventoryRow, Segment } from "./inventory.js";
+import { type InventoryRow, type Segment, isFirstUse } from "./inventory.js";
 import { type Settings, mentionKey } from "./logic.js";
 
 export interface Suggestion {
@@ -37,11 +37,11 @@ const guessed = (row: InventoryRow) => row.resolved === "context" || row.resolve
  * the catalog are touched.
  */
 export function firstUseSuggestions(rows: readonly InventoryRow[], settings: Settings): Suggestion[] {
-  if (settings.scope !== "first") return [];
+  if (settings.scope !== "first" && settings.scope !== "chapter") return [];
   const groups = new Map<string, InventoryRow[]>();
   for (const row of rows) {
     if (!row.person) continue;
-    const key = `${row.part}|${personKey(row.person)}`;
+    const key = settings.scope === "chapter" ? `${row.part}|${row.chapter}|${personKey(row.person)}` : `${row.part}|${personKey(row.person)}`;
     groups.set(key, [...(groups.get(key) ?? []), row]);
   }
   const out: Suggestion[] = [];
@@ -80,7 +80,7 @@ export function bulkSuggestions(rows: readonly InventoryRow[], settings: Setting
       const value = formatDate(person.deathDate, settings.prefix);
       if (value !== row.date) out.push({ id: `f${row.id}`, kind: "fixdate", row, person, value, old: row.date, preselected: false });
     }
-    const wantsDate = settings.scope === "all" || (settings.scope === "first" && row.first);
+    const wantsDate = settings.scope === "all" || ((settings.scope === "first" || settings.scope === "chapter") && isFirstUse(row, settings.scope));
     if (wantsDate && !row.date && isValidDate(person.deathDate) && !receiving.has(row.id)) {
       out.push({ id: `d${row.id}`, kind: "date", row, person, value: formatDate(person.deathDate, settings.prefix), preselected: true });
     }

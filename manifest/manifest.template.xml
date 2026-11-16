@@ -131,6 +131,21 @@
                         <FunctionName>set_scope_first</FunctionName>
                       </Action>
                     </Item>
+                    <Item id="Vefeyat.S.scope.chapter">
+                      <Label resid="S.scope.chapter"/>
+                      <Supertip>
+                        <Title resid="S.scope.chapter"/>
+                        <Description resid="S.scope.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.scope.16"/>
+                        <bt:Image size="32" resid="Ic.scope.32"/>
+                        <bt:Image size="80" resid="Ic.scope.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_scope_chapter</FunctionName>
+                      </Action>
+                    </Item>
                     <Item id="Vefeyat.S.scope.all">
                       <Label resid="S.scope.all"/>
                       <Supertip>
@@ -1125,6 +1140,7 @@
         <bt:String id="Audit" DefaultValue="Tüm belgeyi denetle"/>
         <bt:String id="G.Add" DefaultValue="Ekle ve denetle"/>
         <bt:String id="S.scope.first" DefaultValue="Yalnız ilk kullanım"/>
+        <bt:String id="S.scope.chapter" DefaultValue="Her bölümde ilk kullanım"/>
         <bt:String id="S.scope.all" DefaultValue="Bütün kullanımlar"/>
         <bt:String id="S.scope.none" DefaultValue="Yalnız denetle"/>
         <bt:String id="S.scope" DefaultValue="Tarih ekleme"/>

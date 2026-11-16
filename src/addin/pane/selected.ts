@@ -266,7 +266,12 @@ export async function earlierMention(person: Person): Promise<boolean> {
   const target = personKey(person);
   // The main text and the notes are counted apart: only mentions in the same part count.
   const inNote = await selectionInNote().catch(() => false);
-  const same = rows.filter((r) => r.person !== null && personKey(r.person) === target && r.part === (inNote ? "note" : "main"));
+  let same = rows.filter((r) => r.person !== null && personKey(r.person) === target && r.part === (inNote ? "note" : "main"));
+  if (state.settings.scope === "chapter") {
+    // "Her bölümde ilk kullanım": only this chapter's mentions count.
+    const current = state.mention ? rows.find((r) => rowKey(r, state.segments) === state.mention) : undefined;
+    if (current) same = same.filter((r) => r.chapter === current.chapter);
+  }
   if (inNote) {
     // Notes are other stories: find this mention in the reading, earlier notes come before it.
     const here = state.mention ? rows.findIndex((r) => r.part === "note" && rowKey(r, state.segments) === state.mention) : -1;

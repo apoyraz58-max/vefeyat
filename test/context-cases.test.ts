@@ -147,3 +147,19 @@ describe("bibliography shapes", () => {
     expect(bibliographyFlags(["Giriş", "5. Kaynakça", "x", "EKLER", "y"])).toEqual([false, true, true, false, false]);
   });
 });
+
+describe("chapter headings", async () => {
+  const { isChapterHeading } = await import("../src/core/index.js");
+  it.each([
+    ["BİRİNCİ BÖLÜM", "", true],
+    ["2. Bölüm: Gazzâlî'nin Hayatı", "", true],
+    ["İkinci Bölüm", "", true],
+    ["GİRİŞ", "", true],
+    ["Sonuç", "", true],
+    ["Gazzâlî'nin Hayatı", "Heading1", true],
+    ["Gazzâlî'nin Hayatı", "Heading2", false],
+    ["Bu bölümde Gazzâlî ele alınır.", "", false],
+  ] as const)("%s (%s) → %s", (text, style, expected) => {
+    expect(isChapterHeading(text, style)).toBe(expected);
+  });
+});

@@ -171,7 +171,7 @@ export function quickInsertBlocker(hasCatalog: boolean, alias: string | null, fo
 
 // ---- Document settings (VBA: VfpScope, VfpPrefix, VfuNameForm, VfpAuditMode) ----
 
-export type Scope = "first" | "all" | "none";
+export type Scope = "first" | "chapter" | "all" | "none";
 export type NameForm = "ask" | "near" | "short" | "full" | "original";
 export type AuditMode = "all" | "undated";
 
@@ -186,7 +186,7 @@ export const DEFAULT_SETTINGS: Settings = { prefix: "o", scope: "first", nameFor
 
 export const SETTING_CHOICES = {
   prefix: { original: "Kaynakta olduğu gibi", o: "ö.", ol: "öl.", v: "v." },
-  scope: { first: "Yalnız ilk kullanım", all: "Bütün kullanımlar", none: "Yalnız denetle" },
+  scope: { first: "Yalnız ilk kullanım", chapter: "Her bölümde ilk kullanım", all: "Bütün kullanımlar", none: "Yalnız denetle" },
   nameForm: { ask: "Her seferinde sor", near: "Seçili ada yakın", short: "Kısa ad", full: "Tam / uzun ad", original: "Orijinal ad" },
   auditMode: { all: "Tüm geçişler", undated: "Tarihi olmayanlar" },
 } as const;
@@ -216,7 +216,7 @@ export function scopeRule(scope: Scope): { allowed: boolean; checkEarlier: boole
   if (scope === "none") {
     return { allowed: false, checkEarlier: false, reason: "Tarih ekleme ayarı \"Yalnız denetle\": tarih eklenmez. Vefeyât → Tarih ekleme menüsünden değiştirebilirsiniz." };
   }
-  return { allowed: true, checkEarlier: scope === "first" };
+  return { allowed: true, checkEarlier: scope === "first" || scope === "chapter" };
 }
 
 const FORM_LABELS: Record<Exclude<NameForm, "ask">, string> = {
@@ -238,11 +238,12 @@ export function orderByNameForm<T extends { label: string }>(options: readonly T
  * "Yalnız ilk kullanım", verified repeats are skipped; with "Tarihi
  * olmayanlar", mentions that already carry a date are skipped.
  */
-export function auditRows<T extends { person: unknown; first: boolean; date: string; dateCheck?: string | null }>(rows: readonly T[], settings: Settings): T[] {
+export function auditRows<T extends { person: unknown; first: boolean; firstInChapter?: boolean; date: string; dateCheck?: string | null }>(rows: readonly T[], settings: Settings): T[] {
   return rows.filter((row) => {
     // A wrong written date is always worth a stop, repeat or not.
     if (row.dateCheck === "different" || row.dateCheck === "inconsistent") return true;
     if (settings.scope === "first" && row.person !== null && !row.first) return false;
+    if (settings.scope === "chapter" && row.person !== null && !(row.firstInChapter ?? row.first)) return false;
     if (settings.auditMode === "undated" && row.date) return false;
     return true;
   });

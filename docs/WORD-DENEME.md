@@ -65,6 +65,9 @@ kendiliğinden çıkarılır.
   (**Önceki geçişe git** / **Yine de ekle**). Uyarı yazıma değil kimliğe bakar:
   önceki "Fahreddin er-Râzî", Ebû Bekir er-Râzî için önceki geçiş sayılmaz; önce
   "Gazali" diye yazılmış geçiş Gazzâlî için sayılır.
+- *Her bölümde ilk kullanım*: aynı kural her bölümde baştan işler; kişinin her
+  bölümdeki ilk geçişi tarihi alır. Bölüm başı, Word'ün **Başlık 1** biçemi ya da
+  "BİRİNCİ BÖLÜM", "2. Bölüm", "GİRİŞ", "SONUÇ" gibi bir başlıkla tanınır.
 - *Bütün kullanımlar*: uyarı çıkmaz.
 - *Yalnız denetle*: tarih eklenmez.
 
