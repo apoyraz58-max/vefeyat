@@ -2,6 +2,7 @@
  * Vefeyât pane entry: launch and wiring. The views live in ./pane/.
  */
 import { type Launch, earlierSpellings, parseLaunch, quickInsertBlocker } from "./logic.js";
+import { GO_FUNCTIONS, goQuery, register, registerSettingCommands } from "./actions.js";
 import { canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
 
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
@@ -229,9 +230,37 @@ export function initialise(): void {
   });
   const request = parseLaunch(window.location.search);
   showView(request.view);
-  void restoreCatalog()
+  ready = restoreCatalog()
     .then(() => refresh())
-    .then(() => launch(request));
+    .catch(() => undefined);
+  void ready.then(() => launch(request));
+  registerRibbonFunctions();
+}
+
+let ready: Promise<void> = Promise.resolve();
+
+/**
+ * Keyboard-shortcut manifest: ribbon buttons, the context menu and the
+ * shortcut run as functions in this (shared) runtime instead of reloading the
+ * pane with a new address. Each shows the pane, reads the current selection
+ * and does what ?action=…/?view=… would have done. In the regular manifest
+ * nothing calls these.
+ */
+function registerRibbonFunctions(): void {
+  for (const name of GO_FUNCTIONS) {
+    const query = goQuery(name)!;
+    register(name, (event) => {
+      const addin = (Office as unknown as { addin?: { showAsTaskpane: () => Promise<void> } }).addin;
+      void (addin?.showAsTaskpane() ?? Promise.resolve())
+        .catch(() => undefined)
+        .then(() => event?.completed());
+      void ready
+        .then(() => refresh())
+        .then(() => launch(parseLaunch(query)))
+        .catch(() => undefined);
+    });
+  }
+  registerSettingCommands(() => refresh());
 }
 
 Office.onReady((info) => {

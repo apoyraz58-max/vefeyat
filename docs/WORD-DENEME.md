@@ -29,6 +29,16 @@ düğme eklendiğinde manifesti bir kez yenilemek gerekir: yeni `manifest.xml` d
 indirip paylaşılan klasördekinin yerine koyun, Word'ü kapatın,
 `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\` klasörünü silin, Word'ü açın.
 
+**Klavye kısayolu (deneme).** Ayrı bir manifest "Ölüm tarihi ekle"yi
+**Ctrl+Alt+Shift+V** (Mac: Cmd+Option+Shift+V) kısayoluna bağlar:
+`https://apoyraz58-max.github.io/vefeyat/manifest-kisayol.xml`. Word kısayola yalnız
+"paylaşılan çalışma ortamı"nda izin verir; bu yüzden bu sürümde bütün şerit düğmeleri
+paneli yeniden yüklemek yerine açık panele komut gönderir. Ayrı bir eklenti olarak
+görünür ("Vefeyât (kısayol denemesi)", sekmesi "Vefeyât (deneme)"); asıl eklentiye
+dokunmaz. Windows Word 2408 ve sonrası gerekir. Denerken asıl `manifest.xml`
+dosyasını paylaşılan klasörden geçici olarak çıkarın, yoksa iki Vefeyât sekmesi görünür.
+Kısayol başka bir komutla çakışırsa Word bir kez hangisinin çalışacağını sorar.
+
 ## 2. Hızlı başlangıç
 
 1. Metinde bir şahıs adını seçin (çift tıklama yeter; Türkçe ek sorun değildir).

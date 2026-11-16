@@ -226,5 +226,34 @@ xml = f"""<?xml version="1.0" encoding="UTF-8"?>
   </VersionOverrides>
 </OfficeApp>
 """
-Path(__file__).resolve().parent.parent.joinpath("manifest/manifest.template.xml").write_text(xml, encoding="utf-8")
+root = Path(__file__).resolve().parent.parent
+root.joinpath("manifest/manifest.template.xml").write_text(xml, encoding="utf-8")
 print(f"{len(used_icons)} icons, {len(urls)} urls, {len(short)} labels")
+
+# ---- Keyboard-shortcut trial: manifest-kisayol.xml ----
+# Word allows add-in keyboard shortcuts only in a shared runtime: ribbon, context
+# menu and shortcut all run as functions inside the task pane page
+# (src/addin/actions.ts). A separate add-in (own Id and name) so it can be tried
+# without touching the regular one.
+import re
+
+def go(match):
+    query = urls[match.group(2)].split("?", 1)[1]
+    key, value = query.split("=")
+    return f'{match.group(1)}<Action xsi:type="ExecuteFunction">\n{match.group(1)}  <FunctionName>go_{key}_{value}</FunctionName>\n{match.group(1)}</Action>'
+
+trial = re.sub(r'( *)<Action xsi:type="ShowTaskpane">\s*<TaskpaneId>VefeyatPane</TaskpaneId>\s*<SourceLocation resid="([\w.]+)"/>\s*</Action>', go, xml)
+assert "ShowTaskpane" not in trial
+trial = (trial
+    .replace("<Id>6f3c2a4e-8b1d-4c7a-9e52-0d9a7b3e5f21</Id>", "<Id>6f3c2a4e-8b1d-4c7a-9e52-0d9a7b3e5f22</Id>")
+    .replace('<DisplayName DefaultValue="Vefeyât"/>', '<DisplayName DefaultValue="Vefeyât (kısayol denemesi)"/>')
+    .replace('      <Set Name="WordApi" MinVersion="1.3"/>\n', '      <Set Name="WordApi" MinVersion="1.3"/>\n      <Set Name="SharedRuntime" MinVersion="1.1"/>\n')
+    .replace('      <Host xsi:type="Document">\n', '      <Host xsi:type="Document">\n        <Runtimes>\n          <Runtime resid="Taskpane.Url" lifetime="long"/>\n        </Runtimes>\n')
+    .replace('<FunctionFile resid="Commands.Url"/>', '<FunctionFile resid="Taskpane.Url"/>')
+    .replace('        <bt:Url id="Commands.Url"', f'        <bt:Url id="Taskpane.Url" DefaultValue="{B}taskpane.html"/>\n        <bt:Url id="Commands.Url"')
+    .replace('<bt:String id="Tab" DefaultValue="Vefeyât"/>', '<bt:String id="Tab" DefaultValue="Vefeyât (deneme)"/>')
+    .replace("  </VersionOverrides>\n", f'  </VersionOverrides>\n  <ExtendedOverrides Url="{B}shortcuts.json"/>\n'))
+for needle in ("5f22", "SharedRuntime", "<Runtimes>", 'FunctionFile resid="Taskpane.Url"', 'id="Taskpane.Url"', "(deneme)", "ExtendedOverrides"):
+    assert needle in trial, needle
+root.joinpath("manifest/manifest-kisayol.template.xml").write_text(trial, encoding="utf-8")
+print(f"kısayol denemesi: {trial.count('go_')} işlev")

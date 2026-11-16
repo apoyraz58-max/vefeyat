@@ -63,9 +63,14 @@ if (existsSync(catalog)) {
   console.log("No data/catalog.csv: users choose a CSV on first use.");
 }
 
-const template = await readFile(new URL("manifest/manifest.template.xml", root), "utf8");
-const manifest = template.replaceAll("{{BASE_URL}}", baseUrl).replaceAll("{{VERSION}}", manifestVersion);
-await writeFile(new URL("manifest.xml", out), manifest);
+// manifest.xml is the regular add-in; manifest-kisayol.xml the keyboard-shortcut
+// trial (shared runtime), which also needs shortcuts.json next to it.
+for (const name of ["manifest", "manifest-kisayol"]) {
+  const template = await readFile(new URL(`manifest/${name}.template.xml`, root), "utf8");
+  const manifest = template.replaceAll("{{BASE_URL}}", baseUrl).replaceAll("{{VERSION}}", manifestVersion);
+  await writeFile(new URL(`${name}.xml`, out), manifest);
+}
+await cp(new URL("manifest/shortcuts.json", root), new URL("shortcuts.json", out));
 
 console.log(`Built Vefeyât ${pkg.version} (manifest ${manifestVersion}) for ${baseUrl}`);
 

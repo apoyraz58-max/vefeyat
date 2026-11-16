@@ -1,0 +1,14 @@
+{
+  "actions": [
+    { "id": "go_action_insert", "type": "ExecuteFunction", "name": "Ölüm tarihi ekle" }
+  ],
+  "shortcuts": [
+    {
+      "action": "go_action_insert",
+      "key": {
+        "default": "Ctrl+Alt+Shift+V",
+        "mac": "Command+Option+Shift+V"
+      }
+    }
+  ]
+}

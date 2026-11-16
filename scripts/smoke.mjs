@@ -151,6 +151,7 @@ const FAKE_OFFICE = String.raw`
   };
   window.Office = {
     HostType: { Word: "Word" },
+    addin: { showAsTaskpane: async () => { window.__shown = (window.__shown || 0) + 1; } },
     EventType: { DocumentSelectionChanged: "selection" },
     AsyncResultStatus: { Succeeded: "succeeded" },
     onReady: (cb) => setTimeout(() => cb({ host: "Word" }), 0),
@@ -316,6 +317,18 @@ try {
   // Ribbon buttons.
   tab = await open("?action=insert", "İlk kez Gazzâlî burada.", "Gazzâlî");
   check("ribbon insert writes at once when unambiguous", (await docText(tab)) === "İlk kez Gazzâlî (ö. 505/1111) burada.", await docText(tab));
+  await tab.close();
+  // Keyboard-shortcut manifest: buttons and the shortcut are functions in the open pane.
+  tab = await open("", "Giriş. İlk kez Gazzâlî burada.");
+  await select(tab, "Gazzâlî");
+  const completed = await tab.evaluate(() => new Promise((resolve) => window.go_action_insert({ completed: () => resolve(true) })));
+  await tab.waitForTimeout(500);
+  check("shortcut function shows the pane and inserts the date", completed && (await tab.evaluate(() => window.__shown)) === 1 && (await docText(tab)) === "Giriş. İlk kez Gazzâlî (ö. 505/1111) burada.", await docText(tab));
+  await tab.evaluate(() => window.go_view_dokum(undefined));
+  await tab.waitForTimeout(500);
+  check("ribbon function switches the open pane to Şahıs dökümü", await tab.isVisible("#view-dokum"));
+  await tab.evaluate(() => new Promise((resolve) => window.set_prefix_v({ completed: resolve })));
+  check("Tercihler functions also live in the pane", (await tab.evaluate(() => window.__doc.settings["vefeyat.prefix"])) === "v");
   await tab.close();
   tab = await open("?action=insert", "Râzî der ki.", "Râzî");
   check("ribbon insert asks for a choice with homonyms", (await tab.textContent("#message")).includes("Birden fazla aday") && (await docText(tab)) === "Râzî der ki.");
