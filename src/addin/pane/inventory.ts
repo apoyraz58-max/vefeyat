@@ -1,9 +1,10 @@
 /** Vefeyât pane — Şahıs dökümü and Tüm belgeyi denetle / Denetime devam et. */
+import { buildXlsx, inventoryTable, toTsv } from "../submit.js";
 import { NameIndex } from "../../core/index.js";
 import { auditRows } from "../logic.js";
 import { type InventoryRow, buildInventory, catalogLabel, hasDateIssue, statusLabel, summarize } from "../inventory.js";
 import { parseBookmark, resumeIndex, rowKey } from "../bulk.js";
-import { readSpellings, readExclusions, readAuditBookmark, writeAuditBookmark, readConfirmations, readDocument, documentVersion, selectMention } from "../word.js";
+import { readSpellings, readExclusions, readAuditBookmark, writeAuditBookmark, readConfirmations, readDocument, documentVersion, selectMention, documentName } from "../word.js";
 
 import { $, PAGE_SIZE, loadSettings, noteCounts, placeOfRow, run, setMessage, showView, state, versions } from "./core.js";
 import { refresh } from "./selected.js";
@@ -156,4 +157,51 @@ export function renderAudit(): void {
   $("audit-position").textContent = `Denetim: ${state.auditAt + 1} / ${state.audit.length}` + (row ? ` · ${placeOfRow(row)} · ${statusLabel(row, state.settings.scope)}` : "");
   $<HTMLButtonElement>("audit-prev").disabled = state.auditAt === 0;
   $<HTMLButtonElement>("audit-next").textContent = state.auditAt + 1 >= state.audit.length ? "Bitir" : "Sonraki ▶";
+}
+
+// ---- Excel'e aktar ----
+
+function inventoryAsTable(): string[][] {
+  return inventoryTable(state.rows, state.segments, (row) => statusLabel(row, state.settings.scope));
+}
+
+/** A download name browsers accept everywhere: Turkish letters folded, no odd characters. */
+export function safeFileName(value: string): string {
+  const folded = value
+    .replace(/ı/g, "i").replace(/İ/g, "I").replace(/ş/g, "s").replace(/Ş/g, "S").replace(/ğ/g, "g").replace(/Ğ/g, "G")
+    .replace(/ç/g, "c").replace(/Ç/g, "C").replace(/ö/g, "o").replace(/Ö/g, "O").replace(/ü/g, "u").replace(/Ü/g, "U")
+    .normalize("NFD").replace(/\p{M}/gu, "");
+  return folded.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "belge";
+}
+
+/** Saves the inventory as an .xlsx file (the browser's download). */
+export function exportInventory(): void {
+  if (state.rows.length === 0) {
+    setMessage("Önce Şahıs dökümünü hazırlayın.", "info");
+    return;
+  }
+  const bytes = buildXlsx("Şahıs dökümü", inventoryAsTable());
+  const url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${safeFileName(documentName().replace(/\.docx?$/i, ""))}-sahis-dokumu.xlsx`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  setMessage("Excel dosyası indirildi. İndirme açılmadıysa Panoya kopyala ile Excel'e yapıştırın.", "success");
+}
+
+/** Copies the inventory as tab-separated text: pastes into Excel or a Word table as cells. */
+export async function copyInventory(): Promise<void> {
+  if (state.rows.length === 0) {
+    setMessage("Önce Şahıs dökümünü hazırlayın.", "info");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(toTsv(inventoryAsTable()));
+    setMessage(`${state.rows.length} satır panoya kopyalandı. Excel'de bir hücreye ya da Word'de boş bir yere yapıştırın.`, "success");
+  } catch {
+    setMessage("Pano kullanılamadı. Excel'e aktar düğmesini deneyin.", "warning");
+  }
 }

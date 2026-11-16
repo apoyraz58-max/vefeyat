@@ -447,6 +447,12 @@ try {
   const listed = await tab.$$eval("#inventory-list li strong", (n) => n.map((x) => x.textContent));
   check("Şahıs dökümü lists every mention", listed.join("|") === "Gazali|Gazzâlî|Râzî|Gazzâlî'nin", listed.join("|"));
   check("inventory summary", (await tab.textContent("#inventory-summary")).startsWith("4 geçiş · 1 kesin şahıs · 1 doğrulanacak"), await tab.textContent("#inventory-summary"));
+  {
+    const [download] = await Promise.all([tab.waitForEvent("download", { timeout: 5000 }), tab.click("#inventory-xlsx")]);
+    const saved = await download.path();
+    const bytes = saved ? (await readFile(saved)).subarray(0, 2).toString() : "";
+    check("Şahıs dökümü saves as an Excel file", download.suggestedFilename() === "Adsiz-belge-sahis-dokumu.xlsx" && bytes === "PK", download.suggestedFilename());
+  }
   await tab.click("#inventory-list li:nth-child(3)");
   await tab.waitForTimeout(200);
   check("clicking a row selects it in the document", (await tab.evaluate(() => window.__doc.text.slice(...window.__doc.sel))) === "Râzî");

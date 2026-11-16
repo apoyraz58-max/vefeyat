@@ -328,3 +328,108 @@ export function staticIndex(hits: ReadonlyArray<{ person: Person; page: number }
   }
   return lines;
 }
+
+// ---- Şahıs dökümü → Excel ----
+
+const RESOLVED_LABEL: Record<string, string> = {
+  catalog: "katalog",
+  confirmed: "onayınız",
+  date: "yazılı tarih",
+  context: "belgedeki diğer geçişler",
+  topic: "cümlenin konusu",
+};
+
+/** The inventory as a table: a header row, then one row per mention. */
+export function inventoryTable(rows: readonly InventoryRow[], segments: readonly Segment[], status: (row: InventoryRow) => string): string[][] {
+  const header = ["Sıra", "Yer", "Bölüm", "Metindeki yazım", "Şahıs (katalog)", "Katalogdaki tarih", "Metindeki tarih", "Durum", "Kimlik kaynağı", "Bağlantı"];
+  const who = (row: InventoryRow): string => {
+    if (row.person) return textName(row.person.shortName);
+    if (row.candidates.length > 1) return `${row.candidates.length} aday`;
+    const only = row.candidates[0];
+    return only ? `${textName(only.shortName)} (?)` : "katalogda yok";
+  };
+  return [
+    header,
+    ...rows.map((row, k) => [
+      String(k + 1),
+      placeOf(segments[row.segment]),
+      row.chapter > 0 ? String(row.chapter) : "",
+      row.text,
+      who(row),
+      row.person?.deathDate ?? "",
+      row.date,
+      status(row),
+      row.resolved ? (RESOLVED_LABEL[row.resolved] ?? "") : "",
+      row.person ? (isLocal(row.person) ? "kendi kaydı" : row.person.source) : "",
+    ]),
+  ];
+}
+
+/** Tab-separated text: pastes into Excel or a Word table as cells. */
+export function toTsv(table: readonly (readonly string[])[]): string {
+  return table.map((row) => row.map((cell) => cell.replace(/[\t\r\n]+/g, " ")).join("\t")).join("\r\n");
+}
+
+/** Spreadsheet column letters: 0 → A, 26 → AA. */
+export function columnName(n: number): string {
+  let s = "";
+  for (let k = n + 1; k > 0; k = Math.floor((k - 1) / 26)) s = String.fromCharCode(65 + ((k - 1) % 26)) + s;
+  return s;
+}
+
+const XLSX_TYPES =
+  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+  '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+  '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+  '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+  '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
+const XLSX_RELS =
+  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+  '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+const XLSX_WORKBOOK_RELS =
+  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+  '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+  '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+const XLSX_STYLES =
+  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+  '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>' +
+  '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>' +
+  '<borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs>' +
+  '<cellXfs count="2"><xf/><xf fontId="1" applyFont="1"/></cellXfs></styleSheet>';
+
+/** A one-sheet .xlsx: bold, frozen header row, filters, sensible widths. */
+export function buildXlsx(sheetName: string, table: readonly (readonly string[])[]): Uint8Array {
+  const columns = table[0]?.length ?? 1;
+  const widths = Array.from({ length: columns }, (_, c) => Math.min(60, Math.max(8, ...table.map((row) => (row[c] ?? "").length + 2))));
+  const rowsXml = table
+    .map((row, r) => {
+      const cells = row
+        .map((cell, c) => {
+          const ref = `${columnName(c)}${r + 1}`;
+          if (r > 0 && /^\d{1,9}$/.test(cell)) return `<c r="${ref}"><v>${cell}</v></c>`;
+          const style = r === 0 ? ' s="1"' : "";
+          return `<c r="${ref}" t="inlineStr"${style}><is><t xml:space="preserve">${xml(cell)}</t></is></c>`;
+        })
+        .join("");
+      return `<row r="${r + 1}">${cells}</row>`;
+    })
+    .join("");
+  const range = `A1:${columnName(columns - 1)}${Math.max(1, table.length)}`;
+  const sheet =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+    `<cols>${widths.map((w, c) => `<col min="${c + 1}" max="${c + 1}" width="${w}" customWidth="1"/>`).join("")}</cols>` +
+    `<sheetData>${rowsXml}</sheetData><autoFilter ref="${range}"/></worksheet>`;
+  const name = xml(sheetName.slice(0, 31).replace(/[\\/?*:[\]]/g, " "));
+  const workbook =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+    `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${name}" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+  return zipSync({
+    "[Content_Types].xml": strToU8(XLSX_TYPES),
+    "_rels/.rels": strToU8(XLSX_RELS),
+    "xl/workbook.xml": strToU8(workbook),
+    "xl/_rels/workbook.xml.rels": strToU8(XLSX_WORKBOOK_RELS),
+    "xl/styles.xml": strToU8(XLSX_STYLES),
+    "xl/worksheets/sheet1.xml": strToU8(sheet),
+  });
+}

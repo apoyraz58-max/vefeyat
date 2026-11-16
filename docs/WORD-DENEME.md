@@ -114,6 +114,8 @@ seçince altında ne yazılacağı görünür ("Gazali'nin → Gazzâlî'nin"). 
 - **Şahıs dökümü:** metin, dipnot ve sonnotlardaki bütün geçişler; her satırda
   katalog kaydı, yazılı tarih ve durum. Özet satırı kaç dipnot ve sonnot
   okunduğunu da yazar. Satıra tıklayınca geçiş belgede seçilir.
+  **Excel'e aktar** dökümü .xlsx dosyası olarak kaydeder (başlık satırı sabit,
+  süzgeçli); **Panoya kopyala** Excel'e ya da bir Word tablosuna yapıştırılır.
 - **Tüm belgeyi denetle:** geçişleri tek tek gezer; **Denetimi bitir** duraklatır,
   **Denetime devam et** kaldığı yerden sürdürür. *Yalnız ilk kullanım* ayarında
   tekrarlar atlanır; yanlış yazılmış tarih olan geçişte her zaman durur.

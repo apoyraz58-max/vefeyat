@@ -7,7 +7,7 @@ import { canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelecti
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
-import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit } from "./pane/inventory.js";
+import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { addDate, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
 import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
@@ -196,6 +196,8 @@ export function initialise(): void {
   });
   $("inventory-refresh").addEventListener("click", () => void run(prepareInventory, "Şahıs dökümü hazırlanıyor"));
   $("inventory-act").addEventListener("click", () => void actOnRow());
+  $("inventory-xlsx").addEventListener("click", exportInventory);
+  $("inventory-copy").addEventListener("click", () => void copyInventory());
   $("inventory-prev").addEventListener("click", () => {
     if (state.page > 0) state.page--;
     renderInventory();

@@ -119,3 +119,20 @@ describe("static index from pages", () => {
     expect(pageLabel(9, 11)).toBe("ix");
   });
 });
+
+describe("Excel export", () => {
+  it("a one-sheet workbook with the inventory, header bold and filtered", async () => {
+    const { buildXlsx, inventoryTable, toTsv, columnName } = await import("../src/addin/submit.js");
+    const segs = [main(0, "Gazzâlî (ö. 506/1112) der.")];
+    const table = inventoryTable(buildInventory(segs, catalog), segs, () => "durum");
+    expect(table[0]![0]).toBe("Sıra");
+    expect(table[1]!.slice(1, 7)).toEqual(["Metin", "", "Gazzâlî", "Gazzâlî", "(ö. 505/1111)", "(ö. 506/1112)"]);
+    const files = unzipSync(buildXlsx("Şahıs dökümü", table));
+    const sheet = strFromU8(files["xl/worksheets/sheet1.xml"]!);
+    expect(sheet).toContain('<autoFilter ref="A1:J2"/>');
+    expect(sheet).toContain('t="inlineStr" s="1"');
+    expect(strFromU8(files["xl/workbook.xml"]!)).toContain('name="Şahıs dökümü"');
+    expect(toTsv([["a\tb", "c"]])).toBe("a b\tc");
+    expect([0, 25, 26, 51].map(columnName)).toEqual(["A", "Z", "AA", "AZ"]);
+  });
+});
