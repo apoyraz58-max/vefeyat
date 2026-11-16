@@ -7,6 +7,7 @@
 import { strToU8, zipSync } from "fflate";
 import { type DateKind, type Person, chronoYear, dateKind, isValidDate, nameQuery, normalize, personKey, textName } from "../core/index.js";
 import { type InventoryRow, type Segment, placeOf } from "./inventory.js";
+import { isLocal } from "./persons.js";
 
 // ---- Tutarlılık raporu ----
 
@@ -215,7 +216,7 @@ export function personReportDocx(documentName: string, rows: readonly InventoryR
     {
       table: {
         header: ["Şahıs (DİA)", "İlk geçişteki yazım", "Yer", "Geçiş", "Ölüm tarihi (DİA)", "Notlar", "DİA bağlantısı"],
-        rows: report.map((r) => [textName(r.person.shortName), r.firstAlias, r.location, String(r.mentions), r.person.deathDate, r.notes, r.person.source]),
+        rows: report.map((r) => [textName(r.person.shortName), r.firstAlias, r.location, String(r.mentions), r.person.deathDate, r.notes, isLocal(r.person) ? "kendi kaydı" : r.person.source]),
       },
     },
     {

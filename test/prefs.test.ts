@@ -45,6 +45,17 @@ describe("export and import", () => {
       spellings: { a: "Yeni", b: "B" },
       exclusions: ["x", "y"],
       confirmations: {},
+      persons: [],
     });
+  });
+});
+
+describe("own people in the preferences file", () => {
+  it("travel with export and import", () => {
+    const person = { shortName: "Asım Köksal", fullName: "", deathDate: "(1913-1998)", description: "Tarihçi" };
+    const parsed = parsePrefs(exportPrefs(DEFAULT_SETTINGS, {}, [], {}, [person]));
+    expect(parsed.ok && parsed.file.persons).toEqual([person]);
+    const old = parsePrefs('{"format":"vefeyat-tercihler","version":1}');
+    expect(old.ok && old.file.persons).toEqual([]);
   });
 });

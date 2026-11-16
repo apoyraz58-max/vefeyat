@@ -5,6 +5,7 @@
 import type { NameIndex, Person } from "../core/index.js";
 import { ENDNOTE_BASE, type InventoryRow, type Segment } from "./inventory.js";
 import { parseSpellings } from "./prefs.js";
+import { type LocalPerson, parseLocalPersons } from "./persons.js";
 import { DATE_TAG_PREFIX, type DateControl, type LegacyResolution, isLegacyDateField, legacyPerson } from "./health.js";
 import { type IndexLine, staticIndex, INDEX_CODE, isVefeyatIndexField, xeCode } from "./submit.js";
 import { type SettingName, type Settings, parseConfirmations, parseExclusions, settingValue } from "./logic.js";
@@ -135,6 +136,18 @@ const CONFIRMATIONS_KEY = "vefeyat.confirmations";
 const AUDIT_KEY = "vefeyat.audit";
 const EXCLUSIONS_KEY = "vefeyat.exclusions";
 const SPELLINGS_KEY = "vefeyat.spellings";
+const PERSONS_KEY = "vefeyat.persons";
+
+/** Kendi şahıslarım of this document. */
+export function readLocalPersons(): LocalPerson[] {
+  return parseLocalPersons(Office.context.document.settings.get(PERSONS_KEY));
+}
+
+export function writeLocalPersons(list: readonly LocalPerson[]): Promise<void> {
+  if (list.length === 0) Office.context.document.settings.remove(PERSONS_KEY);
+  else Office.context.document.settings.set(PERSONS_KEY, JSON.stringify(list));
+  return saveSettings();
+}
 
 /** Preferred spellings of this document (person key -> spelling). */
 export function readSpellings(): Record<string, string> {
@@ -373,7 +386,7 @@ export async function finalizeDocument(): Promise<{ controls: number; settings: 
   });
   const settings = Office.context.document.settings;
   let removed = 0;
-  for (const key of [CONFIRMATIONS_KEY, AUDIT_KEY, EXCLUSIONS_KEY, SPELLINGS_KEY, ...Object.values(SETTING_KEYS)]) {
+  for (const key of [CONFIRMATIONS_KEY, AUDIT_KEY, EXCLUSIONS_KEY, SPELLINGS_KEY, PERSONS_KEY, ...Object.values(SETTING_KEYS)]) {
     if (settings.get(key) !== null && settings.get(key) !== undefined) removed++;
     settings.remove(key);
   }

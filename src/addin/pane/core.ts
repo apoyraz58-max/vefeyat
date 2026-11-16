@@ -12,6 +12,8 @@ declare const __VERSION__: string;
 
 export interface State {
   catalog: Catalog | null;
+  /** The catalog from the CSV alone; `catalog` adds Kendi şahıslarım to it. */
+  baseCatalog: Catalog | null;
   catalogSource: "user" | "embedded" | null;
   alias: string | null;
   found: Lookup | null;
@@ -31,6 +33,7 @@ export interface State {
 
 export const state: State = {
   catalog: null,
+  baseCatalog: null,
   catalogSource: null,
   alias: null,
   found: null,

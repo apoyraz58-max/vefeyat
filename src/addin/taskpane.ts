@@ -4,7 +4,7 @@
 import { type Launch, earlierSpellings, parseLaunch, quickInsertBlocker } from "./logic.js";
 import { canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
 
-import { chooseCatalog, resetCatalog, restoreCatalog, runSearch } from "./pane/catalog.js";
+import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit } from "./pane/inventory.js";
@@ -24,6 +24,7 @@ export async function launch(request: Launch): Promise<void> {
   if (request.view === "toplu") await run(prepareBulk, "Öneriler hazırlanıyor");
   if (request.view === "gecmis") renderHistory();
   if (request.view === "kimlik") renderIdentities();
+  if (request.view === "katalog") renderLocals();
   if (request.view === "tercihler") renderSpellings();
   if (request.action === "prefer") await run(preferSelection);
   if (request.action === "clearSpelling") await run(clearSpellings);
@@ -95,6 +96,7 @@ export function initialise(): void {
   $("prefs-download").addEventListener("click", downloadPrefs);
   $("prefs-copy").addEventListener("click", () => void copyPrefs());
   $("prefs-apply").addEventListener("click", () => void run(applyPrefs));
+  $("local-add").addEventListener("click", () => void run(addLocal));
   $("frames-toggle").addEventListener("click", () => void run(toggleFrames));
   $("noproof-run").addEventListener("click", () => void run(noProofing, "Şahıs adları işaretleniyor"));
   const prefsFile = $<HTMLInputElement>("prefs-file");

@@ -244,6 +244,20 @@
         </div>
         <input id="catalog-file" type="file" accept=".csv,text/csv" hidden />
       </section>
+      <section id="locals">
+        <h2>Kendi şahıslarım</h2>
+        <p id="locals-summary" class="muted"></p>
+        <ol id="locals-list" class="inventory" aria-label="Kendi şahıslarım"></ol>
+        <label for="local-short">Kısa ad (metinde nasıl geçiyorsa)</label>
+        <input id="local-short" type="text" class="field" placeholder="Asım Köksal">
+        <label for="local-date">Ölüm tarihi</label>
+        <input id="local-date" type="text" class="field" placeholder="1998 · ö. 505/1111 · 1913-1998">
+        <label for="local-full">Tam ad (isteğe bağlı)</label>
+        <input id="local-full" type="text" class="field">
+        <label for="local-description">Açıklama (isteğe bağlı)</label>
+        <input id="local-description" type="text" class="field" placeholder="Tarihçi, Ankara Üniversitesi">
+        <div class="actions"><button id="local-add" type="button" class="primary">Ekle / güncelle</button></div>
+      </section>
     </div>
 
     <div id="view-yardim" class="view" data-title="Kılavuz" hidden>

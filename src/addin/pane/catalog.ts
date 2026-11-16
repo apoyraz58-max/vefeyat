@@ -1,9 +1,11 @@
 /** Vefeyât pane — the catalog (embedded or the user's CSV) and Şahıs ara. */
+import { type LocalPerson, upsertLocal, validateLocal, withLocal } from "../persons.js";
+import { readLocalPersons, writeLocalPersons } from "../word.js";
 import { Catalog, CatalogError } from "../../core/index.js";
 import { candidateLabel } from "../logic.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "../store.js";
 
-import { $, setMessage, showView, state, versions } from "./core.js";
+import { $, run, setMessage, showView, state, versions } from "./core.js";
 import { resetTags } from "./health.js";
 import { refresh } from "./selected.js";
 
@@ -49,12 +51,10 @@ export function describeCatalog(fileName: string, count: number, source: "user" 
 }
 
 export function useCatalog(csv: string, fileName: string, source: "user" | "embedded", persisted: boolean): void {
-  state.catalog = Catalog.fromCsv(csv);
-  versions.identity++;
-  resetTags();
-  state.index = null; // rebuilt on the next inventory
+  state.baseCatalog = Catalog.fromCsv(csv);
+  applyLocalPersons();
   state.catalogSource = source;
-  describeCatalog(fileName, state.catalog.people.length, source, persisted);
+  describeCatalog(fileName, state.baseCatalog.people.length, source, persisted);
 }
 
 /** User's own CSV first; otherwise the catalog published with the add-in. */
@@ -84,6 +84,7 @@ export async function restoreCatalog(): Promise<void> {
     }
   }
   state.catalog = null;
+  state.baseCatalog = null;
   resetTags();
   $("catalog-status").textContent = "Katalog yüklenemedi. Bilgisayarınızdaki DİA CSV dosyasını seçin.";
   $("no-catalog").hidden = false;
@@ -109,4 +110,82 @@ export async function resetCatalog(): Promise<void> {
   await clearCatalog();
   await restoreCatalog();
   setMessage(state.catalogSource === "embedded" ? "Eklentinin kataloğuna dönüldü." : "Eklentiyle gelen katalog bulunamadı.", "info");
+}
+
+// ---- Kendi şahıslarım ----
+
+/** Rebuilds the working catalog: the CSV plus the document's own people. */
+export function applyLocalPersons(): void {
+  if (!state.baseCatalog) return;
+  state.catalog = withLocal(state.baseCatalog, readLocalPersons());
+  versions.identity++;
+  resetTags();
+  state.index = null; // rebuilt on the next inventory
+}
+
+export function renderLocals(): void {
+  const list = readLocalPersons();
+  $("locals-summary").textContent = list.length
+    ? `Bu belgede ${list.length} kendi kaydınız var. Katalog kayıtları gibi kullanılır; DİA bağlantıları yoktur.`
+    : "Katalogda olmayan kişileri (modern yazarlar, DİA'da maddesi olmayanlar) buraya ekleyebilirsiniz. Kayıt bu belgeye kaydedilir.";
+  const out = $("locals-list");
+  out.replaceChildren();
+  for (const person of list) {
+    const item = document.createElement("li");
+    const name = document.createElement("strong");
+    name.textContent = person.shortName;
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = [person.deathDate || "tarih yok", person.fullName, person.description].filter(Boolean).join(" · ");
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "link";
+    edit.textContent = "Düzenle";
+    edit.addEventListener("click", () => fillLocalForm(person));
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "link";
+    remove.textContent = "Kaldır";
+    remove.addEventListener("click", () =>
+      void run(async () => {
+        await writeLocalPersons(readLocalPersons().filter((p) => p.shortName !== person.shortName));
+        applyLocalPersons();
+        renderLocals();
+        setMessage(`${person.shortName} kendi kayıtlarınızdan kaldırıldı.`, "success");
+      }),
+    );
+    item.append(name, meta, " ", edit, " ", remove);
+    out.append(item);
+  }
+}
+
+export function fillLocalForm(person: Partial<LocalPerson>): void {
+  $<HTMLInputElement>("local-short").value = person.shortName ?? "";
+  $<HTMLInputElement>("local-full").value = person.fullName ?? "";
+  $<HTMLInputElement>("local-date").value = (person.deathDate ?? "").replace(/^\(|\)$/g, "");
+  $<HTMLInputElement>("local-description").value = person.description ?? "";
+  $<HTMLInputElement>(person.shortName ? "local-date" : "local-short").focus();
+}
+
+export async function addLocal(): Promise<void> {
+  const checked = validateLocal({
+    shortName: $<HTMLInputElement>("local-short").value,
+    fullName: $<HTMLInputElement>("local-full").value,
+    deathDate: $<HTMLInputElement>("local-date").value,
+    description: $<HTMLInputElement>("local-description").value,
+  });
+  if (!checked.ok) {
+    setMessage(checked.reason, "warning");
+    return;
+  }
+  const inCatalog = state.baseCatalog?.find(checked.person.shortName, false).length ?? 0;
+  await writeLocalPersons(upsertLocal(readLocalPersons(), checked.person));
+  applyLocalPersons();
+  renderLocals();
+  fillLocalForm({});
+  setMessage(
+    `${checked.person.shortName} kendi kayıtlarınıza eklendi.` +
+      (inCatalog ? " Katalogda bu ada benzeyen kayıtlar da var; seçerken \"kendi kaydınız\" notuna bakın." : ""),
+    "success",
+  );
 }

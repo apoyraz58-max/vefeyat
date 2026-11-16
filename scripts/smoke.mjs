@@ -269,6 +269,22 @@ try {
     check("stale pane reloads once with the new version", url.includes("_v=9.9.9.9") && url.includes("view=yardim") && (await page.textContent("#message")).includes("eski kopyayı"), url);
     await page.close();
   }
+  // Kendi şahıslarım: a name the catalog lacks is added from the selected-name window and then dated.
+  tab = await open("", "Asım Köksal bu konuyu inceler.", "Asım Köksal");
+  await tab.waitForSelector("#candidates button");
+  await tab.click("#candidates button");
+  await tab.waitForSelector("#view-katalog:not([hidden])");
+  const prefilled = await tab.inputValue("#local-short");
+  await tab.fill("#local-date", "1913-1998");
+  await tab.fill("#local-description", "Tarihçi");
+  await tab.click("#local-add");
+  await tab.waitForFunction(() => (window.__doc.settings["vefeyat.persons"] || "").includes("Asım Köksal"));
+  check("own person added from the selected-name window", prefilled === "Asım Köksal" && (await tab.textContent("#locals-list")).includes("(1913-1998)"));
+  await tab.evaluate(() => history.replaceState(null, "", "?action=insert"));
+  await tab.reload();
+  await tab.waitForFunction(() => window.__doc.text.includes("1998"), null, { timeout: 5000 }).catch(() => {});
+  check("own person is dated like a catalog entry", (await docText(tab)) === "Asım Köksal (1913-1998) bu konuyu inceler.", await docText(tab));
+  await tab.close();
   // Ribbon buttons.
   tab = await open("?action=insert", "İlk kez Gazzâlî burada.", "Gazzâlî");
   check("ribbon insert writes at once when unambiguous", (await docText(tab)) === "İlk kez Gazzâlî (ö. 505/1111) burada.", await docText(tab));

@@ -53,6 +53,12 @@ adların çizgisi kalkar ve sağ tık menüsü görünür; tarih eklenen adlar k
 **Pencere.** Sağdaki Vefeyât penceresi, VBA'daki pencereler gibi yalnız düğmenin istediği işi
 gösterir (aday seçimi, onay, katalog, kılavuz). Ayar içermez.
 
+**Kendi şahıslarım.** Katalogda olmayan kişileri (modern yazarlar, DİA'da maddesi olmayanlar)
+**Veri ve yardım → Veri bilgisi** penceresindeki *Kendi şahıslarım* bölümünden ya da seçili ad
+katalogda yoksa çıkan **Kendi şahıslarıma ekle** düğmesiyle ekleyin (kısa ad, ölüm tarihi; isteğe
+bağlı tam ad ve açıklama). Kayıtlar belgeye kaydedilir, katalog kayıtları gibi kullanılır ("kendi
+kaydınız" notuyla) ve Tercihleri dışa aktar/al ile taşınır.
+
 **Katalog.** Eklentiyle yayımlanan DİA kataloğu kendiliğinden yüklenir. **Katalog → Başka bir
 CSV seç** ile kendi dosyanızı kullanabilirsiniz; **Eklentinin kataloğuna dön** ile geri
 dönersiniz.

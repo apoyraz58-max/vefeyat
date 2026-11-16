@@ -1,4 +1,6 @@
 /** Vefeyât pane — the selected-name window: candidates, dates, spellings, earlier mentions, Şahıs değil. */
+import { isLocal } from "../persons.js";
+import { fillLocalForm, renderLocals } from "./catalog.js";
 import { type Person, alreadyHasDate, isValidDate, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, scopeRule } from "../logic.js";
 import { type InventoryRow } from "../inventory.js";
@@ -6,7 +8,7 @@ import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
 import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, writeConfirmations } from "../word.js";
 
-import { $, documentRows, loadSettings, logHistory, setMessage, state, versions } from "./core.js";
+import { $, documentRows, loadSettings, logHistory, setMessage, state, versions, showView } from "./core.js";
 
 // ---- Selected name ----
 
@@ -44,6 +46,16 @@ export function renderCandidates(): void {
     empty.className = "muted";
     empty.textContent = "Katalogda bu adla eşleşen şahıs yok.";
     list.append(empty);
+    // Kendi şahıslarım: the selected name, ready to complete with a date.
+    const add = document.createElement("button");
+    add.type = "button";
+    add.textContent = "Kendi şahıslarıma ekle";
+    add.addEventListener("click", () => {
+      showView("katalog");
+      renderLocals();
+      fillLocalForm({ shortName: nameQuery(state.alias ?? "") });
+    });
+    list.append(add);
     return;
   }
   found.candidates.forEach((person, index) => {
@@ -80,10 +92,11 @@ export function renderCandidates(): void {
         : contextNote && chosenHere
           ? contextNote
           : matchHint(found.scores.get(personKey(person)) ?? 0);
-    if (note) {
+    const own = isLocal(person) ? "kendi kaydınız" : "";
+    if (note || own) {
       const hint = document.createElement("span");
       hint.className = "hint";
-      hint.textContent = ` · ${note}`;
+      hint.textContent = ` · ${[own, note].filter(Boolean).join(" · ")}`;
       text.append(hint);
     }
     if (person.description) {

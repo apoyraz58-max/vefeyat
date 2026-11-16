@@ -4,6 +4,7 @@
  */
 import { type Person, isValidAlias, nameQuery, personKey } from "../core/index.js";
 import { type Settings, SETTING_CHOICES, type SettingName, parseConfirmations, parseExclusions } from "./logic.js";
+import { type LocalPerson, parseLocalPersons, upsertLocal } from "./persons.js";
 
 /** person key -> preferred spelling (without a Turkish ending). */
 export type Spellings = Readonly<Record<string, string>>;
@@ -35,10 +36,26 @@ export interface PrefsFile {
   readonly spellings: Record<string, string>;
   readonly exclusions: string[];
   readonly confirmations: Record<string, string>;
+  /** Kendi şahıslarım (absent in files from older versions). */
+  readonly persons: LocalPerson[];
 }
 
-export function exportPrefs(settings: Settings, spellings: Spellings, exclusions: readonly string[], confirmations: Readonly<Record<string, string>>): string {
-  const file: PrefsFile = { format: "vefeyat-tercihler", version: 1, settings: { ...settings }, spellings: { ...spellings }, exclusions: [...exclusions], confirmations: { ...confirmations } };
+export function exportPrefs(
+  settings: Settings,
+  spellings: Spellings,
+  exclusions: readonly string[],
+  confirmations: Readonly<Record<string, string>>,
+  persons: readonly LocalPerson[] = [],
+): string {
+  const file: PrefsFile = {
+    format: "vefeyat-tercihler",
+    version: 1,
+    settings: { ...settings },
+    spellings: { ...spellings },
+    exclusions: [...exclusions],
+    confirmations: { ...confirmations },
+    persons: [...persons],
+  };
   return JSON.stringify(file, null, 2);
 }
 
@@ -68,18 +85,20 @@ export function parsePrefs(text: string): ImportResult {
       spellings: parseSpellings(JSON.stringify(raw.spellings ?? {})),
       exclusions: parseExclusions(JSON.stringify(raw.exclusions ?? [])),
       confirmations: parseConfirmations(JSON.stringify(raw.confirmations ?? {})),
+      persons: parseLocalPersons(JSON.stringify(raw.persons ?? [])),
     },
   };
 }
 
 /** Import merges lists into the document's own; imported values win. */
 export function mergePrefs(
-  current: { spellings: Spellings; exclusions: readonly string[]; confirmations: Readonly<Record<string, string>> },
+  current: { spellings: Spellings; exclusions: readonly string[]; confirmations: Readonly<Record<string, string>>; persons?: readonly LocalPerson[] },
   file: PrefsFile,
-): { spellings: Record<string, string>; exclusions: string[]; confirmations: Record<string, string> } {
+): { spellings: Record<string, string>; exclusions: string[]; confirmations: Record<string, string>; persons: LocalPerson[] } {
   return {
     spellings: { ...current.spellings, ...file.spellings },
     exclusions: [...new Set([...current.exclusions, ...file.exclusions])],
     confirmations: { ...current.confirmations, ...file.confirmations },
+    persons: file.persons.reduce((list, person) => upsertLocal(list, person), [...(current.persons ?? [])]),
   };
 }

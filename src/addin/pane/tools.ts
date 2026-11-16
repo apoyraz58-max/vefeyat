@@ -4,8 +4,9 @@ import { type SettingName, listConfirmations, dateTag } from "../logic.js";
 import { type InventoryRow, buildInventory } from "../inventory.js";
 import { HISTORY_LABEL, type Suggestion, applyOrder, bulkSuggestions, describeSuggestion } from "../bulk.js";
 import { exportPrefs, mergePrefs, parsePrefs } from "../prefs.js";
-import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, selectDateControl, replaceDateAfterSelection, canSkipProofing, skipProofing, insertDate, readConfirmations, readDocument, documentVersion, replaceSelection, selectMention, writeConfirmations } from "../word.js";
+import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, selectDateControl, replaceDateAfterSelection, canSkipProofing, skipProofing, insertDate, readConfirmations, readDocument, documentVersion, replaceSelection, selectMention, writeConfirmations, readLocalPersons, writeLocalPersons } from "../word.js";
 
+import { applyLocalPersons } from "./catalog.js";
 import { $, documentRows, history, loadSettings, logHistory, markSelected, placeOfRow, progress, run, setMessage, state, versions } from "./core.js";
 
 export function renderHistory(): void {
@@ -272,7 +273,7 @@ export async function clearSpellings(): Promise<void> {
 }
 
 export function prefsText(): string {
-  return exportPrefs(state.settings, readSpellings(), readExclusions(), readConfirmations());
+  return exportPrefs(state.settings, readSpellings(), readExclusions(), readConfirmations(), readLocalPersons());
 }
 
 export function downloadPrefs(): void {
@@ -307,15 +308,17 @@ export async function applyPrefs(): Promise<void> {
     setMessage(parsed.reason, "warning");
     return;
   }
-  const merged = mergePrefs({ spellings: readSpellings(), exclusions: readExclusions(), confirmations: readConfirmations() }, parsed.file);
+  const merged = mergePrefs({ spellings: readSpellings(), exclusions: readExclusions(), confirmations: readConfirmations(), persons: readLocalPersons() }, parsed.file);
   for (const [name, value] of Object.entries(parsed.file.settings)) await writeSetting(name as SettingName, value as string);
   await writeSpellings(merged.spellings);
   await writeExclusions(merged.exclusions);
   await writeConfirmations(merged.confirmations);
+  await writeLocalPersons(merged.persons);
+  applyLocalPersons();
   await loadSettings();
   renderSpellings();
   setMessage(
-    `Tercihler uygulandı: ${Object.keys(parsed.file.settings).length} ayar, ${Object.keys(parsed.file.spellings).length} yazım, ${parsed.file.exclusions.length} istisna, ${Object.keys(parsed.file.confirmations).length} kimlik onayı.`,
+    `Tercihler uygulandı: ${Object.keys(parsed.file.settings).length} ayar, ${Object.keys(parsed.file.spellings).length} yazım, ${parsed.file.exclusions.length} istisna, ${Object.keys(parsed.file.confirmations).length} kimlik onayı, ${parsed.file.persons.length} kendi şahıs kaydı.`,
     "success",
   );
 }
