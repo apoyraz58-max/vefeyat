@@ -10,7 +10,7 @@
   <body>
     <header>
       <div>
-        <h1 id="view-title">Vefeyât</h1>
+        <h1 id="view-title-row"><img src="assets/logo/vefeyat-mark.svg" alt="" class="brand" width="22" height="22"><span id="view-title">Vefeyât</span></h1>
         <p id="settings-summary" class="summary"></p>
       </div>
       <button id="back" type="button" class="link" hidden>← Seçili ad</button>
@@ -302,7 +302,11 @@
       </section>
       <section id="about">
         <h2>Hakkında</h2>
-        <p><strong>Vefeyât</strong> · sürüm <span id="about-version"></span></p>
+        <picture>
+          <source srcset="assets/logo/vefeyat-logo-dark.svg" media="(prefers-color-scheme: dark)">
+          <img src="assets/logo/vefeyat-logo.svg" alt="Vefeyât — şahıs adları ve vefat tarihleri" class="about-logo">
+        </picture>
+        <p>Sürüm <span id="about-version"></span></p>
         <p>Geliştiren: <strong>Abdurrahman Poyraz</strong><br>
           Sivas Cumhuriyet Üniversitesi İlahiyat Fakültesi</p>
         <p class="muted">Şahıs bilgileri ve ölüm tarihleri TDV İslâm Ansiklopedisi (DİA) kataloğundan alınır.

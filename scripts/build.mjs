@@ -49,6 +49,7 @@ for (const file of ["taskpane.html", "commands.html"]) {
 }
 await writeFile(new URL("version.json", out), JSON.stringify({ version }));
 await cp(new URL("assets/icons/", root), new URL("assets/icons/", out), { recursive: true });
+await cp(new URL("assets/logo/", root), new URL("assets/logo/", out), { recursive: true });
 for (const size of [16, 32, 64, 80, 128]) {
   await cp(new URL(`assets/icon-${size}.png`, root), new URL(`assets/icon-${size}.png`, out));
 }
