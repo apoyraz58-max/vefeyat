@@ -44,6 +44,9 @@ export async function insertDate(dateText: string, tag: string, title: string): 
     control.tag = tag;
     control.title = title;
     control.appearance = "Hidden";
+    // When the date is deleted by hand, Word shows the placeholder in the text
+    // ("Metin girmek için buraya tıklayın"); keep it invisible.
+    control.placeholderText = EMPTY_PLACEHOLDER;
     // Continue typing after the date, outside the control.
     control.getRange("After").select("Start");
     control.load("id");
@@ -738,6 +741,33 @@ async function findControl(context: Word.RequestContext, id: number): Promise<Wo
   return null;
 }
 
+const EMPTY_PLACEHOLDER = "\u200b";
+
+/**
+ * Vefeyât date controls whose date was deleted: Word keeps the empty control
+ * and shows its placeholder in the text. Removing them changes no visible
+ * text. Returns how many were removed.
+ */
+export async function removeEmptyDateControls(): Promise<number> {
+  return Word.run(async (context) => {
+    const lists = await controlLists(context);
+    const own = lists.flatMap(({ list }) => list.items.filter((c) => c.tag?.startsWith(DATE_TAG_PREFIX)));
+    for (const c of own) c.load("placeholderText");
+    await context.sync();
+    const empty = own.filter((c) => {
+      const text = (c.text ?? "").replace(/[\u200b\s]/g, "");
+      return text === "" || (!!c.placeholderText && c.text === c.placeholderText);
+    });
+    for (const c of empty) {
+      c.cannotDelete = false;
+      c.cannotEdit = false;
+      c.delete(false);
+    }
+    if (empty.length) await context.sync();
+    return empty.length;
+  });
+}
+
 /** Every Vefeyât date control, in reading order of body and footnotes. */
 export async function readDateControls(): Promise<DateControl[]> {
   return Word.run(async (context) =>
@@ -1352,6 +1382,9 @@ export async function updateDateAfterSelection(old: string, value: string, tag: 
     control.tag = tag;
     control.title = title;
     control.appearance = "Hidden";
+    // When the date is deleted by hand, Word shows the placeholder in the text
+    // ("Metin girmek için buraya tıklayın"); keep it invisible.
+    control.placeholderText = EMPTY_PLACEHOLDER;
     control.getRange("After").select("Start");
     control.load("id");
     await context.sync();

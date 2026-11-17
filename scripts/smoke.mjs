@@ -58,11 +58,12 @@ const FAKE_OFFICE = String.raw`
     get text() { return st.text; },
     search: (needle, options) => new R(0, st.text.length, st).search(needle, options),
     getRange: (loc) => new R(0, st.text.length, st).getRange(loc),
-    get contentControls() { return { items: st.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; },
+    get contentControls() { return { items: st.controls.filter((c) => c.range.s >= 0), load() { return this; } }; },
     get fields() { return { items: [], load() { return this; } }; },
     type: st === doc ? "MainDoc" : st.kind === "end" ? "Endnote" : "Footnote",
     load() { return this; },
   });
+  window.__R = (a, b) => new R(a, b);
   class R {
     constructor(s, e, st = doc) { this.s = s; this.e = e; this.st = st; }
     load() { return this; }
@@ -146,7 +147,7 @@ const FAKE_OFFICE = String.raw`
       doc.handlers = doc.handlers || { changed: [], added: [], deleted: [] };
       const events = (kind) => ({ add: (h) => { doc.handlers[kind].push(h); } });
       return fn({ document: { sections, onParagraphChanged: events("changed"), onParagraphAdded: events("added"), onParagraphDeleted: events("deleted"),
-        getParagraphByUniqueLocalId: (id) => items[Number(id.slice(1))], getSelection: () => new R(doc.sel[0], doc.sel[1], doc.selStory || doc), body: { search, paragraphs, fields, get footnotes() { return notesIn("foot", 0, 1e9); }, get endnotes() { return notesIn("end", 0, 1e9); }, get contentControls() { return { items: doc.controls.filter((c) => c.range.e > c.range.s), load() { return this; } }; } } }, sync: async () => {} });
+        getParagraphByUniqueLocalId: (id) => items[Number(id.slice(1))], getSelection: () => new R(doc.sel[0], doc.sel[1], doc.selStory || doc), body: { search, paragraphs, fields, get footnotes() { return notesIn("foot", 0, 1e9); }, get endnotes() { return notesIn("end", 0, 1e9); }, get contentControls() { return { items: doc.controls.filter((c) => c.range.s >= 0), load() { return this; } }; } } }, sync: async () => {} });
     },
   };
   window.Office = {
@@ -356,6 +357,17 @@ try {
   await tab.click("#update-date");
   await tab.waitForTimeout(300);
   check("Güncelle on a Vefeyât date replaces it with its control", (await docText(tab)) === "Gazzâlî (v. 505/1111) der." && (await tab.evaluate(() => window.__doc.controls.filter((c) => c.range.e > c.range.s).length)) === 1, await docText(tab));
+  await select(tab, "Gazzâlî");
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  // The date deleted by hand leaves an empty control (Word shows its placeholder): removed quietly.
+  await tab.evaluate(() => { const c = window.__doc.controls.find((x) => x.range.e > x.range.s); window.__R(c.range.s, c.range.e).delete(); c.range.s = c.range.e = window.__doc.text.indexOf(" der"); });
+  await tab.evaluate(() => window.go_view_saglik(undefined));
+  await tab.waitForTimeout(600);
+  check("empty date control left by a deleted date is removed", (await tab.evaluate(() => window.__doc.controls.filter((c) => c.range.s >= 0).length)) === 0 && (await docText(tab)) === "Gazzâlî der.", await docText(tab));
+  await tab.close();
+  tab = await open("", "Gazzâlî (ö. 505/1111) der.", "Gazzâlî");
+  await tab.evaluate(() => { window.__doc.settings["vefeyat.prefix"] = "o"; });
   await select(tab, "Gazzâlî");
   await tab.click("#insert");
   await tab.waitForTimeout(300);

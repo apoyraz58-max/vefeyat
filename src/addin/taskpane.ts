@@ -3,11 +3,11 @@
  */
 import { type Launch, earlierSpellings, parseLaunch, quickInsertBlocker } from "./logic.js";
 import { GO_FUNCTIONS, goQuery, register, registerSettingCommands } from "./actions.js";
-import { canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
+import { hasPendingChanges, canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
 
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
-import { offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
+import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { addDate, updateDate, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
@@ -200,7 +200,12 @@ export function initialise(): void {
     }, 250);
     // Typing moves the selection: once it rests, look whether a first mention moved.
     window.clearTimeout(upkeepTimer);
-    upkeepTimer = window.setTimeout(() => void checkFirstUse().catch(() => {}), 2000);
+    upkeepTimer = window.setTimeout(() => {
+      const edited = hasPendingChanges();
+      void (edited ? tidyEmptyDates() : Promise.resolve(0))
+        .then(() => checkFirstUse())
+        .catch(() => {});
+    }, 2000);
   });
   $("firstuse-review").addEventListener("click", () => {
     $("firstuse-notice").hidden = true;
@@ -245,7 +250,7 @@ export function initialise(): void {
   ready = restoreCatalog()
     .then(() => refresh())
     .catch(() => undefined);
-  void ready.then(() => launch(request));
+  void ready.then(() => launch(request)).then(() => tidyEmptyDates());
   registerRibbonFunctions();
 }
 

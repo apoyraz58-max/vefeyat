@@ -2,7 +2,7 @@
 import { NameIndex, textName } from "../../core/index.js";
 import { SETTING_CHOICES, dateTag } from "../logic.js";
 import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "../health.js";
-import { countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, readSettings, refreshSettings } from "../word.js";
+import { removeEmptyDateControls, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, readSettings, refreshSettings } from "../word.js";
 
 import { $, logHistory, markSelected, progress, run, setMessage, state } from "./core.js";
 
@@ -20,12 +20,23 @@ export function tags(): TagIndex | null {
   return tagIndex;
 }
 
+/**
+ * Removes the empty controls left when a Vefeyât date was deleted by hand
+ * (Word shows "Metin girmek için buraya tıklayın" there). Visible text does not change.
+ */
+export async function tidyEmptyDates(): Promise<number> {
+  const removed = await removeEmptyDateControls().catch(() => 0);
+  if (removed) logHistory("repair", `Silinmiş tarihlerin boş kalan ${removed} alanı kaldırıldı`);
+  return removed;
+}
+
 export async function checkHealth(): Promise<void> {
   const index = tags();
   if (!index) {
     setMessage("Katalog yüklenmedi.", "warning");
     return;
   }
+  await tidyEmptyDates();
   await refreshSettings();
   state.settings = readSettings();
   healthRows = checkControls(await readDateControls(), index, state.settings.prefix);
