@@ -241,7 +241,7 @@ try {
   await select(page, "Gazzâlî", 0);
   await page.click("#insert");
   await page.waitForTimeout(200);
-  check("existing date is not duplicated", (await page.textContent("#message")).includes("zaten bir tarih var"));
+  check("existing date is not duplicated", (await page.textContent("#message")).includes("zaten katalogdakiyle aynı") && (await docText(page)).split("(ö. 505/1111)").length === 3, await docText(page));
 
   await select(page, "Gazali'nin");
   check("weak spelling is not chosen automatically", !(await page.isVisible("#details")));
@@ -335,6 +335,31 @@ try {
   check("ribbon function switches the open pane to Şahıs dökümü", await tab.isVisible("#view-dokum"));
   await tab.evaluate(() => new Promise((resolve) => window.set_prefix_v({ completed: resolve })));
   check("Tercihler functions also live in the pane", (await tab.evaluate(() => window.__doc.settings["vefeyat.prefix"])) === "v");
+  await tab.waitForSelector("#prefix-offer:not([hidden])", { timeout: 3000 }).catch(() => {});
+  check("Kısaltma change offers to convert the document's dates", (await tab.textContent("#prefix-offer-text")).includes("1 Vefeyât tarihi"), await tab.textContent("#prefix-offer-text"));
+  await tab.click("#prefix-convert");
+  await tab.waitForTimeout(400);
+  check("dates converted to the new Kısaltma", (await docText(tab)) === "Giriş. İlk kez Gazzâlî (v. 505/1111) burada.", await docText(tab));
+  await tab.close();
+  // A date already after the name: Güncelle.
+  tab = await open("", "Gazzâlî (ö. 505/1112) der.", "Gazzâlî");
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  check("existing different date offers Güncelle", await tab.isVisible("#existing") && (await tab.textContent("#existing-text")).includes("(ö. 505/1111)"));
+  await tab.click("#update-date");
+  await tab.waitForTimeout(300);
+  check("Güncelle replaces the written date with a Vefeyât date", (await docText(tab)) === "Gazzâlî (ö. 505/1111) der." && (await tab.evaluate(() => window.__doc.controls.filter((c) => c.range.e > c.range.s && c.tag.startsWith("vefeyat:date:")).length)) === 1, await docText(tab));
+  await tab.evaluate(() => { window.__doc.settings["vefeyat.prefix"] = "v"; });
+  await select(tab, "Gazzâlî");
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  await tab.click("#update-date");
+  await tab.waitForTimeout(300);
+  check("Güncelle on a Vefeyât date replaces it with its control", (await docText(tab)) === "Gazzâlî (v. 505/1111) der." && (await tab.evaluate(() => window.__doc.controls.filter((c) => c.range.e > c.range.s).length)) === 1, await docText(tab));
+  await select(tab, "Gazzâlî");
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  check("same date: says it is already current", (await tab.textContent("#message")).includes("zaten katalogdakiyle aynı") && await tab.isHidden("#existing"));
   await tab.close();
   tab = await open("?view=kisayol", "Metin.", "", { api: ["KeyboardShortcuts 1.1"] });
   await tab.waitForSelector("#shortcuts:not([hidden])", { timeout: 3000 }).catch(() => {});

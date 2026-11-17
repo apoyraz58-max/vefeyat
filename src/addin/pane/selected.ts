@@ -1,12 +1,12 @@
 /** Vefeyât pane — the selected-name window: candidates, dates, spellings, earlier mentions, Şahıs değil. */
 import { isLocal } from "../persons.js";
 import { fillLocalForm, renderLocals } from "./catalog.js";
-import { type Person, alreadyHasDate, isValidDate, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
-import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, scopeRule } from "../logic.js";
+import { type Person, alreadyHasDate, formatDate, isValidDate, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
+import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
 import { type InventoryRow } from "../inventory.js";
 import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
-import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, writeConfirmations, selectionInNote } from "../word.js";
+import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, writeConfirmations, selectionInNote, updateDateAfterSelection } from "../word.js";
 
 import { $, documentRows, loadSettings, logHistory, setMessage, state, versions, showView } from "./core.js";
 
@@ -163,6 +163,57 @@ export function renderSpellingChoice(): void {
 
 export function hideEarlier(): void {
   $("earlier").hidden = true;
+  $("existing").hidden = true;
+  existingDate = null;
+}
+
+/** The date found after the name when Ölüm tarihi ekle was refused, for "Güncelle". */
+let existingDate: string | null = null;
+
+/**
+ * Ölüm tarihi ekle on a name that already carries a date: when it differs from
+ * the catalog (another year, another Kısaltma, an old catalog), offers to
+ * replace it; when it is the same, says so.
+ */
+function offerUpdate(person: Person, following: string): boolean {
+  const old = leadingDate(following);
+  if (!old || !isValidDate(person.deathDate)) return false;
+  const value = formatDate(person.deathDate, state.settings.prefix);
+  if (sameDate(old, value)) {
+    setMessage(`Adın arkasındaki tarih zaten katalogdakiyle aynı: ${value}`, "success");
+    return true;
+  }
+  existingDate = old;
+  $("existing-text").textContent = `Adın arkasında zaten bir tarih var: ${old}. Katalogdaki tarih: ${value}.`;
+  $("existing").hidden = false;
+  setMessage("", "info");
+  return true;
+}
+
+/** "Güncelle": the date after the name is replaced with the catalog's, as a Vefeyât date. */
+export async function updateDate(): Promise<void> {
+  const person = state.chosen;
+  const old = existingDate;
+  if (!person || !old) return;
+  await loadSettings();
+  const current = await currentSelection();
+  if (!current) return;
+  if (leadingDate(current.following) !== old) {
+    hideEarlier();
+    setMessage("Adın arkasındaki tarih değişti. Yeniden Ölüm tarihi ekle'ye basın.", "warning");
+    return;
+  }
+  const value = formatDate(person.deathDate, state.settings.prefix);
+  await rememberChoice();
+  const control = await updateDateAfterSelection(old, value, dateTag(person), `Vefeyât: ${textName(person.shortName)}`);
+  hideEarlier();
+  if (control === null) {
+    setMessage("Tarih adın hemen arkasında bulunamadı; değiştirilmedi.", "warning");
+    return;
+  }
+  logHistory("date", `${current.alias} ${old} → ${value}`, control);
+  setMessage(`Tarih güncellendi: ${old} → ${value}`, "success");
+  state.alias = null;
 }
 
 export async function refresh(force = false): Promise<void> {
@@ -235,6 +286,7 @@ export async function addDate(force: boolean): Promise<void> {
   if (!current) return;
   const plan = planDate(person, state.settings.prefix, current.following);
   if (!plan.ok) {
+    if (offerUpdate(person, current.following)) return;
     setMessage(plan.reason, "warning");
     return;
   }

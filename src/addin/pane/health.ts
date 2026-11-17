@@ -1,6 +1,6 @@
 /** Vefeyât pane — Belge sağlığı, VBA tarihlerini dönüştür, Tarihin kaynağı. */
 import { NameIndex, textName } from "../../core/index.js";
-import { dateTag } from "../logic.js";
+import { SETTING_CHOICES, dateTag } from "../logic.js";
 import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "../health.js";
 import { countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, readSettings, refreshSettings } from "../word.js";
 
@@ -149,4 +149,46 @@ export async function repairSource(): Promise<void> {
 
 export function resetTags(): void {
   tagIndex = null;
+}
+
+// ---- Kısaltma değişince ----
+
+let prefixRows: HealthRow[] = [];
+
+/**
+ * After Kısaltma changes (ribbon Ayarlar menu, Tercihleri al): when Vefeyât
+ * dates in the document still carry another abbreviation, offers to convert
+ * them. Hand-written dates are not Vefeyât dates and stay as they are.
+ */
+export async function offerPrefix(): Promise<void> {
+  const index = tags();
+  if (!index) return;
+  await refreshSettings();
+  state.settings = readSettings();
+  prefixRows = checkControls(await readDateControls(), index, state.settings.prefix).filter((r) => r.health === "prefix" && repairable(r));
+  $("prefix-offer").hidden = prefixRows.length === 0;
+  if (!prefixRows.length) return;
+  const label = SETTING_CHOICES.prefix[state.settings.prefix];
+  $("prefix-offer-text").textContent =
+    `Kısaltma: ${label}. Belgedeki ${prefixRows.length} Vefeyât tarihi başka kısaltmayla yazılı` +
+    ` (ör. ${prefixRows[0]!.text.trim()} → ${prefixRows[0]!.expected}). Bunlar da çevrilsin mi? Elle yazılmış tarihler değişmez.`;
+}
+
+export async function convertPrefix(): Promise<void> {
+  $("prefix-offer").hidden = true;
+  let fixed = 0;
+  for (const row of prefixRows) {
+    if (await writeDateControl(row.id, repairText(row, row.text))) {
+      fixed++;
+      logHistory("repair", `${row.text.trim()} → ${row.expected}`, row.id);
+    }
+  }
+  prefixRows = [];
+  setMessage(`${fixed} tarih yeni kısaltmaya çevrildi.`, "success");
+}
+
+export function declinePrefix(): void {
+  $("prefix-offer").hidden = true;
+  prefixRows = [];
+  setMessage("Yalnız ayar değişti; belgedeki tarihler olduğu gibi kaldı. Sonradan Belge sağlığı'ndan çevirebilirsiniz.", "info");
 }

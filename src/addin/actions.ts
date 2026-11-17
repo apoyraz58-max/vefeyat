@@ -23,12 +23,12 @@ export function register(name: string, handler: (event: CommandEvent) => void): 
 }
 
 /** Tercihler menus: each item stores one document setting. */
-export function registerSettingCommands(after?: () => Promise<void>): void {
+export function registerSettingCommands(after?: (setting: SettingName) => Promise<void>): void {
   for (const setting of Object.keys(SETTING_CHOICES) as SettingName[]) {
     for (const value of Object.keys(SETTING_CHOICES[setting])) {
       register(`set_${setting}_${value}`, (event) => {
         writeSetting(setting, value)
-          .then(() => after?.())
+          .then(() => after?.(setting))
           .catch(() => undefined)
           .finally(() => event?.completed());
       });

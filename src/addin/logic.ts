@@ -70,6 +70,26 @@ export function planDate(person: Person, prefix: PrefixKey, following: string): 
 }
 
 /**
+ * The date written directly after a name ("(ö. 505/1111)", "(1913-1998)"),
+ * as it stands in the text, or null. Only a parenthesis that startsWithDate
+ * accepts, ending at its own ")" on the same line.
+ */
+export function leadingDate(following: string): string | null {
+  if (!startsWithDate(following)) return null;
+  const open = following.indexOf("(");
+  const close = following.indexOf(")", open);
+  if (open < 0 || close < 0) return null;
+  const date = following.slice(open, close + 1);
+  return /[\r\n\u0007\u000b]/.test(date) || date.length > 60 ? null : date;
+}
+
+/** Whether two date texts are the same apart from spacing and case. */
+export function sameDate(a: string, b: string): boolean {
+  const key = (t: string): string => t.replace(/\s+/g, "").toLocaleLowerCase("tr");
+  return key(a) === key(b);
+}
+
+/**
  * Literal spellings searched before the selection to warn about an earlier
  * mention: the selected spelling, the three catalog names, their reading
  * order and the family part of the short name ("Râzî" of "Fahreddin er-Râzî").

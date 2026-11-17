@@ -17,6 +17,13 @@
     </header>
 
     <p id="message" class="message" hidden role="status"></p>
+    <div id="prefix-offer" class="message info" hidden>
+      <p id="prefix-offer-text"></p>
+      <div class="actions">
+        <button id="prefix-convert" type="button" class="primary">Çevir</button>
+        <button id="prefix-keep" type="button">Hayır, yalnız ayar</button>
+      </div>
+    </div>
     <div id="busy" class="busy" hidden role="status">
       <span id="busy-text">Çalışıyor…</span> <span id="busy-time" class="muted"></span>
       <button id="busy-cancel" type="button" class="link">İptal</button>
@@ -69,6 +76,13 @@
           <div class="actions">
             <button id="go-earlier" type="button">Önceki geçişe git</button>
             <button id="insert-anyway" type="button">Yine de ekle</button>
+          </div>
+        </div>
+
+        <div id="existing" class="message info" hidden>
+          <p id="existing-text"></p>
+          <div class="actions">
+            <button id="update-date" type="button" class="primary">Güncelle</button>
           </div>
         </div>
 

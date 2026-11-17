@@ -1323,6 +1323,42 @@ export async function replaceDateAfterSelection(old: string, value: string): Pro
   });
 }
 
+/**
+ * "Güncelle": the date written right after the selected name (`old`) gives way
+ * to a new Vefeyât date. A Vefeyât date goes with its control; a hand-written
+ * one with the space before it. Returns the new control's id, or null when
+ * `old` is not directly after the name.
+ */
+export async function updateDateAfterSelection(old: string, value: string, tag: string, title: string): Promise<number | null> {
+  return Word.run(async (context) => {
+    const selection = context.document.getSelection();
+    const rest = selection.getRange("End").expandTo(selection.paragraphs.getFirst().getRange("End"));
+    const found = rest.search(searchText(old), { matchCase: true, matchWholeWord: false });
+    found.load("items/text");
+    await context.sync();
+    const target = found.items[0];
+    if (!target) return null;
+    const gap = selection.getRange("End").expandTo(target.getRange("Start"));
+    gap.load("text");
+    const owner = target.parentContentControlOrNullObject;
+    owner.load("tag");
+    await context.sync();
+    if (gap.text.trim().length > 0) return null;
+    if (!owner.isNullObject && owner.tag?.startsWith(DATE_TAG_PREFIX)) owner.delete(false);
+    else gap.expandTo(target).delete();
+    if (Office.context.requirements.isSetSupported("WordApiDesktop", "1.3")) selection.hasNoProofing = true;
+    const inserted = selection.getRange("End").insertText(` ${value}`, "After");
+    const control = inserted.insertContentControl();
+    control.tag = tag;
+    control.title = title;
+    control.appearance = "Hidden";
+    control.getRange("After").select("Start");
+    control.load("id");
+    await context.sync();
+    return control.id;
+  });
+}
+
 /** Whether the selection is inside a footnote or an endnote (WordApi 1.3: Body.type). */
 export async function selectionInNote(): Promise<boolean> {
   return Word.run(async (context) => {

@@ -97,8 +97,13 @@ uyuşanlar taşınır ya da kaldırılır, kimliği tahmine dayananlar işaretsi
 izleyebilen güncel Microsoft 365 Word'de kendiliğinden çıkar; diğerlerinde Toplu
 düzeltme önizlemesini açtığınızda öneriler yine görünür.)
 
-Adın arkasında zaten tarih varsa ikinci tarih eklenmez. **Kısaltma** menüsü önek
-biçimini (ö. / öl. / v. / kaynaktaki gibi) belirler.
+Adın arkasında zaten tarih varsa ikinci tarih eklenmez. Tarih katalogdakiyle aynıysa
+"zaten aynı" denir; farklıysa (başka yıl, başka kısaltma, elle yazılmış) **Güncelle**
+düğmesi çıkar ve tarihi katalogdakiyle değiştirir; elle yazılmış tarih de Vefeyât
+tarihine dönüşür. **Kısaltma** menüsü önek biçimini (ö. / öl. / v. / kaynaktaki gibi)
+belirler. Kısaltmayı değiştirince belgede başka kısaltmalı Vefeyât tarihi varsa panel
+"çevrilsin mi?" diye sorar: **Çevir** hepsini yeni kısaltmaya çevirir, **Hayır** yalnız
+ayarı değiştirir. Elle yazılmış tarihler değişmez.
 
 **Eş adlılar.** Bir ad birden çok kişiye uyuyorsa pencere adayları gösterir; seçili
 olan renkli ve "seçili" etiketlidir. Seçiminiz o geçiş için belgeye kaydedilir

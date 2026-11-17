@@ -7,9 +7,9 @@ import { canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelecti
 
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
-import { checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
+import { offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
-import { addDate, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
+import { addDate, updateDate, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
 import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
@@ -103,7 +103,10 @@ export function initialise(): void {
   $("shortcuts-save").addEventListener("click", () => void run(saveShortcuts));
   $("shortcuts-reset").addEventListener("click", () => void run(resetShortcuts));
   $("prefs-copy").addEventListener("click", () => void copyPrefs());
-  $("prefs-apply").addEventListener("click", () => void run(applyPrefs));
+  $("prefs-apply").addEventListener("click", () => void run(async () => {
+    await applyPrefs();
+    await offerPrefix();
+  }));
   $("local-add").addEventListener("click", () => void run(addLocal));
   $("frames-toggle").addEventListener("click", () => void run(toggleFrames));
   $("noproof-run").addEventListener("click", () => void run(noProofing, "Şahıs adları işaretleniyor"));
@@ -170,6 +173,9 @@ export function initialise(): void {
   });
   $("insert").addEventListener("click", () => void run(() => addDate(false)));
   $("insert-anyway").addEventListener("click", () => void run(() => addDate(true)));
+  $("update-date").addEventListener("click", () => void run(updateDate));
+  $("prefix-convert").addEventListener("click", () => void run(convertPrefix, "Tarihler çevriliyor"));
+  $("prefix-keep").addEventListener("click", declinePrefix);
   $("go-earlier").addEventListener("click", () =>
     void run(async () => {
       const row = earlierRow;
@@ -266,7 +272,10 @@ function registerRibbonFunctions(): void {
         .catch(() => undefined);
     });
   }
-  registerSettingCommands(() => refresh());
+  registerSettingCommands(async (setting) => {
+    await refresh();
+    if (setting === "prefix") await offerPrefix();
+  });
 }
 
 Office.onReady((info) => {
