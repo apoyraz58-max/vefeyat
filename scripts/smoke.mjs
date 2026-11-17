@@ -263,7 +263,7 @@ try {
   await commands.waitForFunction(() => typeof window.set_prefix_v === "function");
   const done = await commands.evaluate(() => new Promise((resolve) => window.set_prefix_v({ completed: () => resolve(window.__doc.settings["vefeyat.prefix"]) })));
   check("Kısaltma menu stores the setting", done === "v");
-  check("all 15 setting commands registered", (await commands.evaluate(() => Object.keys(window).filter((k) => k.startsWith("set_")).length)) === 15);
+  check("all 16 setting commands registered", (await commands.evaluate(() => Object.keys(window).filter((k) => k.startsWith("set_")).length)) === 16);
   await commands.close();
 
   await page.evaluate(() => { window.__doc.settings["vefeyat.prefix"] = "v"; window.__doc.settings["vefeyat.nameForm"] = "full"; });

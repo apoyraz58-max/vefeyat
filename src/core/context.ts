@@ -243,7 +243,7 @@ export function isSchool(window: string, localFirst: number, length: number, lit
   const after = words(mid(window, localFirst + length + 1));
   if (["imam", "fakih", "alim", "muhadis"].some((item) => endsWithWord(before, item))) return false;
   // "Eş'arî (ö. 324/935)", "Ebü'l-Hasan el-Eş'arî": the scholar himself.
-  if (/^\s*\((ö|öl|v)\.\s*\d/.test(mid(window, localFirst + length + 1))) return false;
+  if (/^\s*\((ö|öl|v|d)\.\s*\d/.test(mid(window, localFirst + length + 1))) return false;
   if (/^(el|al)[-‐]/i.test(literal) || /\b(el|al)[-‐]$/i.test(left(window, localFirst))) return false;
   if (vbTrim(before).length > 0) {
     const prior = vbTrim(before).split(" ");

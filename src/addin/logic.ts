@@ -206,7 +206,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = { prefix: "o", scope: "first", nameForm: "ask", auditMode: "all" };
 
 export const SETTING_CHOICES = {
-  prefix: { original: "Kaynakta olduğu gibi", o: "ö.", ol: "öl.", v: "v." },
+  prefix: { original: "Kaynakta olduğu gibi", o: "ö.", ol: "öl.", v: "v.", d: "d. (İngilizce)" },
   scope: { first: "Yalnız ilk kullanım", chapter: "Her bölümde ilk kullanım", all: "Bütün kullanımlar", none: "Yalnız denetle" },
   nameForm: { ask: "Her seferinde sor", near: "Seçili ada yakın", short: "Kısa ad", full: "Tam / uzun ad", original: "Orijinal ad" },
   auditMode: { all: "Tüm geçişler", undated: "Tarihi olmayanlar" },

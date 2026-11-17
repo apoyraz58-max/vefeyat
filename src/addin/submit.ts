@@ -30,6 +30,7 @@ const MARKERS: ReadonlyArray<readonly [string, string]> = [
   ["(ö.", "ö."],
   ["(öl.", "öl."],
   ["(v.", "v."],
+  ["(d.", "d."],
 ];
 const KIND_LABELS: Record<DateKind, string> = {
   hijriGregorian: "hicrî/milâdî (505/1111)",

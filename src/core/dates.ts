@@ -10,10 +10,10 @@ import { normalize } from "./normalize.js";
 import { normalizeWhitespace } from "./alias.js";
 import { vbLower, vbTrim } from "./text.js";
 
-/** Death-date marker setting: as in the catalog, "ö.", "öl." or "v.". */
-export type PrefixKey = "original" | "o" | "ol" | "v";
+/** Death-date marker setting: as in the catalog, "ö.", "öl.", "v." or "d." (died, for English texts). */
+export type PrefixKey = "original" | "o" | "ol" | "v" | "d";
 
-export const PREFIX_KEYS: readonly PrefixKey[] = ["original", "o", "ol", "v"];
+export const PREFIX_KEYS: readonly PrefixKey[] = ["original", "o", "ol", "v", "d"];
 
 export class InvalidSettingError extends Error {
   constructor(message: string) {
@@ -38,6 +38,8 @@ export function prefixLabel(prefix: PrefixKey): string {
       return "öl.";
     case "v":
       return "v.";
+    case "d":
+      return "d.";
     default:
       return "";
   }

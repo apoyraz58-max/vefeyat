@@ -14,3 +14,17 @@ describe("leadingDate / sameDate", () => {
     expect(sameDate("(ö. 505/1111)", "(v. 505/1111)")).toBe(false);
   });
 });
+
+describe("d. (died) for English texts", () => {
+  it("formats, is recognised as a date and as a prefix variant", async () => {
+    const { formatDate, startsWithDate, requirePrefix } = await import("../src/core/index.js");
+    const { checkDate } = await import("../src/addin/health.js");
+    expect(requirePrefix("d")).toBe("d");
+    expect(formatDate("(ö. 505/1111)", "d")).toBe("(d. 505/1111)");
+    expect(formatDate("(1844-1921)", "d")).toBe("(1844-1921)");
+    expect(startsWithDate(" (d. 505/1111) argues")).toBe(true);
+    const person = { shortName: "Gazzâlî", fullName: "", originalName: "", deathDate: "(ö. 505/1111)", description: "", source: "" };
+    expect(checkDate("(ö. 505/1111)", person, "d")).toEqual({ health: "prefix", expected: "(d. 505/1111)" });
+    expect(checkDate(" (d. 505/1111)", person, "d").health).toBe("ok");
+  });
+});

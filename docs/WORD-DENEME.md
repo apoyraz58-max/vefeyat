@@ -100,7 +100,7 @@ düzeltme önizlemesini açtığınızda öneriler yine görünür.)
 Adın arkasında zaten tarih varsa ikinci tarih eklenmez. Tarih katalogdakiyle aynıysa
 "zaten aynı" denir; farklıysa (başka yıl, başka kısaltma, elle yazılmış) **Güncelle**
 düğmesi çıkar ve tarihi katalogdakiyle değiştirir; elle yazılmış tarih de Vefeyât
-tarihine dönüşür. **Kısaltma** menüsü önek biçimini (ö. / öl. / v. / kaynaktaki gibi)
+tarihine dönüşür. **Kısaltma** menüsü önek biçimini (ö. / öl. / v. / İngilizce metinler için d. / kaynaktaki gibi)
 belirler. Kısaltmayı değiştirince belgede başka kısaltmalı Vefeyât tarihi varsa panel
 "çevrilsin mi?" diye sorar: **Çevir** hepsini yeni kısaltmaya çevirir, **Hayır** yalnız
 ayarı değiştirir. Elle yazılmış tarihler değişmez.

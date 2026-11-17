@@ -126,7 +126,7 @@ groups = [
         setting_menu("nameForm", "Ad biçimi", "İsim yazımında önce önerilecek biçim.", "nameform",
                      [("ask", "Her seferinde sor"), ("near", "Seçili ada yakın"), ("short", "Kısa ad"), ("full", "Tam / uzun ad"), ("original", "Orijinal ad")]),
         setting_menu("prefix", "Kısaltma", "Ölüm tarihinin başındaki kısaltma.", "prefix",
-                     [("original", "Kaynakta olduğu gibi"), ("o", "ö."), ("ol", "öl."), ("v", "v.")]),
+                     [("original", "Kaynakta olduğu gibi"), ("o", "ö."), ("ol", "öl."), ("v", "v."), ("d", "d. (İngilizce metinler)")]),
         menu("Prefs", S("Prefs", "Ayarlar"), L("Prefs.Tip", "Yazım tercihleri ve görünüm ayarları."), "settings", [
             item("Prefer", S("Prefer", "Seçili yazımı tercih et"), L("Prefer.Tip", "Seçili adın yazımını bu şahıs için belgeye özgü tercih olarak kaydeder."), "settings", pane(U("U.Prefer", "taskpane.html?action=prefer"))),
             item("ClearSpelling", S("ClearSpelling", "Yazım tercihlerini temizle"), L("ClearSpelling.Tip", "Belgeye özgü yazım tercihlerini siler."), "settings", pane(U("U.ClearSpelling", "taskpane.html?action=clearSpelling"))),

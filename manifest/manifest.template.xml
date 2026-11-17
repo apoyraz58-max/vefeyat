@@ -744,6 +744,21 @@
                         <FunctionName>set_prefix_v</FunctionName>
                       </Action>
                     </Item>
+                    <Item id="Vefeyat.S.prefix.d">
+                      <Label resid="S.prefix.d"/>
+                      <Supertip>
+                        <Title resid="S.prefix.d"/>
+                        <Description resid="S.prefix.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.prefix.16"/>
+                        <bt:Image size="32" resid="Ic.prefix.32"/>
+                        <bt:Image size="80" resid="Ic.prefix.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_prefix_d</FunctionName>
+                      </Action>
+                    </Item>
                   </Items>
                 </Control>
                 <Control xsi:type="Menu" id="Vefeyat.Prefs">
@@ -1167,6 +1182,7 @@
         <bt:String id="S.prefix.o" DefaultValue="ö."/>
         <bt:String id="S.prefix.ol" DefaultValue="öl."/>
         <bt:String id="S.prefix.v" DefaultValue="v."/>
+        <bt:String id="S.prefix.d" DefaultValue="d. (İngilizce metinler)"/>
         <bt:String id="S.prefix" DefaultValue="Kısaltma"/>
         <bt:String id="Prefs" DefaultValue="Ayarlar"/>
         <bt:String id="Prefer" DefaultValue="Seçili yazımı tercih et"/>
