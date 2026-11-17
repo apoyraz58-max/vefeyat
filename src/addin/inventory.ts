@@ -138,7 +138,8 @@ export function spellingMatches(person: Person, literal: string): boolean {
 export function notePeopleOrMatches(segment: Pick<Segment, "part" | "text">, index: NameIndex): Match[] {
   // Citation islands ("Gazzâlî, el-Mustasfâ, I, 45", "(Gazzâlî, 1993: 45)")
   // are left out in both parts; the rest of the paragraph or footnote is read.
-  const names = findMatches(segment.text, index, false).map((h): NameHit => [h.start, h.length, h.text]);
+  // In the main text only islands with a digit count: a paragraph without one has none to look for.
+  const names = segment.part === "main" && !/\d/.test(segment.text) ? [] : findMatches(segment.text, index, false).map((h): NameHit => [h.start, h.length, h.text]);
   let spans = citationSpans(segment.text, names);
   if (segment.part === "main") {
     // Main text narrates more than it cites: only islands with a locator
@@ -182,6 +183,48 @@ export function buildInventory(
   exclusions: readonly string[] = [],
   spellings: Readonly<Record<string, string>> = {},
 ): InventoryRow[] {
+  const steps = inventorySteps(segments, catalog, index, confirmations, exclusions, spellings);
+  let step = steps.next();
+  while (!step.done) step = steps.next();
+  return step.value;
+}
+
+/**
+ * buildInventory for the pane: the same work, handed back to the browser
+ * every few milliseconds so the window stays responsive on a long thesis,
+ * with the number of paragraphs done for a progress bar.
+ */
+export async function buildInventoryAsync(
+  segments: readonly Segment[],
+  catalog: Catalog,
+  index = new NameIndex(catalog.people),
+  confirmations: Confirmations = {},
+  exclusions: readonly string[] = [],
+  spellings: Readonly<Record<string, string>> = {},
+  progress: (done: number, total: number) => void = () => {},
+): Promise<InventoryRow[]> {
+  const steps = inventorySteps(segments, catalog, index, confirmations, exclusions, spellings);
+  let pause = Date.now();
+  let step = steps.next();
+  while (!step.done) {
+    if (Date.now() - pause > 40) {
+      progress(step.value, segments.length);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      pause = Date.now();
+    }
+    step = steps.next();
+  }
+  return step.value;
+}
+
+function* inventorySteps(
+  segments: readonly Segment[],
+  catalog: Catalog,
+  index: NameIndex,
+  confirmations: Confirmations,
+  exclusions: readonly string[],
+  spellings: Readonly<Record<string, string>>,
+): Generator<number, InventoryRow[]> {
   const excluded = new Set(exclusions);
   const ordered = segments
     .map((segment, i) => ({ segment, i }))
@@ -194,7 +237,9 @@ export function buildInventory(
   const bibliography = new Set(mains.filter((_, k) => flags[k]).map((o) => o.segment.anchor));
   const lowerWords = lowerCaseWords(segments.map((s) => s.text));
   let chapter = 0;
+  let done = 0;
   for (const { segment, i } of ordered) {
+    yield done++;
     if (segment.part === "main" && isChapterHeading(segment.text, segment.style)) chapter++;
     if (bibliography.has(segment.anchor)) continue;
     const known = notePeopleOrMatches(segment, index);

@@ -2,11 +2,11 @@
 import { buildXlsx, inventoryTable, toTsv } from "../submit.js";
 import { NameIndex } from "../../core/index.js";
 import { auditRows } from "../logic.js";
-import { type InventoryRow, buildInventory, catalogLabel, hasDateIssue, statusLabel, summarize } from "../inventory.js";
+import { type InventoryRow, buildInventoryAsync, catalogLabel, hasDateIssue, statusLabel, summarize } from "../inventory.js";
 import { parseBookmark, resumeIndex, rowKey } from "../bulk.js";
 import { readSpellings, readExclusions, readAuditBookmark, writeAuditBookmark, readConfirmations, readDocument, documentVersion, selectMention, documentName } from "../word.js";
 
-import { $, PAGE_SIZE, loadSettings, noteCounts, placeOfRow, run, setMessage, showView, state, versions } from "./core.js";
+import { $, PAGE_SIZE, loadSettings, noteCounts, placeOfRow, run, setMessage, showView, state, versions, progress } from "./core.js";
 import { refresh } from "./selected.js";
 
 export async function prepareInventory(): Promise<void> {
@@ -18,7 +18,7 @@ export async function prepareInventory(): Promise<void> {
   const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.page = 0;
   state.selectedRow = null;
@@ -92,7 +92,7 @@ export async function startAudit(): Promise<void> {
   const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.audit = auditRows(state.rows, state.settings);
   state.auditAt = 0;
@@ -121,7 +121,7 @@ export async function resumeAudit(): Promise<void> {
   const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.audit = auditRows(state.rows, state.settings);
   const at = resumeIndex(state.audit, state.segments, bookmark);

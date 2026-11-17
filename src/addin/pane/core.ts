@@ -1,7 +1,7 @@
 /** Vefeyât pane — shared state, messages, the busy bar and long-operation runner, the cached reading of the document, İşlem geçmişi. */
 import { Catalog, NameIndex, type Person } from "../../core/index.js";
 import { DEFAULT_SETTINGS, type Lookup, type Settings, type View, settingsSummary } from "../logic.js";
-import { type InventoryRow, type Segment, buildInventory, placeOf } from "../inventory.js";
+import { type InventoryRow, type Segment, buildInventoryAsync, placeOf } from "../inventory.js";
 import { type HistoryEntry, type HistoryKind, addHistory, parseHistory } from "../bulk.js";
 import { readSpellings, readExclusions, readConfirmations, readDocument, documentVersion, readSettings, refreshSettings } from "../word.js";
 
@@ -169,7 +169,7 @@ export async function documentRows(): Promise<InventoryRow[]> {
   if (state.rows.length > 0 && stamp === versions.rowsBuiltFor) return state.rows;
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
   versions.rowsBuiltFor = stamp;
   return state.rows;
 }

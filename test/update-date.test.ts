@@ -28,3 +28,16 @@ describe("d. (died) for English texts", () => {
     expect(checkDate(" (d. 505/1111)", person, "d").health).toBe("ok");
   });
 });
+
+describe("buildInventoryAsync", () => {
+  it("gives the same rows as buildInventory", async () => {
+    const { buildInventory, buildInventoryAsync } = await import("../src/addin/inventory.js");
+    const { Catalog } = await import("../src/core/index.js");
+    const p = (shortName: string, deathDate: string) => ({ shortName, fullName: "", originalName: "", deathDate, description: "", source: "x" + shortName });
+    const catalog = new Catalog([p("Gazzâlî", "(ö. 505/1111)"), p("Cüveynî", "(ö. 478/1085)")]);
+    const segments = Array.from({ length: 300 }, (_, k) => ({ part: "main" as const, anchor: k, order: 0, text: k % 2 ? "Gazzâlî der." : "Cüveynî (ö. 478/1085) der." }));
+    let reported = 0;
+    const rows = await buildInventoryAsync(segments, catalog, undefined, {}, [], {}, () => reported++);
+    expect(rows).toEqual(buildInventory(segments, catalog));
+  });
+});

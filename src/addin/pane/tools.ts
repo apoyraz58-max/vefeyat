@@ -1,7 +1,7 @@
 /** Vefeyât pane — İşlem geçmişi list, Toplu düzeltme, Belge istisnaları, Kimlik eşleşmeleri, Denetim kapsamı, Tercihler. */
 import { NameIndex, personKey, textName } from "../../core/index.js";
 import { type SettingName, listConfirmations, dateTag } from "../logic.js";
-import { type InventoryRow, buildInventory } from "../inventory.js";
+import { type InventoryRow, buildInventoryAsync } from "../inventory.js";
 import { HISTORY_LABEL, type Suggestion, applyOrder, bulkSuggestions, describeSuggestion, firstUseSuggestions } from "../bulk.js";
 import { exportPrefs, mergePrefs, parsePrefs } from "../prefs.js";
 import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, selectDateControl, replaceDateAfterSelection, canSkipProofing, skipProofing, insertDate, readConfirmations, readDocument, documentVersion, replaceSelection, selectMention, writeConfirmations, readLocalPersons, writeLocalPersons, removeDateAfter, hasPendingChanges, documentRead, watchDocument } from "../word.js";
@@ -52,7 +52,7 @@ export async function prepareBulk(): Promise<void> {
   const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
   state.segments = read.segments;
-  state.rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   suggestions = bulkSuggestions(state.rows, state.settings, readSpellings());
   bulkChosen.clear();

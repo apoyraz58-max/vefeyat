@@ -59,7 +59,23 @@ function isIgnoredMark(code: number): boolean {
 }
 
 /** `VefeyatNormalize`. */
+// normalize runs on the same words again and again in a long document: short
+// inputs are remembered (bounded, cleared when full).
+const NORMALIZE_MEMO = new Map<string, string>();
+const MEMO_INPUT = 160;
+const MEMO_SIZE = 60000;
+
 export function normalize(text: string): string {
+  if (text.length > MEMO_INPUT) return normalizeUncached(text);
+  const known = NORMALIZE_MEMO.get(text);
+  if (known !== undefined) return known;
+  const result = normalizeUncached(text);
+  if (NORMALIZE_MEMO.size >= MEMO_SIZE) NORMALIZE_MEMO.clear();
+  NORMALIZE_MEMO.set(text, result);
+  return result;
+}
+
+function normalizeUncached(text: string): string {
   // Fold Turkish I before lowercasing to avoid locale-specific results.
   let lowered = "";
   for (const ch of text) {

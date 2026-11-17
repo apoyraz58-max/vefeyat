@@ -362,6 +362,27 @@ try {
   await tab.click("#insert");
   await tab.waitForTimeout(300);
   await tab.close();
+  // A long thesis: Şahıs dökümü must not freeze the window (work is handed back to the browser).
+  {
+    const names = ["Gazzâlî", "Fahreddin er-Râzî", "İbn Sînâ", "Cüveynî", "Şâfiî", "Zemahşerî"];
+    const filler = "Fıkıh usûlünün mahiyetine ilişkin görüşler, usûlcülerin bu ilim için yaptıkları tariflerden de anlaşılabilir.";
+    const big = Array.from({ length: 3000 }, (_, k) => `${filler} ${names[k % names.length]} bu konuda şöyle der${k % 3 ? "" : " (1993: 45)"}. ${filler}`).join("\r");
+    tab = await open("", big);
+    await tab.waitForTimeout(1500);
+    await tab.evaluate(() => {
+      window.__longest = 0;
+      let last = performance.now();
+      window.__beat = setInterval(() => { const now = performance.now(); window.__longest = Math.max(window.__longest, now - last); last = now; }, 10);
+    });
+    const t0 = Date.now();
+    await tab.evaluate(() => window.go_view_dokum(undefined));
+    await tab.waitForFunction(() => /\d+ geçiş/.test(document.getElementById("inventory-summary")?.textContent ?? ""), null, { timeout: 60000 });
+    const took = Date.now() - t0;
+    const longest = await tab.evaluate(() => { clearInterval(window.__beat); return Math.round(window.__longest); });
+    console.log(`    3000 paragraf: döküm ${took} ms, en uzun donma ${longest} ms`);
+    check("long thesis: inventory keeps the window responsive", longest < 1000, `${longest} ms`);
+    await tab.close();
+  }
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
   await tab.click("#insert");

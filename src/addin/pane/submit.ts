@@ -1,6 +1,6 @@
 /** Vefeyât pane — Teslim ve dizin: Tutarlılık raporu, Şahıs raporu, Şahıslar dizini, Teslim öncesi temizle. */
 import { NameIndex } from "../../core/index.js";
-import { buildInventory } from "../inventory.js";
+import { buildInventoryAsync } from "../inventory.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "../submit.js";
 import { buildPageIndex, canReadPages, StepError, readSpellings, readExclusions, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, openNewDocument, readConfirmations, readDocument } from "../word.js";
 
@@ -39,7 +39,7 @@ export async function createPersonReport(): Promise<void> {
   }
   const read = await readDocument();
   state.index ??= new NameIndex(state.catalog.people);
-  const rows = buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  const rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   await openNewDocument(toBase64(personReportDocx(documentName(), rows)));
   setMessage("Şahıs raporu yeni bir Word belgesi olarak açıldı.", "success");
 }
@@ -58,7 +58,7 @@ export async function createIndex(): Promise<void> {
   });
   state.index ??= new NameIndex(state.catalog.people);
   const withNotes = $<HTMLInputElement>("index-notes").checked;
-  const rows = indexRows(buildInventory(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings())).filter(
+  const rows = indexRows(await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"))).filter(
     (r) => withNotes || r.part === "main",
   );
   if (rows.length === 0) {
