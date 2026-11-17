@@ -33,26 +33,52 @@ export async function readSelection(): Promise<SelectionText> {
   });
 }
 
-/** Writes " <date>" right after the selection inside a hidden, tagged content control. */
+/**
+ * The selected name without the space a double click selects after it:
+ * the date goes right after the name, not after that space.
+ */
+async function selectedName(context: Word.RequestContext): Promise<Word.Range> {
+  const selection = context.document.getSelection();
+  selection.load("text");
+  await context.sync();
+  const trimmed = selection.text.replace(/[\s\u00a0]+$/, "");
+  if (trimmed === selection.text || trimmed.length === 0 || trimmed.length > 250) return selection;
+  const hits = selection.search(searchText(trimmed), { matchCase: true, matchWholeWord: false });
+  hits.load("items");
+  await context.sync();
+  return hits.items[0] ?? selection;
+}
+
+/**
+ * Writes " <date>" as a hidden, tagged Vefeyât control right after `name`,
+ * keeps a space between the date and a following word ("(ö. 646/1249) farklı")
+ * and puts the caret after it.
+ */
+async function writeDateAfter(context: Word.RequestContext, name: Word.Range, dateText: string, tag: string, title: string): Promise<number> {
+  // The name stops being underlined as a misspelling: its right-click menu then carries Vefeyât.
+  if (Office.context.requirements.isSetSupported("WordApiDesktop", "1.3")) name.hasNoProofing = true;
+  const inserted = name.getRange("End").insertText(` ${dateText}`, "After");
+  const control = inserted.insertContentControl();
+  control.tag = tag;
+  control.title = title;
+  control.appearance = "Hidden";
+  // When the date is deleted by hand, Word shows the placeholder in the text
+  // ("Metin girmek için buraya tıklayın"); keep it invisible.
+  control.placeholderText = EMPTY_PLACEHOLDER;
+  const next = control.getRange("After").expandTo(name.paragraphs.getLast().getRange("End"));
+  next.load("text");
+  control.load("id");
+  await context.sync();
+  if (/^[\p{L}\p{N}(\[“"'‘]/u.test(next.text)) control.getRange("After").insertText(" ", "After");
+  // Continue typing after the date, outside the control.
+  control.getRange("After").select("Start");
+  await context.sync();
+  return control.id;
+}
+
+/** Writes " <date>" right after the selected name inside a hidden, tagged content control. */
 export async function insertDate(dateText: string, tag: string, title: string): Promise<number> {
-  return Word.run(async (context) => {
-    const selection = context.document.getSelection();
-    // The name stops being underlined as a misspelling: its right-click menu then carries Vefeyât.
-    if (Office.context.requirements.isSetSupported("WordApiDesktop", "1.3")) selection.hasNoProofing = true;
-    const inserted = selection.getRange("End").insertText(` ${dateText}`, "After");
-    const control = inserted.insertContentControl();
-    control.tag = tag;
-    control.title = title;
-    control.appearance = "Hidden";
-    // When the date is deleted by hand, Word shows the placeholder in the text
-    // ("Metin girmek için buraya tıklayın"); keep it invisible.
-    control.placeholderText = EMPTY_PLACEHOLDER;
-    // Continue typing after the date, outside the control.
-    control.getRange("After").select("Start");
-    control.load("id");
-    await context.sync();
-    return control.id;
-  });
+  return Word.run(async (context) => writeDateAfter(context, await selectedName(context), dateText, tag, title));
 }
 
 /** Replaces the selected text and keeps the new text selected. */
@@ -1392,14 +1418,14 @@ export async function replaceDateAfterSelection(old: string, value: string): Pro
  */
 export async function updateDateAfterSelection(old: string, value: string, tag: string, title: string): Promise<number | null> {
   return Word.run(async (context) => {
-    const selection = context.document.getSelection();
-    const rest = selection.getRange("End").expandTo(selection.paragraphs.getFirst().getRange("End"));
+    const name = await selectedName(context);
+    const rest = name.getRange("End").expandTo(name.paragraphs.getFirst().getRange("End"));
     const found = rest.search(searchText(old), { matchCase: true, matchWholeWord: false });
     found.load("items/text");
     await context.sync();
     const target = found.items[0];
     if (!target) return null;
-    const gap = selection.getRange("End").expandTo(target.getRange("Start"));
+    const gap = name.getRange("End").expandTo(target.getRange("Start"));
     gap.load("text");
     const owner = target.parentContentControlOrNullObject;
     owner.load("tag");
@@ -1407,19 +1433,8 @@ export async function updateDateAfterSelection(old: string, value: string, tag: 
     if (gap.text.trim().length > 0) return null;
     if (!owner.isNullObject && owner.tag?.startsWith(DATE_TAG_PREFIX)) owner.delete(false);
     else gap.expandTo(target).delete();
-    if (Office.context.requirements.isSetSupported("WordApiDesktop", "1.3")) selection.hasNoProofing = true;
-    const inserted = selection.getRange("End").insertText(` ${value}`, "After");
-    const control = inserted.insertContentControl();
-    control.tag = tag;
-    control.title = title;
-    control.appearance = "Hidden";
-    // When the date is deleted by hand, Word shows the placeholder in the text
-    // ("Metin girmek için buraya tıklayın"); keep it invisible.
-    control.placeholderText = EMPTY_PLACEHOLDER;
-    control.getRange("After").select("Start");
-    control.load("id");
     await context.sync();
-    return control.id;
+    return writeDateAfter(context, name, value, tag, title);
   });
 }
 

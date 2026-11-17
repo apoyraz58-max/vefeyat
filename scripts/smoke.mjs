@@ -361,6 +361,17 @@ try {
   await tab.click("#insert");
   await tab.waitForTimeout(300);
   await tab.close();
+  // A double click selects the space after the name: the date still goes right after the name.
+  tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  check("date goes after the name, not after the selected space", (await docText(tab)) === "Gazzâlî'nin (ö. 505/1111) farklı eserleri.", await docText(tab));
+  await tab.close();
+  tab = await open("", "Gazzâlî'ninfarklı eserleri.", "Gazzâlî'nin");
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  check("a space is kept between the date and the next word", (await docText(tab)) === "Gazzâlî'nin (ö. 505/1111) farklı eserleri.", await docText(tab));
+  await tab.close();
   // The date deleted by hand leaves an empty control (Word shows its placeholder): removed right after the edit.
   tab = await open("", "Gazzâlî der.", "Gazzâlî", { api: ["WordApi 1.6"] });
   await tab.click("#insert");
