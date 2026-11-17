@@ -10,7 +10,7 @@ import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, sh
 import { checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { addDate, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
-import { renderShortcuts, saveShortcuts } from "./pane/shortcuts.js";
+import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
 import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
 
@@ -101,6 +101,7 @@ export function initialise(): void {
   $("spellings-clear").addEventListener("click", () => void run(clearSpellings));
   $("prefs-download").addEventListener("click", downloadPrefs);
   $("shortcuts-save").addEventListener("click", () => void run(saveShortcuts));
+  $("shortcuts-reset").addEventListener("click", () => void run(resetShortcuts));
   $("prefs-copy").addEventListener("click", () => void copyPrefs());
   $("prefs-apply").addEventListener("click", () => void run(applyPrefs));
   $("local-add").addEventListener("click", () => void run(addLocal));

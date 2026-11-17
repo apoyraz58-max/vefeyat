@@ -339,11 +339,15 @@ try {
   tab = await open("?view=kisayol", "Metin.", "", { api: ["KeyboardShortcuts 1.1"] });
   await tab.waitForSelector("#shortcuts:not([hidden])", { timeout: 3000 }).catch(() => {});
   const keyOptions = await tab.$$eval("#shortcuts-list select[data-action=go_action_insert] option", (o) => o.map((x) => x.value));
-  check("Klavye kısayolları lists conflicts and only free keys", (await tab.textContent("#shortcuts-summary")).includes("1 kısayol kullanılamıyor") && !keyOptions.includes("Alt+Shift+A") && !keyOptions.includes("Alt+Shift+Y") && keyOptions.includes("Alt+Shift+B"), keyOptions.slice(0, 5).join(","));
-  await tab.selectOption("#shortcuts-list select[data-action=go_action_insert]", "Alt+Shift+B");
+  check("Klavye kısayolları lists conflicts and only free keys", (await tab.textContent("#shortcuts-summary")).includes("1 kısayol kullanılamıyor") && !keyOptions.includes("Alt+Shift+A") && !keyOptions.includes("Alt+Shift+Y") && keyOptions.includes("Alt+Shift+C"), keyOptions.slice(0, 5).join(","));
+  check("another command's default key is never offered", !keyOptions.includes("Alt+Shift+B") && keyOptions.includes("Alt+Shift+C"), keyOptions.slice(0, 5).join(","));
+  await tab.selectOption("#shortcuts-list select[data-action=go_action_insert]", "Alt+Shift+C");
   await tab.click("#shortcuts-save");
   await tab.waitForTimeout(300);
-  check("chosen shortcut is saved in Word", (await tab.evaluate(() => window.__keys?.go_action_insert)) === "Alt+Shift+B");
+  check("chosen shortcut is saved in Word", (await tab.evaluate(() => window.__keys?.go_action_insert)) === "Alt+Shift+C");
+  await tab.click("#shortcuts-reset");
+  await tab.waitForTimeout(300);
+  check("reset returns every command to its default", (await tab.evaluate(() => Object.values(window.__keys).every((v) => v === null) && Object.keys(window.__keys).length === 6)));
   await tab.close();
   tab = await open("?view=tercihler", "Metin.");
   check("no shortcut section without shortcut support", await tab.isHidden("#shortcuts"));

@@ -42,7 +42,8 @@ export async function renderShortcuts(): Promise<void> {
     const ours = definition.actions.filter((a) => a.id in current);
     if (!ours.length) return; // regular manifest: Word knows no Vefeyât shortcuts
     const defaults = new Map(definition.shortcuts.map((s) => [s.action, s.key.default] as const));
-    const taken = new Set(Object.values(current).filter(Boolean).map((k) => k!.toUpperCase()));
+    // Never offer a key Vefeyât already uses, or one another Vefeyât command has by default.
+    const taken = new Set([...Object.values(current), ...defaults.values()].filter(Boolean).map((k) => k!.toUpperCase()));
     const report = await api.areShortcutsInUse(candidateKeys());
     const busy = new Set(report.filter((r) => r.inUse).map((r) => r.shortcut.toUpperCase()));
     const list = $("shortcuts-list");
@@ -55,7 +56,8 @@ export async function renderShortcuts(): Promise<void> {
       name.textContent = action.name;
       const now = document.createElement("span");
       if (key === null) conflicts++;
-      now.textContent = key === null ? " — kısayol Word'ün başka bir komutuna bırakılmış" : ` — ${key}`;
+      const changed = key !== null && !same(key, defaults.get(action.id));
+      now.textContent = key === null ? " — kısayol Word'ün başka bir komutuna bırakılmış" : ` — ${key}` + (changed ? ` (sizin seçiminiz; varsayılan ${defaults.get(action.id)})` : "");
       const select = document.createElement("select");
       select.dataset.action = action.id;
       select.setAttribute("aria-label", `${action.name} kısayolu`);
@@ -109,6 +111,19 @@ export async function saveShortcuts(): Promise<void> {
     setMessage("Kısayollar kaydedildi. Düğme açıklamalarında varsayılan tuşlar yazmaya devam eder.", "success");
   } catch {
     setMessage("Word kısayolu kaydetmedi. Microsoft 365 hesabıyla oturum açık olmalı.", "error");
+  }
+  await renderShortcuts();
+}
+
+/** Drops every saved choice: each command returns to shortcuts.json. */
+export async function resetShortcuts(): Promise<void> {
+  const api = actions();
+  if (!api || !definition) return;
+  try {
+    await api.replaceShortcuts(Object.fromEntries(definition.actions.map((a) => [a.id, null])));
+    setMessage("Bütün kısayollar varsayılana döndü.", "success");
+  } catch {
+    setMessage("Word kısayolları sıfırlamadı. Microsoft 365 hesabıyla oturum açık olmalı.", "error");
   }
   await renderShortcuts();
 }
