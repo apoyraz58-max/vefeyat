@@ -38,6 +38,9 @@ const check = [
   "6. Tutarlılık raporu: ö. ve v. karışık uyarısı. Şahıs raporu: yeni belge açılmalı. Şahıs dökümü özetinde '1 tarih uyarısı' olmalı: 6. paragraftaki elle yazılmış tarih yanlış (hicrî yıl doğru, milâdî yıl 100 yıl kaymış).",
   "7. Toplu düzeltme önizlemesi, Denetime devam et (bir geçişte Denetimi bitir, sonra devam et), Tüm belgeyi denetle (her kişinin ilk geçişinde durmalı), Teslim öncesi temizle (kopyada!).",
   "8. Sağ tık: bir ada sağ tıklayın; kırmızı çizgiliyse önce Ayarlar → Şahıs adlarını yazım denetiminden çıkar.",
+  "9. Klavye kısayolları: bir adı seçip Alt+Shift+V tarih eklemeli, Alt+Shift+G Şahıs dökümünü açmalı. Ayarlar → Klavye kısayolları altı kısayolu listelemeli; fareyle Ölüm tarihi ekle'nin üzerine gelince '(Alt+Shift+V)' yazmalı.",
+  "10. 4. paragrafta 1037 tarihli adı seçip Ölüm tarihi ekle: 'Adın arkasında zaten bir tarih var … Katalogdaki tarih: (ö. …)' ve Güncelle çıkmalı (kısaltma farklı). Güncelle'den sonra tarih katalogdaki gibi ve adla tarih, tarihle sonraki kelime arasında tek boşluk olmalı. Aynı ada yeniden basınca 'zaten katalogdakiyle aynı' demeli.",
+  "11. Birkaç tarih ekledikten sonra Kısaltma → v.: panel 'çevrilsin mi?' diye sormalı; Çevir'den sonra eklenen tarihler v. ile yazılmalı, 6. paragraftaki elle yazılmış tarih değişmemeli. Eklenen bir tarihi elle silin: yerinde 'Metin girmek için…' yazısı görünmemeli. Belge sağlığı boşluk uyarısı vermemeli.",
   "Sorun görürseniz: paneldeki mesajın ekran görüntüsü, panelin altındaki sürüm numarası ve hangi adımda olduğu.",
 ];
 
