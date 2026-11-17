@@ -7,7 +7,7 @@ import { onParagraphsEdited, watchDocument, canReadPages, selectionPage, writeAu
 
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
-import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, repairHealth, repairSource, showSource } from "./pane/health.js";
+import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { addDate, updateDate, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
@@ -134,6 +134,7 @@ export function initialise(): void {
     renderHistory();
   });
   $("legacy-convert").addEventListener("click", () => void run(convertLegacy, "VBA tarihleri dönüştürülüyor"));
+  $("spacing-fix").addEventListener("click", () => void run(fixSpacing, "Boşluklar düzeltiliyor"));
   $("health-refresh").addEventListener("click", () => void run(checkHealth, "Tarihler denetleniyor"));
   $("health-repair").addEventListener("click", () => void run(repairHealth));
   $("source-repair").addEventListener("click", () => void run(repairSource));

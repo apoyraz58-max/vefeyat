@@ -168,7 +168,9 @@ işaretle**; o belgede bir daha listelenmez (Diğer araçlar → Belge istisnala
   kısaltılmış yıl ("917-18") uyarı vermez.
 - **Belge sağlığı:** Vefeyât'ın eklediği tarihleri katalog ve önek ayarıyla
   karşılaştırır; seçtiklerinizi onarır. Önek değiştirdiyseniz eski önekli tarihler
-  burada hazır işaretli gelir.
+  burada hazır işaretli gelir. Tarihin çevresindeki bozuk boşlukları da bulur
+  (sonraki kelimeye bitişik tarih, önünde çift boşluk); **Boşlukları düzelt** her
+  tarihin iki yanında tek boşluk bırakır. Silinmiş tarihlerin boş alanlarını kaldırır.
 - **Tarihin kaynağı:** imleçteki Vefeyât tarihinin hangi kayıttan geldiğini gösterir.
 - **Tutarlılık raporu:** ö./öl./v. ve tarih biçimlerinin karışık kullanıldığı yerler.
 

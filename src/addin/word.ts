@@ -69,7 +69,7 @@ async function writeDateAfter(context: Word.RequestContext, name: Word.Range, da
   next.load("text");
   control.load("id");
   await context.sync();
-  if (/^[\p{L}\p{N}(\[“"'‘]/u.test(next.text)) control.getRange("After").insertText(" ", "After");
+  if (WORD_START.test(next.text)) control.getRange("After").insertText(" ", "After");
   // Continue typing after the date, outside the control.
   control.getRange("After").select("Start");
   await context.sync();
@@ -815,6 +815,80 @@ export async function removeEmptyDateControlsIn(ids: readonly string[]): Promise
 
 function isEmptyDate(text: string | undefined, placeholder: string | undefined): boolean {
   return (text ?? "").replace(/[\u200b\s]/g, "") === "" || (!!placeholder && text === placeholder);
+}
+
+/** A Vefeyât date with broken spacing around it. */
+export interface SpacingIssue {
+  readonly id: number;
+  /** "…Hâcib'in  (öl. 646/1249)farklı…" */
+  readonly sample: string;
+  /** Spaces before the date although the date starts with its own. */
+  readonly doubleBefore: number;
+  /** Name and date stuck together: "Hâcib'in(öl. …)". */
+  readonly missingBefore: boolean;
+  /** Date and the next word stuck together: "(öl. 646/1249)farklı". */
+  readonly missingAfter: boolean;
+}
+
+// A word, number or opening quote/parenthesis; not a closing ' or " (the quote may end with the date).
+const WORD_START = /^[\p{L}\p{N}(\[“‘]/u;
+
+function spacingOf(id: number, before: string, date: string, after: string): SpacingIssue | null {
+  const doubleBefore = /^\s/.test(date) ? (before.match(/ +$/)?.[0].length ?? 0) : 0;
+  const missingBefore = !/^\s/.test(date) && /[\p{L}\p{N}’'.]$/u.test(before);
+  const missingAfter = WORD_START.test(after);
+  if (!doubleBefore && !missingBefore && !missingAfter) return null;
+  const sample = `…${before.slice(-20)}${date}${after.slice(0, 12)}…`.replace(/ {2,}/g, (m) => "·".repeat(m.length));
+  return { id, sample, doubleBefore, missingBefore, missingAfter };
+}
+
+async function spacingIn(context: Word.RequestContext, only?: ReadonlySet<number>): Promise<Array<{ control: Word.ContentControl; before: Word.Range; issue: SpacingIssue }>> {
+  const lists = await controlLists(context);
+  const own = lists.flatMap(({ list }) => list.items.filter((c) => c.tag?.startsWith(DATE_TAG_PREFIX) && (!only || only.has(c.id)) && c.text.trim() !== ""));
+  const found: Array<{ control: Word.ContentControl; before: Word.Range; issue: SpacingIssue }> = [];
+  for (let from = 0; from < own.length; from += CHUNK) {
+    const part = own.slice(from, from + CHUNK).map((control) => {
+      const before = control.paragraphs.getFirst().getRange("Start").expandTo(control.getRange("Before"));
+      const after = control.getRange("After").expandTo(control.paragraphs.getLast().getRange("End"));
+      before.load("text");
+      after.load("text");
+      return { control, before, after };
+    });
+    await context.sync();
+    for (const { control, before, after } of part) {
+      const issue = spacingOf(control.id, before.text, control.text, after.text);
+      if (issue) found.push({ control, before, issue });
+    }
+  }
+  return found;
+}
+
+/** Vefeyât dates with a missing or doubled space around them. */
+export async function readDateSpacing(): Promise<SpacingIssue[]> {
+  return Word.run(async (context) => (await spacingIn(context)).map((f) => f.issue));
+}
+
+/** Fixes the spacing around the given Vefeyât dates. Returns how many were fixed. */
+export async function fixDateSpacing(ids: readonly number[]): Promise<number> {
+  return Word.run(async (context) => {
+    const found = await spacingIn(context, new Set(ids));
+    const spaces = found.map((f) => {
+      const list = f.issue.doubleBefore ? f.before.search(" ", { matchCase: true }) : null;
+      list?.load("items");
+      return list;
+    });
+    await context.sync();
+    found.forEach(({ control, issue }, k) => {
+      control.cannotEdit = false;
+      if (issue.missingAfter) control.getRange("After").insertText(" ", "After");
+      if (issue.missingBefore) control.getRange("Before").insertText(" ", "Before");
+      const items = spaces[k]?.items ?? [];
+      // The trailing spaces before the date: the date brings its own.
+      for (const space of items.slice(items.length - issue.doubleBefore)) space.delete();
+    });
+    await context.sync();
+    return found.length;
+  });
 }
 
 /** Every Vefeyât date control, in reading order of body and footnotes. */

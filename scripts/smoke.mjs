@@ -94,7 +94,8 @@ const FAKE_OFFICE = String.raw`
       const range = this;
       const st = this.st;
       const control = { load() { return this; }, id: doc.controls.length + doc.notes.reduce((n, x) => n + x.controls.length, 0) + 1, tag: "", title: "", appearance: "", range,
-        getRange: (loc) => (loc === "After" ? new R(range.e, range.e, st) : range),
+        getRange(loc) { return loc === "After" ? new R(this.range.e, this.range.e, st) : loc === "Before" ? new R(this.range.s, this.range.s, st) : this.range; },
+        get paragraphs() { return new R(this.range.s, this.range.e, st).paragraphs; },
         get text() { return st.text.slice(this.range.s, this.range.e); },
         insertText(t) { this.range = this.range.insertText(t, "Replace"); },
         delete(keep) { if (!keep) new R(this.range.s, this.range.e, st).delete(); this.range = new R(-1, -1, st); },
@@ -371,6 +372,24 @@ try {
   await tab.click("#insert");
   await tab.waitForTimeout(300);
   check("a space is kept between the date and the next word", (await docText(tab)) === "Gazzâlî'nin (ö. 505/1111) farklı eserleri.", await docText(tab));
+  await tab.close();
+  // Belge sağlığı: broken spacing around a Vefeyât date (old double-click bug).
+  tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin");
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  await tab.evaluate(() => {
+    // "Gazzâlî'nin (ö. 505/1111) farklı" → "Gazzâlî'nin  (ö. 505/1111)farklı"
+    const c = window.__doc.controls.find((x) => x.range.e > x.range.s);
+    window.__R(c.range.e, c.range.e + 1).delete();
+    window.__R(c.range.s, c.range.s).insertText(" ", "Replace");
+  });
+  check("spacing broken as in the report", (await docText(tab)) === "Gazzâlî'nin  (ö. 505/1111)farklı eserleri.", await docText(tab));
+  await tab.evaluate(() => window.go_view_saglik(undefined));
+  await tab.waitForSelector("#spacing:not([hidden])", { timeout: 3000 }).catch(() => {});
+  check("Belge sağlığı reports the broken spacing", (await tab.textContent("#spacing-text")).includes("1 tarihin çevresinde boşluk bozuk"), await tab.textContent("#spacing-text"));
+  await tab.click("#spacing-fix");
+  await tab.waitForTimeout(500);
+  check("Boşlukları düzelt restores one space on each side", (await docText(tab)) === "Gazzâlî'nin (ö. 505/1111) farklı eserleri." && await tab.isHidden("#spacing"), await docText(tab));
   await tab.close();
   // The date deleted by hand leaves an empty control (Word shows its placeholder): removed right after the edit.
   tab = await open("", "Gazzâlî der.", "Gazzâlî", { api: ["WordApi 1.6"] });

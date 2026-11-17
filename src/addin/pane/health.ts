@@ -2,7 +2,7 @@
 import { NameIndex, textName } from "../../core/index.js";
 import { SETTING_CHOICES, dateTag } from "../logic.js";
 import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "../health.js";
-import { removeEmptyDateControls, removeEmptyDateControlsIn, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, readSettings, refreshSettings } from "../word.js";
+import { readDateSpacing, fixDateSpacing, type SpacingIssue, removeEmptyDateControls, removeEmptyDateControlsIn, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, readSettings, refreshSettings } from "../word.js";
 
 import { $, logHistory, markSelected, progress, run, setMessage, state } from "./core.js";
 
@@ -45,9 +45,32 @@ export async function checkHealth(): Promise<void> {
   $("legacy-text").textContent =
     `Belgede VBA sürümünün eklediği ${legacy} tarih var (Word alanı). Bunlar yeni sürümde denetlenemez ve teslim temizliğinde kalır. ` +
     "Dönüştürünce aynı tarih metni, adın arkasında Vefeyât tarihi olarak kalır; adı bulunamayan alana dokunulmaz.";
+  spacing = await readDateSpacing().catch(() => []);
+  renderSpacing();
   healthChosen.clear();
   for (const row of healthRows) if (row.health === "prefix" || row.health === "empty") healthChosen.add(row.id);
   renderHealth();
+}
+
+let spacing: SpacingIssue[] = [];
+
+function renderSpacing(): void {
+  $("spacing").hidden = spacing.length === 0;
+  if (!spacing.length) return;
+  const after = spacing.filter((s) => s.missingAfter).length;
+  const before = spacing.filter((s) => s.doubleBefore || s.missingBefore).length;
+  $("spacing-text").textContent =
+    `${spacing.length} tarihin çevresinde boşluk bozuk` +
+    ` (${[after ? `${after} tarih sonraki kelimeye bitişik` : "", before ? `${before} tarihin önünde çift ya da eksik boşluk` : ""].filter(Boolean).join(", ")}).` +
+    ` Örnek: ${spacing[0]!.sample}`;
+}
+
+/** "Boşlukları düzelt": one space before and after every Vefeyât date. */
+export async function fixSpacing(): Promise<void> {
+  const fixed = await fixDateSpacing(spacing.map((s) => s.id));
+  logHistory("repair", `${fixed} tarihin çevresindeki boşluk düzeltildi`);
+  await checkHealth();
+  setMessage(`${fixed} tarihin çevresindeki boşluk düzeltildi.`, "success");
 }
 
 export function renderHealth(): void {
