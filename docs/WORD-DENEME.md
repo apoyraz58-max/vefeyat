@@ -29,21 +29,16 @@ düğme eklendiğinde manifesti bir kez yenilemek gerekir: yeni `manifest.xml` d
 indirip paylaşılan klasördekinin yerine koyun, Word'ü kapatın,
 `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\` klasörünü silin, Word'ü açın.
 
-**Klavye kısayolları (deneme).** Ayrı bir manifest sık kullanılan komutlara üç tuşlu
-kısayol verir: `https://apoyraz58-max.github.io/vefeyat/manifest-kisayol.xml`.
-Ölüm tarihi ekle **Alt+Shift+V**, İsim yazımı **Alt+Shift+W**, Tüm belgeyi denetle
-**Alt+Shift+B**, Şahıs dökümü **Alt+Shift+G**, Toplu düzeltme **Alt+Shift+U**, Şahıs ara
-**Alt+Shift+J** (Mac'te Alt+Shift yerine Cmd+Option). Kısayol, fareyle düğmenin üzerine
-gelince çıkan açıklamanın başlığında yazar. Türkçe Word'ün kendi kısayollarıyla çakışan
-olursa **Ayarlar → Klavye kısayolları** (Tercihler penceresi) Word'e hangi tuşların dolu
-olduğunu sorar, çakışanı gösterir ve komutu boştaki bir tuşa almanızı sağlar; seçiminizi
-Word saklar (Microsoft 365 oturumu gerekir). Açıklamalarda varsayılan tuşlar yazmaya devam eder. Word kısayola yalnız
-"paylaşılan çalışma ortamı"nda izin verir; bu yüzden bu sürümde bütün şerit düğmeleri
-paneli yeniden yüklemek yerine açık panele komut gönderir. Ayrı bir eklenti olarak
-görünür ("Vefeyât (kısayol denemesi)", sekmesi "Vefeyât (deneme)"); asıl eklentiye
-dokunmaz. Windows Word 2408 ve sonrası gerekir. Denerken asıl `manifest.xml`
-dosyasını paylaşılan klasörden geçici olarak çıkarın, yoksa iki Vefeyât sekmesi görünür.
-Kısayol başka bir komutla çakışırsa Word bir kez hangisinin çalışacağını sorar.
+**Klavye kısayolları.** Ölüm tarihi ekle **Alt+Shift+V**, İsim yazımı **Alt+Shift+W**,
+Tüm belgeyi denetle **Alt+Shift+B**, Şahıs dökümü **Alt+Shift+G**, Toplu düzeltme
+**Alt+Shift+U**, Şahıs ara **Alt+Shift+J** (Mac'te Alt+Shift yerine Cmd+Option). Kısayol,
+fareyle düğmenin üzerine gelince çıkan açıklamanın başlığında yazar. Bir kısayol başka
+şey yaparsa **Ayarlar → Klavye kısayolları** Word'e hangi tuşların dolu olduğunu sorar,
+çakışanı gösterir ve komutu boştaki bir tuşa almanızı sağlar; seçiminizi Word saklar
+(Microsoft 365 oturumu gerekir). **Hepsini varsayılana döndür** kayıtlı seçimleri siler.
+Açıklamalarda varsayılan tuşlar yazmaya devam eder. Word kısayola yalnız "paylaşılan
+çalışma ortamı"nda izin verdiği için şerit düğmeleri paneli yeniden yüklemez, açık panele
+komut gönderir. Windows'ta Word 2408 ve sonrası gerekir.
 
 ## 2. Hızlı başlangıç
 

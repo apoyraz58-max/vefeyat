@@ -1,4 +1,4 @@
-"""Generates manifest/manifest.template.xml: the Vefeyât ribbon in the VBA 0.3.41 layout.
+"""Generates manifest/manifest.template.xml (and shortcuts.json): the Vefeyât ribbon in the VBA 0.3.41 layout.
 
 Run after changing the ribbon:  python3 scripts/manifest.py
 Office add-in ribbons only allow buttons and menus (no drop-down boxes showing a value),
@@ -227,14 +227,11 @@ xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 </OfficeApp>
 """
 root = Path(__file__).resolve().parent.parent
-root.joinpath("manifest/manifest.template.xml").write_text(xml, encoding="utf-8")
-print(f"{len(used_icons)} icons, {len(urls)} urls, {len(short)} labels")
 
-# ---- Keyboard-shortcut trial: manifest-kisayol.xml ----
+# ---- Shared runtime and keyboard shortcuts ----
 # Word allows add-in keyboard shortcuts only in a shared runtime: ribbon, context
-# menu and shortcut all run as functions inside the task pane page
-# (src/addin/actions.ts). A separate add-in (own Id and name) so it can be tried
-# without touching the regular one.
+# menu and shortcuts all run as functions inside the task pane page
+# (src/addin/actions.ts) instead of reloading it with ?action=…/?view=….
 import re
 import json
 
@@ -258,33 +255,30 @@ def go(match):
 
 shortcut_item = item("Shortcuts", S("Shortcuts", "Klavye kısayolları"), L("Shortcuts.Tip", "Vefeyât kısayollarını gösterir; çakışan bir kısayolu boştaki bir tuşa alır."), "settings", pane(U("U.Shortcuts", "taskpane.html?view=kisayol")))
 noproof_end = xml.index("</Item>\n", xml.index('id="Vefeyat.NoProof"')) + len("</Item>\n")
-trial = re.sub(r'( *)<Action xsi:type="ShowTaskpane">\s*<TaskpaneId>VefeyatPane</TaskpaneId>\s*<SourceLocation resid="([\w.]+)"/>\s*</Action>', go, xml[:noproof_end] + shortcut_item + xml[noproof_end:])
-assert "ShowTaskpane" not in trial
-trial = (trial
-    .replace("<Id>6f3c2a4e-8b1d-4c7a-9e52-0d9a7b3e5f21</Id>", "<Id>6f3c2a4e-8b1d-4c7a-9e52-0d9a7b3e5f22</Id>")
-    .replace('<DisplayName DefaultValue="Vefeyât"/>', '<DisplayName DefaultValue="Vefeyât (kısayol denemesi)"/>')
+final = re.sub(r'( *)<Action xsi:type="ShowTaskpane">\s*<TaskpaneId>VefeyatPane</TaskpaneId>\s*<SourceLocation resid="([\w.]+)"/>\s*</Action>', go, xml[:noproof_end] + shortcut_item + xml[noproof_end:])
+assert "ShowTaskpane" not in final
+final = (final
     .replace('      <Set Name="WordApi" MinVersion="1.3"/>\n', '      <Set Name="WordApi" MinVersion="1.3"/>\n      <Set Name="SharedRuntime" MinVersion="1.1"/>\n')
     .replace('      <Host xsi:type="Document">\n', '      <Host xsi:type="Document">\n        <Runtimes>\n          <Runtime resid="Taskpane.Url" lifetime="long"/>\n        </Runtimes>\n')
     .replace('<FunctionFile resid="Commands.Url"/>', '<FunctionFile resid="Taskpane.Url"/>')
     .replace('        <bt:Url id="Commands.Url"', f'        <bt:Url id="Taskpane.Url" DefaultValue="{B}taskpane.html"/>\n        <bt:Url id="Commands.Url"')
-    .replace('<bt:String id="Tab" DefaultValue="Vefeyât"/>', '<bt:String id="Tab" DefaultValue="Vefeyât (deneme)"/>')
     .replace("  </VersionOverrides>\n", f'  </VersionOverrides>\n  <ExtendedOverrides Url="{B}shortcuts.json"/>\n'))
-trial = trial.replace("      </bt:ShortStrings>", f'        <bt:String id="Shortcuts" DefaultValue="{esc(short["Shortcuts"])}"/>\n      </bt:ShortStrings>')
-trial = trial.replace("      </bt:LongStrings>", f'        <bt:String id="Shortcuts.Tip" DefaultValue="{esc(long_["Shortcuts.Tip"])}"/>\n      </bt:LongStrings>')
+final = final.replace("      </bt:ShortStrings>", f'        <bt:String id="Shortcuts" DefaultValue="{esc(short["Shortcuts"])}"/>\n      </bt:ShortStrings>')
+final = final.replace("      </bt:LongStrings>", f'        <bt:String id="Shortcuts.Tip" DefaultValue="{esc(long_["Shortcuts.Tip"])}"/>\n      </bt:LongStrings>')
 for action, name, tip, key in SHORTCUTS:
-    assert f"<FunctionName>{action}</FunctionName>" in trial, action
+    assert f"<FunctionName>{action}</FunctionName>" in final, action
     old = f'<bt:String id="{tip}" DefaultValue="{esc(long_[tip])}"/>'
-    assert old in trial, tip
-    trial = trial.replace(old, f'<bt:String id="{tip}" DefaultValue="Kısayol: Alt+Shift+{key}. {esc(long_[tip])}"/>')
+    assert old in final, tip
+    final = final.replace(old, f'<bt:String id="{tip}" DefaultValue="Kısayol: Alt+Shift+{key}. {esc(long_[tip])}"/>')
     label = tip.removesuffix(".Tip")
-    trial = trial.replace(f'<Title resid="{label}"/>', f'<Title resid="{label}.K"/>')
-    trial = trial.replace("      </bt:ShortStrings>", f'        <bt:String id="{label}.K" DefaultValue="{esc(short[label])} (Alt+Shift+{key})"/>\n      </bt:ShortStrings>')
+    final = final.replace(f'<Title resid="{label}"/>', f'<Title resid="{label}.K"/>')
+    final = final.replace("      </bt:ShortStrings>", f'        <bt:String id="{label}.K" DefaultValue="{esc(short[label])} (Alt+Shift+{key})"/>\n      </bt:ShortStrings>')
 shortcuts = {
     "actions": [{"id": a, "type": "ExecuteFunction", "name": n} for a, n, _, _ in SHORTCUTS],
     "shortcuts": [{"action": a, "key": {"default": f"Alt+Shift+{k}", "mac": f"Command+Option+{k}"}} for a, _, _, k in SHORTCUTS],
 }
 root.joinpath("manifest/shortcuts.json").write_text(json.dumps(shortcuts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-for needle in ("5f22", "SharedRuntime", "<Runtimes>", 'FunctionFile resid="Taskpane.Url"', 'id="Taskpane.Url"', "(deneme)", "ExtendedOverrides"):
-    assert needle in trial, needle
-root.joinpath("manifest/manifest-kisayol.template.xml").write_text(trial, encoding="utf-8")
-print(f"kısayol denemesi: {trial.count('go_')} işlev")
+for needle in ("SharedRuntime", "<Runtimes>", 'FunctionFile resid="Taskpane.Url"', 'id="Taskpane.Url"', "ExtendedOverrides"):
+    assert needle in final, needle
+root.joinpath("manifest/manifest.template.xml").write_text(final, encoding="utf-8")
+print(f"{len(used_icons)} icons, {len(urls)} urls, {len(short)} labels, {final.count('<FunctionName>go_')} ribbon functions, {len(SHORTCUTS)} shortcuts")
