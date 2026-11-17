@@ -3,7 +3,7 @@
  */
 import { type Launch, earlierSpellings, parseLaunch, quickInsertBlocker } from "./logic.js";
 import { GO_FUNCTIONS, goQuery, register, registerSettingCommands } from "./actions.js";
-import { hasPendingChanges, canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
+import { onParagraphsEdited, watchDocument, canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
 
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
@@ -200,12 +200,7 @@ export function initialise(): void {
     }, 250);
     // Typing moves the selection: once it rests, look whether a first mention moved.
     window.clearTimeout(upkeepTimer);
-    upkeepTimer = window.setTimeout(() => {
-      const edited = hasPendingChanges();
-      void (edited ? tidyEmptyDates() : Promise.resolve(0))
-        .then(() => checkFirstUse())
-        .catch(() => {});
-    }, 2000);
+    upkeepTimer = window.setTimeout(() => void checkFirstUse().catch(() => {}), 2000);
   });
   $("firstuse-review").addEventListener("click", () => {
     $("firstuse-notice").hidden = true;
@@ -251,10 +246,40 @@ export function initialise(): void {
     .then(() => refresh())
     .catch(() => undefined);
   void ready.then(() => launch(request)).then(() => tidyEmptyDates());
+  watchEmptyDates();
   registerRibbonFunctions();
 }
 
 let ready: Promise<void> = Promise.resolve();
+
+/**
+ * A Vefeyât date deleted by hand leaves an empty control that Word fills with
+ * "Metin girmek için buraya tıklayın". Right after each edit the edited
+ * paragraphs are looked at and such controls removed, so the text never shows
+ * it; whenever the pane is shown again, the whole document is looked at.
+ */
+function watchEmptyDates(): void {
+  const pending = new Set<string>();
+  let timer: number | undefined;
+  onParagraphsEdited((ids) => {
+    for (const id of ids) pending.add(id);
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      const batch = [...pending];
+      pending.clear();
+      void tidyEmptyDates(batch);
+    }, 300);
+  });
+  void watchDocument();
+  const addin = (Office as unknown as { addin?: { onVisibilityModeChanged?: (h: (a: { visibilityMode: string }) => void) => Promise<unknown> } }).addin;
+  try {
+    void addin?.onVisibilityModeChanged?.((args) => {
+      if (args.visibilityMode === "Taskpane") void tidyEmptyDates();
+    })?.catch?.(() => undefined);
+  } catch {
+    // Not a shared runtime.
+  }
+}
 
 /**
  * Keyboard-shortcut manifest: ribbon buttons, the context menu and the

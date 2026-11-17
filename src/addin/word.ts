@@ -754,10 +754,7 @@ export async function removeEmptyDateControls(): Promise<number> {
     const own = lists.flatMap(({ list }) => list.items.filter((c) => c.tag?.startsWith(DATE_TAG_PREFIX)));
     for (const c of own) c.load("placeholderText");
     await context.sync();
-    const empty = own.filter((c) => {
-      const text = (c.text ?? "").replace(/[\u200b\s]/g, "");
-      return text === "" || (!!c.placeholderText && c.text === c.placeholderText);
-    });
+    const empty = own.filter((c) => isEmptyDate(c.text, c.placeholderText));
     for (const c of empty) {
       c.cannotDelete = false;
       c.cannotEdit = false;
@@ -766,6 +763,32 @@ export async function removeEmptyDateControls(): Promise<number> {
     if (empty.length) await context.sync();
     return empty.length;
   });
+}
+
+/** removeEmptyDateControls for a few edited paragraphs only: cheap enough for every edit. */
+export async function removeEmptyDateControlsIn(ids: readonly string[]): Promise<number> {
+  return Word.run(async (context) => {
+    const lists = ids.slice(0, 50).map((id) => {
+      const list = context.document.getParagraphByUniqueLocalId(id).getRange().contentControls;
+      list.load("items/tag,items/text,items/placeholderText");
+      return list;
+    });
+    await context.sync();
+    const empty = lists.flatMap((list) =>
+      list.items.filter((c) => c.tag?.startsWith(DATE_TAG_PREFIX) && isEmptyDate(c.text, c.placeholderText)),
+    );
+    for (const c of empty) {
+      c.cannotDelete = false;
+      c.cannotEdit = false;
+      c.delete(false);
+    }
+    if (empty.length) await context.sync();
+    return empty.length;
+  });
+}
+
+function isEmptyDate(text: string | undefined, placeholder: string | undefined): boolean {
+  return (text ?? "").replace(/[\u200b\s]/g, "") === "" || (!!placeholder && text === placeholder);
 }
 
 /** Every Vefeyât date control, in reading order of body and footnotes. */
@@ -1228,6 +1251,13 @@ export function forgetDocument(): void {
   structural = true;
 }
 
+const editListeners: Array<(ids: string[]) => void> = [];
+
+/** Called with the changed paragraphs' ids after every edit (needs WordApi 1.6). */
+export function onParagraphsEdited(listener: (ids: string[]) => void): void {
+  editListeners.push(listener);
+}
+
 /**
  * Starts listening to paragraph changes. Returns false where Word has no
  * such events: every read is then a full one.
@@ -1239,6 +1269,7 @@ export async function watchDocument(): Promise<boolean> {
     await Word.run(async (context) => {
       context.document.onParagraphChanged.add(async (event) => {
         for (const id of event.uniqueLocalIds) dirty.add(id);
+        for (const listener of editListeners) listener(event.uniqueLocalIds);
       });
       context.document.onParagraphAdded.add(async () => {
         structural = true;

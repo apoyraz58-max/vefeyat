@@ -102,7 +102,7 @@ const FAKE_OFFICE = String.raw`
       st.controls.push(control);
       return control;
     }
-    get contentControls() { return { items: this.st.controls.filter((c) => c.range.s >= this.s && c.range.e <= this.e && c.range.e > c.range.s), load() { return this; } }; }
+    get contentControls() { return { items: this.st.controls.filter((c) => c.range.s >= this.s && c.range.e <= this.e && c.range.s >= 0), load() { return this; } }; }
     get parentContentControlOrNullObject() {
       const c = this.st.controls.find((c) => c.range.s <= this.s && this.e <= c.range.e && c.range.e > c.range.s);
       return c ? Object.assign(Object.create(c), { isNullObject: false, load() { return this; } }) : { isNullObject: true, load() { return this; } };
@@ -360,11 +360,19 @@ try {
   await select(tab, "Gazzâlî");
   await tab.click("#insert");
   await tab.waitForTimeout(300);
-  // The date deleted by hand leaves an empty control (Word shows its placeholder): removed quietly.
-  await tab.evaluate(() => { const c = window.__doc.controls.find((x) => x.range.e > x.range.s); window.__R(c.range.s, c.range.e).delete(); c.range.s = c.range.e = window.__doc.text.indexOf(" der"); });
-  await tab.evaluate(() => window.go_view_saglik(undefined));
-  await tab.waitForTimeout(600);
-  check("empty date control left by a deleted date is removed", (await tab.evaluate(() => window.__doc.controls.filter((c) => c.range.s >= 0).length)) === 0 && (await docText(tab)) === "Gazzâlî der.", await docText(tab));
+  await tab.close();
+  // The date deleted by hand leaves an empty control (Word shows its placeholder): removed right after the edit.
+  tab = await open("", "Gazzâlî der.", "Gazzâlî", { api: ["WordApi 1.6"] });
+  await tab.click("#insert");
+  await tab.waitForTimeout(300);
+  await tab.evaluate(() => {
+    const c = window.__doc.controls.find((x) => x.range.e > x.range.s);
+    window.__R(c.range.s, c.range.e).delete();
+    c.range.s = c.range.e = window.__doc.text.indexOf(" der");
+    for (const h of window.__doc.handlers.changed) h({ uniqueLocalIds: ["p0"] });
+  });
+  await tab.waitForTimeout(800);
+  check("empty date control is removed right after the edit", (await tab.evaluate(() => window.__doc.controls.filter((c) => c.range.s >= 0).length)) === 0 && (await docText(tab)) === "Gazzâlî der.", await docText(tab));
   await tab.close();
   tab = await open("", "Gazzâlî (ö. 505/1111) der.", "Gazzâlî");
   await tab.evaluate(() => { window.__doc.settings["vefeyat.prefix"] = "o"; });
