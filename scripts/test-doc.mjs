@@ -30,7 +30,7 @@ const vbaDate = (t) =>
 // would be the first mention of that person (dates, audit, "daha önce geçti").
 const check = [
   "KONTROL LİSTESİ (bu bölümde şahıs adı geçmez; denemeden sonra silebilirsiniz)",
-  "1. Şahıs dökümü: GİRİŞ'teki 1.–4. paragraflardaki altı kişi ve 6. paragrafın son cümlesindeki imam listelenmeli; dipnot ve sonnottakiler 'Dipnot'/'Sonnot' etiketiyle. 5. paragraf, 6. paragrafın ilk iki cümlesi, 7. paragraftaki atıflar, başlıklar ve KAYNAKÇA listelenmemeli.",
+  "1. Şahıs dökümü: GİRİŞ'teki 1.–4. paragraflardaki altı kişi, 6. paragrafın son cümlesindeki imam ve 8. paragraftaki adlar listelenmeli; dipnot ve sonnottakiler 'Dipnot'/'Sonnot' etiketiyle. 5. paragraf, 6. paragrafın ilk iki cümlesi, 7. paragraftaki atıflar, başlıklar ve KAYNAKÇA listelenmemeli.",
   "2. 1. paragraftaki kısa adlar 'kimlik belgedeki diğer geçişlerden'; 4. paragraftaki tarihli kısa ad 'kimlik yazılı tarihten' olmalı; 3. paragraftaki baş harfli ad ve konusuz kısa ad tefsir müellifine bağlanmalı (ikincisi 'kimlik konudan (tefsir)').",
   "3. Belge sağlığı: 1 VBA tarihi bulunmalı; 'VBA tarihlerini dönüştür' sonrası 2. paragraftaki tarih metinde aynen kalmalı ve listede sağlam görünmeli.",
   "4. 4. paragraftaki ilk tam adı seçip Ölüm tarihi ekle: 'daha önce geçti' uyarısı çıkmamalı. 4. paragraftaki tarihli kısa adı seçince doğru kişi işaretli gelmeli. Sonra Tarihin kaynağı; sonra Ayarlar → Tarih alanlarını göster/gizle.",
@@ -41,6 +41,10 @@ const check = [
   "9. Klavye kısayolları: bir adı seçip Alt+Shift+V tarih eklemeli, Alt+Shift+G Şahıs dökümünü açmalı. Ayarlar → Klavye kısayolları altı kısayolu listelemeli; fareyle Ölüm tarihi ekle'nin üzerine gelince '(Alt+Shift+V)' yazmalı.",
   "10. 4. paragrafta 1037 tarihli adı seçip Ölüm tarihi ekle: 'Adın arkasında zaten bir tarih var … Katalogdaki tarih: (ö. …)' ve Güncelle çıkmalı (kısaltma farklı). Güncelle'den sonra tarih katalogdaki gibi ve adla tarih, tarihle sonraki kelime arasında tek boşluk olmalı. Aynı ada yeniden basınca 'zaten katalogdakiyle aynı' demeli.",
   "11. Birkaç tarih ekledikten sonra Kısaltma → v.: panel 'çevrilsin mi?' diye sormalı; Çevir'den sonra eklenen tarihler v. ile yazılmalı, 6. paragraftaki elle yazılmış tarih değişmemeli. Eklenen bir tarihi elle silin: yerinde 'Metin girmek için…' yazısı görünmemeli. Belge sağlığı boşluk uyarısı vermemeli.",
+  "12. Bir kişiye tek tarih: 1. paragrafta ilk ada tarih ekleyin, sonra aynı paragraftaki kısa ada Ölüm tarihi ekle: tarih eklenmemeli; 'Bu şahsın tarihi belgede zaten var' ve Tarihe git çıkmalı. Tarihe git ilk adı seçmeli.",
+  "13. Şahıs dökümü süzgeci: listenin üstünde seçenekler sayılarıyla görünmeli; 'Doğrulanacak' yalnız kimliği kesin olmayanları göstermeli. Arama kutusuna 'razi' yazınca yalnız 3. ve 4. paragraftaki adlar kalmalı.",
+  "14. 8. paragraf: lakaplı ad (Fahrülislâm …) katalogdaki Ebü'l-Usr kaydına bağlanmalı. Tek z ile yazılmış adı seçip İsim yazımı'nda doğru yazımı seçin, Tümünü değiştir: kaç geçişin değişeceğini söylemeli; Onayla'dan sonra 8. paragraftaki iki geçiş ekleriyle birlikte düzelmeli.",
+  "15. Birden çok adayı olan bir kısa adda (3. veya 4. paragraf) kişiyi elle seçince 'Bu yazımın bütün belirsiz geçişlerine uygula' çıkmalı; basınca Şahıs dökümünde o yazım için doğrulanacak satır kalmamalı.",
   "Sorun görürseniz: paneldeki mesajın ekran görüntüsü, panelin altındaki sürüm numarası ve hangi adımda olduğu.",
 ];
 
@@ -56,6 +60,7 @@ const body = [
   para(run("Usûlî açıdan bakıldığında bu delil zayıftır. Bu meseleyi usûlî bakışla ele almak gerekir. Nakşibendî tarikatı Osmanlı'da yaygınlaşmıştır; Sünnî ve Şiî müellifler ayrışır.")),
   para(run("Irak'taki medreseler gelişmişti. Arap dili ve edebiyatı önemlidir. Şâfiî (ö. 204/920) bu görüşü er-Risâle'de savunur; Şâfiî mezhebinde ise durum farklıdır.")),
   para(run("Bu tartışma (Gazzâlî, 1993: 45) yaygındır. Bu görüş için bk. Gazzâlî, el-Mustasfâ, I, 45.") + foot("Gazzâlî, age, II, 45.")),
+  para(run("Gazali'nin bu görüşü Fahrülislâm el-Pezdevî tarafından da tartışılmıştır. Gazali'ye göre ise mesele açıktır.")),
   p("KAYNAKÇA", "Heading1"),
   p("Gazzâlî, Ebû Hâmid. el-Mustasfâ min ilmi'l-usûl. Beyrut: Dâru'l-kütübi'l-ilmiyye, 1993."),
   p("İbn Haldûn. Mukaddime. Çev. Süleyman Uludağ. İstanbul: Dergâh Yayınları, 2004."),

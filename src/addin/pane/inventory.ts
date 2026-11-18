@@ -196,8 +196,9 @@ export function renderAudit(): void {
 
 // ---- Excel'e aktar ----
 
+/** The döküm as a table: the rows the süzgeç and the search leave (all of them when nothing is filtered). */
 function inventoryAsTable(): string[][] {
-  return inventoryTable(state.rows, state.segments, (row) => statusLabel(row, state.settings.scope));
+  return inventoryTable(visibleRows(), state.segments, (row) => statusLabel(row, state.settings.scope));
 }
 
 /** A download name browsers accept everywhere: Turkish letters folded, no odd characters. */
@@ -235,7 +236,7 @@ export async function copyInventory(): Promise<void> {
   }
   try {
     await navigator.clipboard.writeText(toTsv(inventoryAsTable()));
-    setMessage(`${state.rows.length} satır panoya kopyalandı. Excel'de bir hücreye ya da Word'de boş bir yere yapıştırın.`, "success");
+    setMessage(`${visibleRows().length} satır panoya kopyalandı. Excel'de bir hücreye ya da Word'de boş bir yere yapıştırın.`, "success");
   } catch {
     setMessage("Pano kullanılamadı. Excel'e aktar düğmesini deneyin.", "warning");
   }
