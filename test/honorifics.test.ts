@@ -35,3 +35,23 @@ describe("lakap + nisba, joined or apart", () => {
     ]);
   });
 });
+
+describe("running text: ayn, eş- and article-less nisbas", () => {
+  const cat = new Catalog([
+    p("Ebû Mutî‘ el-Belhî", "Ebû Mutî‘ el-Hakem b. Abdillâh b. Mesleme el-Belhî", "(ö. 199/814)"),
+    p("A‘lem eş-Şentemerî", "Ebü’l-Haccâc Yûsuf b. Süleymân b. Îsâ el-A‘lem eş-Şentemerî", "(ö. 476/1083)"),
+    p("Ebû Ca‘fer en-Nüfeylî", "Ebû Ca‘fer Abdullāh b. Muhammed b. Alî en-Nüfeylî", "(ö. 234/848)"),
+    p("Ebü’l-Abbâs es-Seffâh", "Ebü’l-Abbâs Abdullāh b. Muhammed b. Alî es-Seffâh", "(ö. 136/754)"),
+  ]);
+  const index = new NameIndex(cat.people);
+  it.each([
+    ["Ebû Mutî‘ el-Belhî", "Ebû Mutî‘ el-Belhî"],
+    ["A‘lem eş-Şentemerî", "A‘lem eş-Şentemerî"],
+    ["A‘lem Şentemerî", "A‘lem eş-Şentemerî"],
+    ["Ebû Ca‘fer Nüfeylî", "Ebû Ca‘fer en-Nüfeylî"],
+    ["Ebü’l-Abbas Seffâh", "Ebü’l-Abbâs es-Seffâh"],
+  ])("%s", (written, expected) => {
+    const rows = buildInventory([{ part: "main", anchor: 0, order: 0, text: `Bu konuda ${written} şöyle der.` }], cat, index);
+    expect(rows.map((r) => [r.text, r.person?.shortName])).toEqual([[written, expected]]);
+  });
+});

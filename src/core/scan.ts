@@ -116,7 +116,7 @@ export function wordCount(value: string): number {
 
 /** `VfbInitialUpper`: the first cased letter is a capital (uncased scripts count as capital). */
 export function initialUpper(value: string): boolean {
-  if (["el-", "er-", "es-", "et-", "ez-", "en-", "ed-"].includes(vbLower(value.slice(0, 3)))) value = value.slice(3);
+  if (["el-", "er-", "es-", "et-", "ez-", "en-", "ed-", "eş-"].includes(vbLower(value.slice(0, 3)))) value = value.slice(3);
   for (const ch of value) {
     if (upper(ch) !== vbLower(ch)) return ch === upper(ch);
     const code = ch.charCodeAt(0);
@@ -189,6 +189,8 @@ export class NameIndex {
       this.shapes.set(key, counts);
     }
     counts.add(wordCount(value));
+    // "A‘lem": an ayn inside a word does not split it in running text.
+    counts.add(wordCount(value.replace(/(\p{L})[‘’'ʿʾ`](\p{L})/gu, "$1$2")));
   }
 
   /** A single word of a longer name that is a place, title or ordinary word. */
@@ -209,6 +211,11 @@ export class NameIndex {
     values.forEach((value, j) => {
       this.add(value, i);
       this.add(withoutArticles(value), i);
+      // "Ebû Ca‘fer Nüfeylî": without the article, an ayn inside a word keeps it one word.
+      if (/\p{L}[‘’'ʿʾ`]\p{L}/u.test(value)) this.add(withoutArticles(value.replace(/(\p{L})[‘’'ʿʾ`](\p{L})/gu, "$1$2")), i);
+      // "Ebü’l-Abbâs Seffâh": only the separate articles go, the künye keeps its own.
+      const bare = value.replace(/(^|\s)(el|er|es|et|ez|en|ed|eş)[-‐](?=\p{L})/giu, "$1");
+      if (bare !== value) this.add(bare, i);
       if (j === 0) {
         const natural = naturalOrder(value);
         if (natural.length > 0) {
@@ -291,6 +298,8 @@ export class NameIndex {
 
 /** `VfbJoinable`: tokens of one name are separated by spaces only ("b." "i." "v." allowed). */
 function joinable(gap: string, previous: string): boolean {
+  // An ayn or hamza ending the previous word ("Ebû Mutî‘ el-Belhî", "Akra‘ b. Hâbis") is part of that word.
+  gap = gap.replace(/^[‘’'ʿʾ`](?=[ \t\u00a0])/u, "");
   for (const ch of gap) {
     if (ch === "." && (previous === "b" || previous === "i" || previous === "v")) continue;
     if (ch !== " " && ch !== "\t" && ch !== " ") return false;

@@ -224,7 +224,7 @@ function workLead(value: string): boolean {
   let clean = vbTrim(value);
   while (clean.length > 0 && isWhite(left(clean, 1))) clean = clean.slice(1);
   if (clean.length === 0) return false;
-  let lead = ["el-", "et-", "er-", "es-", "ez-", "en-", "ed-"].includes(vbLower(left(clean, 3)));
+  let lead = ["el-", "et-", "er-", "es-", "ez-", "en-", "ed-", "eş-"].includes(vbLower(left(clean, 3)));
   if (initialUpper(clean)) lead = true;
   if (quoteClose(clean, 1) > 1) lead = true;
   // Ibid markers stand for the title: "a.g.e.", "age", "a.y.", "aynı eser", "ibid".
