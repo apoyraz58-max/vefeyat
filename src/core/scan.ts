@@ -8,7 +8,7 @@ import { MAX_NAME_LENGTH } from "./alias.js";
 import type { Person } from "./catalog.js";
 import { personKey } from "./catalog.js";
 import { excludeMention, hasSuffix, isSentenceInitial, schoolRoot } from "./context.js";
-import { nameQuery, nameScore, prominence } from "./names.js";
+import { fuseLinks, honorificAliases, nameQuery, nameScore, prominence } from "./names.js";
 import { collapseLetters, isSeparator, nameKey, normalize } from "./normalize.js";
 import { vbLower, vbTrim } from "./text.js";
 import { isValidAlias } from "./alias.js";
@@ -238,6 +238,17 @@ export class NameIndex {
             this.add(withoutArticles(alias), i);
           }
           if (nisbas.length >= 2) this.add(`${kunya} ${nisbas[0]} ${nisbas[1]}`, i);
+        }
+        // Lakap + nisba, the other usual short form: "Fahrü’l-İslâm Alî b. Muhammed … el-Pezdevî"
+        // → "Fahrü’l-İslâm el-Pezdevî", also written joined: "Fahrülislâm Pezdevî".
+        for (const alias of honorificAliases(value)) {
+          // Joined or apart, lakap and künye each: "Fahrülislâm Ebü’l-Usr", "Fahrü’l-İslâm Ebülusr" …
+          const [first, ...rest] = alias.split(" ");
+          const forms = new Set([alias, fuseLinks(alias), [fuseLinks(first as string), ...rest].join(" "), [first, ...rest.map(fuseLinks)].join(" ")]);
+          for (const form of forms) {
+            this.add(form, i);
+            this.add(withoutArticles(form), i);
+          }
         }
       }
       if (j === 0) {

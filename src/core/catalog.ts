@@ -6,7 +6,7 @@
  * `VfaConfirmationCandidates`, `VfqStrength` and `VfqSingleSafe`.
  */
 import { collapseLetters, normalize } from "./normalize.js";
-import { containsTokens, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
+import { containsTokens, fuseLinks, honorificAliases, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
 import { vbTrim } from "./text.js";
 
 /** One catalog row. Field order matches the CSV and the VBA arrays (0..5). */
@@ -26,12 +26,20 @@ export function personFields(person: Person): readonly [string, string, string, 
   return [person.shortName, person.fullName, person.originalName, person.deathDate, person.description, person.source];
 }
 
-/** The person's names; an inverted short name ("Râzî, Ebû Bekir") also in reading order. */
+/**
+ * The person's names; an inverted short name ("Râzî, Ebû Bekir") also in
+ * reading order, and lakap + nisba short forms ("Fahrülİslâm el-Pezdevî").
+ */
+const NAMES = new WeakMap<Person, readonly string[]>();
 function names(person: Person): readonly string[] {
+  const known = NAMES.get(person);
+  if (known) return known;
   const comma = person.shortName.indexOf(",");
-  if (comma < 0 || person.shortName.indexOf(",", comma + 1) >= 0) return [person.shortName, person.fullName, person.originalName];
-  const natural = `${person.shortName.slice(comma + 1).trim()} ${person.shortName.slice(0, comma).trim()}`;
-  return [person.shortName, natural, person.fullName, person.originalName];
+  const natural =
+    comma < 0 || person.shortName.indexOf(",", comma + 1) >= 0 ? [] : [`${person.shortName.slice(comma + 1).trim()} ${person.shortName.slice(0, comma).trim()}`];
+  const list = [person.shortName, ...natural, person.fullName, person.originalName, ...honorificAliases(person.fullName).map(fuseLinks)];
+  NAMES.set(person, list);
+  return list;
 }
 
 export class CatalogError extends Error {

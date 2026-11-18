@@ -16,6 +16,8 @@ const CSV = [
   "Gazzâlî;Ebû Hâmid Muhammed b. Muhammed el-Gazzâlî;الغزالي;(ö. 505/1111);Eş'arî kelâmcısı, Şâfiî fakihi, mutasavvıf.;https://islamansiklopedisi.org.tr/gazzali",
   "Fahreddin er-Râzî;Ebû Abdillâh Fahreddîn Muhammed b. Ömer er-Râzî;;(ö. 606/1210);Eş'arî kelâmcısı, müfessir.;https://islamansiklopedisi.org.tr/fahreddin-er-razi",
   "Ebû Bekir er-Râzî;Ebû Bekir Muhammed b. Zekeriyyâ er-Râzî;;(ö. 313/925);Tabip ve filozof.;https://islamansiklopedisi.org.tr/razi-ebu-bekir",
+  "Pezdevî, Ebü’l-Usr;Ebü’l-Hasen Ebü’l-Usr Fahrü’l-İslâm Alî b. Muhammed b. el-Hüseyn b. Abdilkerîm el-Pezdevî;;(ö. 482/1089);Hanefî fakihi.;https://islamansiklopedisi.org.tr/pezdevi-ebul-usr",
+  "Pezdevî, Ebü’l-Yüsr;Sadrü’l-İslâm Ebü’l-Yüsr Muhammed b. Muhammed b. el-Hüseyn b. Abdilkerîm el-Pezdevî;;(ö. 493/1100);Mâtürîdî kelâmcısı.;https://islamansiklopedisi.org.tr/pezdevi-ebul-yusr",
 ].join("\r\n");
 
 const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".map": "application/json" };
@@ -222,6 +224,11 @@ try {
   const page = await open("", text);
   check("embedded catalog loads automatically", (await page.textContent("#view-secili")) !== null && (await page.isHidden("#no-catalog")));
   check("no settings tab in the window", (await page.$$(".tabs")).length === 0);
+  // Lakap + nisba, written joined: "Fahrülislâm el-Pezdevî" is in the catalog as "Fahrü’l-İslâm … el-Pezdevî".
+  const lakapTab = await open("", "Fahrülislâm el-Pezdevî bu meseleyi ele alır.", "Fahrülislâm el-Pezdevî");
+  const lakap = (await lakapTab.textContent("#view-secili")).replace(/\s+/g, " ");
+  check("joined lakap + nisba is found and the right bearer chosen", lakap.includes("Ebü’l-Usr") && lakap.includes("482/1089") && !(await lakapTab.isDisabled("#insert")), lakap.slice(0, 300));
+  await lakapTab.close();
   check("settings summary at the top", (await page.textContent("#settings-summary")) === "Kısaltma: ö. · Yalnız ilk kullanım · Ad biçimi: Her seferinde sor");
 
   await select(page, "Gazzâlî");
@@ -707,7 +714,7 @@ try {
   check("user CSV persists", (await tab.textContent("#catalog-status")).includes("1 şahıs · sizin seçtiğiniz dosya: benim.csv"), await tab.textContent("#catalog-status"));
   await tab.click("#reset-catalog");
   await tab.waitForTimeout(300);
-  check("reset returns to the published catalog", (await tab.textContent("#catalog-status")).includes("3 şahıs · eklentiyle gelen katalog"), await tab.textContent("#catalog-status"));
+  check("reset returns to the published catalog", (await tab.textContent("#catalog-status")).includes("5 şahıs · eklentiyle gelen katalog"), await tab.textContent("#catalog-status"));
   await tab.close();
 
   // Without a published catalog the window asks for a CSV.

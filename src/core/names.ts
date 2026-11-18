@@ -130,8 +130,22 @@ export function nameMatch(
 }
 
 /** `VfLooseNameMatch`: multi-word queries whose words appear in any order. */
+/**
+ * Joins a one-letter article to its words in normalized text: "fahru l islam"
+ * → "fahrulislam", as the joined spelling "Fahrülislâm" normalizes. "b" (bin) stays.
+ */
+export function fuseNormalizedLinks(value: string): string {
+  let fused = value;
+  for (let previous = ""; previous !== fused; ) {
+    previous = fused;
+    fused = fused.replace(/(\S+) ([lsdtzrn]) (\S+)/, "$1$2$3");
+  }
+  return fused;
+}
+
 export function looseNameMatch(name: string, query: string): number {
-  query = lookupTokens(query);
+  query = fuseNormalizedLinks(lookupTokens(query));
+  name = fuseNormalizedLinks(name);
   if (!query.includes(" ")) return 0;
   if (containsTokens(name, query)) return 2;
   const wanted = query.split(" ");
@@ -195,4 +209,32 @@ export function prominence(shortName: string, query: string): number {
   if (wanted !== undefined && short === wanted) value = 5000;
   if (short === query) value += 100;
   return value;
+}
+
+/**
+ * "Fahrü’l-İslâm" → "Fahrülİslâm": the joined spelling of a compound with an
+ * article ("’l-", "’d-", "’ş-" …), as many texts write it ("Fahrülislâm",
+ * "Şemsüleimme", "Sadrüşşerîa").
+ */
+export function fuseLinks(value: string): string {
+  return value.replace(/(\p{L})[’'‘ʼ](\p{Ll}{1,2})[-‐](\p{L})/gu, "$1$2$3");
+}
+
+/** A lakap: a joined compound ("Hüccetü’l-İslâm", "Şemsüleimme") or a "-ddin" name ("Fahreddin", "Takıyyüddîn"). */
+const HONORIFIC = /^\p{Lu}\p{L}*([’'‘ʼ]\p{Ll}{1,2}[-‐]\p{L}+|(ed|üd|ud|id|ed)d[iî]n|ülislâm|ülislam|üleimme|üşşerîa)$/u;
+
+/**
+ * Lakap + nisba short forms of a full name: every lakap before the first
+ * "b." with each of the first three nisbas ("el-Pezdevî", "et-Tûsî").
+ */
+export function honorificAliases(fullName: string): string[] {
+  const words = fullName.trim().split(/\s+/);
+  const firstB = words.findIndex((w) => w === "b." || w === "bin" || w === "bint");
+  const head = words.slice(0, firstB < 0 ? Math.min(words.length, 4) : firstB);
+  const isKunya = (w: string): boolean => /^(Eb[ûüu]|Ebi|Ümm[üu]?)([’'‘]|$|-)/i.test(w);
+  const honorifics = head.filter((w) => HONORIFIC.test(w) && !isKunya(w));
+  const nisbas = words.filter((w) => /^(el|er|es|et|ez|en|ed|eş)[-‐]\p{Lu}/iu.test(w)).slice(0, 3);
+  // The künye that follows a lakap ("Fahrü’l-İslâm Ebü’l-Usr … el-Pezdevî"); a joined one is one word.
+  const kunyas = head.flatMap((w, k) => (isKunya(w) ? [/[’'‘-]/.test(w) ? w : `${w} ${head[k + 1] ?? ""}`.trim()] : []));
+  return honorifics.flatMap((h) => nisbas.flatMap((n) => [`${h} ${n}`, ...kunyas.map((c) => `${h} ${c} ${n}`)]));
 }
