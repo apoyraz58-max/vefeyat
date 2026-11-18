@@ -445,6 +445,15 @@ try {
   const notesText = await tab.evaluate(() => window.__doc.notes.map((n) => n.text).join(" | "));
   check("Tümünü değiştir changes every mention, endings kept, citations in notes too", (await docText(tab)) === "Gazzâlî der.\rSonra Gazzâlî'nin eseri.\rGazzâlî yine der; Gazzâlî'ye göre.\rKAYNAKÇA\rGazzâlî, Ebû Hâmid. el-Mustasfâ. Beyrut 1993." && notesText.includes("Gazzâlî, el-Mustasfâ"), `${await docText(tab)} || ${notesText} || ${await tab.textContent("#message")}`);
   await tab.close();
+  // Sorun bildir: versions, settings and recent messages; never the document text.
+  tab = await open("?view=yardim", "Gizli tez metni: Gazzâlî der.", "Gazzâlî");
+  await tab.fill("#report-note", "Tarih eklenmedi.");
+  await tab.waitForTimeout(200);
+  const report = await tab.inputValue("#report-text");
+  check("Sorun bildir lists version, settings and the note, not the document text", report.includes("Ne oldu: Tarih eklendi".slice(0, 10)) && report.includes("Vefeyât: ") && report.includes("Ayarlar: Kısaltma") && report.includes("Tarih eklenmedi.") && !report.includes("Gizli tez metni"), report.slice(0, 300));
+  await tab.click("#report-mail").catch(() => {});
+  check("e-mail link goes to the beta address", (await tab.getAttribute("#report-mail", "href")).startsWith("mailto:apoyraz@cumhuriyet.edu.tr?subject="));
+  await tab.close();
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
   await tab.click("#insert");

@@ -281,4 +281,9 @@ root.joinpath("manifest/shortcuts.json").write_text(json.dumps(shortcuts, ensure
 for needle in ("SharedRuntime", "<Runtimes>", 'FunctionFile resid="Taskpane.Url"', 'id="Taskpane.Url"', "ExtendedOverrides"):
     assert needle in final, needle
 root.joinpath("manifest/manifest.template.xml").write_text(final, encoding="utf-8")
+# manifest-uyumlu: older Word without the shared runtime: buttons open the pane
+# with ?action=…/?view=… and the Tercihler menus run in commands.html; no shortcuts.
+compatible = xml.replace('<DisplayName DefaultValue="Vefeyât"/>', '<DisplayName DefaultValue="Vefeyât"/>')
+assert "SharedRuntime" not in compatible and "ExtendedOverrides" not in compatible
+root.joinpath("manifest/manifest-uyumlu.template.xml").write_text(compatible, encoding="utf-8")
 print(f"{len(used_icons)} icons, {len(urls)} urls, {len(short)} labels, {final.count('<FunctionName>go_')} ribbon functions, {len(SHORTCUTS)} shortcuts")

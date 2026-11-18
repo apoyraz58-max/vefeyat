@@ -64,7 +64,18 @@ export const $ = <T extends HTMLElement>(id: string): T => {
   return element as T;
 };
 
+/** The last messages and page errors of this session, for Sorun bildir (newest last). */
+export const events: string[] = [];
+
+export function noteEvent(kind: string, text: string): void {
+  const line = text.replace(/\s+/g, " ").trim();
+  if (!line) return;
+  events.push(`${new Date().toLocaleTimeString("tr-TR", { hour12: false })} ${kind}: ${line.slice(0, 300)}`);
+  if (events.length > 20) events.shift();
+}
+
 export function setMessage(text: string, kind: "info" | "warning" | "error" | "success" = "info"): void {
+  if (kind !== "success" || text) noteEvent(kind === "info" ? "bilgi" : kind === "warning" ? "uyarı" : kind === "error" ? "hata" : "tamam", text);
   const box = $("message");
   box.textContent = text;
   box.className = `message ${kind}`;

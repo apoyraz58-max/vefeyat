@@ -56,3 +56,11 @@ Pages; yerel sunucu için `BASE_URL=https://localhost:3000/ npm run build`).
   sonraki aşamalar `docs/MIGRATION.md`.
 
 Kişisel CSV kataloğu, tezler ve derlenmiş `.dotm` dosyaları depoya eklenmez.
+
+## Kapalı beta
+
+Denemeciler `beta` dalını kullanır: <https://apoyraz58-max.github.io/vefeyat/beta/manifest.xml>
+(eski Word için `manifest-uyumlu.xml`). Kurulum ve sorun bildirme: [docs/BETA.md](docs/BETA.md).
+Main'deki bir sürümü betaya almak: `git push origin main:beta` (Pages iş akışı main'i
+kökte, beta dalını `/beta/` altında yayımlar; beta kendi kimliği ve adıyla geliştirme
+sürümünün yanına kurulabilir).

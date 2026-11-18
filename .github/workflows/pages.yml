@@ -1,9 +1,11 @@
 name: pages
-# Publishes the add-in (dist/addin) to GitHub Pages from main.
+# Publishes the add-in to GitHub Pages: main at the site root (development,
+# every change at once), the beta branch under /beta/ (closed beta; changes only
+# when main is promoted: git push origin main:beta).
 # One-time setup: Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
 on:
   push:
-    branches: [main]
+    branches: [main, beta]
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -24,6 +29,18 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - name: Build the beta branch into /beta/
+        run: |
+          if git rev-parse --verify --quiet origin/beta >/dev/null; then
+            git worktree add ../beta-src origin/beta
+            cd ../beta-src
+            npm ci
+            CHANNEL=beta BETA_NUMBER=$(git rev-list --count HEAD) \
+              BASE_URL=https://apoyraz58-max.github.io/vefeyat/beta/ \
+              OUT_DIR=$GITHUB_WORKSPACE/dist/addin/beta/ npm run build
+          else
+            echo "No beta branch yet."
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist/addin

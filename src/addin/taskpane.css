@@ -161,3 +161,7 @@ input[type="search"] {
 #view-title-row{display:flex;align-items:center;gap:8px}.brand{flex:none;border-radius:5px}.about-logo{display:block;width:100%;max-width:300px;height:auto;margin:4px 0 10px}
 /* İsim yazımı: the list gets the whole width, long names stay readable; the buttons go below. */
 select.wide { display: block; width: 100%; max-width: 100%; box-sizing: border-box; margin-bottom: 6px; text-overflow: ellipsis; }
+/* Sorun bildir */
+#report-note, #report-text { display: block; width: 100%; box-sizing: border-box; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; margin: 6px 0 0; }
+#report-text { font: 12px monospace; color: var(--muted); }
+a.button { display: inline-flex; align-items: center; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 5px 10px; min-height: 32px; box-sizing: border-box; text-decoration: none; }

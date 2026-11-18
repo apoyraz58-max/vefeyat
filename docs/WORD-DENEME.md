@@ -8,6 +8,12 @@ Yeni bir özelliği önce bir tez **kopyasında** deneyin.
 
 ## 1. Kurulum ve güncelleme
 
+**Kapalı beta denemecileri** için ayrı ve sabit bir sürüm var: [BETA.md](BETA.md)
+(manifest: `https://apoyraz58-max.github.io/vefeyat/beta/manifest.xml`; eski Word için
+`manifest-uyumlu.xml`). Bu sayfadaki adresler geliştirme sürümünündür; her değişiklik oraya
+hemen gelir. Eski Word (2408 öncesi, Office 2019/2021) için geliştirme sürümünde de
+`manifest-uyumlu.xml` var: klavye kısayolları dışında her şey aynı.
+
 Manifest: `https://apoyraz58-max.github.io/vefeyat/manifest.xml`
 
 **Windows masaüstü Word:** Manifesti bir klasöre koyun ve klasörü paylaşın (sağ tık →

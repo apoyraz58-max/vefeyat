@@ -363,7 +363,18 @@
           <li>Teslimden önce, bir kopyada: <strong>Teslim öncesi temizle</strong>.</li>
         </ul>
         <p><a href="https://github.com/apoyraz58-max/vefeyat/blob/main/docs/WORD-DENEME.md" target="_blank" rel="noopener noreferrer">Ayrıntılı kılavuz</a>
-          · <a href="https://apoyraz58-max.github.io/vefeyat/vefeyat-deneme.docx" target="_blank" rel="noopener noreferrer">Deneme tezi</a></p>
+          · <a href="vefeyat-deneme.docx" target="_blank" rel="noopener noreferrer">Deneme tezi</a></p>
+      </section>
+      <section id="report">
+        <h2>Sorun bildir</h2>
+        <p class="muted">Ne yaptığınızı ve ne beklediğinizi kısaca yazın. Bildirime sürüm, Word sürümü, ayarlar ve bu oturumdaki son mesajlar eklenir; belge metni eklenmez.</p>
+        <textarea id="report-note" rows="3" aria-label="Ne oldu?" placeholder="Örn. 3. sayfadaki adı seçip Ölüm tarihi ekle dedim, tarih eklenmedi."></textarea>
+        <textarea id="report-text" rows="8" readonly aria-label="Bildirim metni"></textarea>
+        <div class="actions">
+          <button id="report-copy" type="button" class="primary">Panoya kopyala</button>
+          <a id="report-mail" class="button" href="mailto:apoyraz@cumhuriyet.edu.tr" target="_blank" rel="noopener noreferrer">E-postayla gönder</a>
+        </div>
+        <p class="muted">Adres: apoyraz@cumhuriyet.edu.tr</p>
       </section>
       <section id="about">
         <h2>Hakkında</h2>
@@ -381,7 +392,7 @@
 
     <footer>
       <span>Vefeyât <span id="version"></span></span>
-      <span>Belge metni bilgisayarınızdan çıkmaz.</span>
+      <span>Belge metni bilgisayarınızdan çıkmaz. <a id="report-link" href="#report">Sorun bildir</a></span>
     </footer>
     <script src="taskpane.js"></script>
   </body>

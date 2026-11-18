@@ -11,6 +11,7 @@ import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth,
 import { setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
+import { copyReport, mailReport, renderReport, watchErrors } from "./pane/report.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
 import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
 
@@ -27,6 +28,7 @@ export async function launch(request: Launch): Promise<void> {
   if (request.view === "gecmis") renderHistory();
   if (request.view === "kimlik") renderIdentities();
   if (request.view === "katalog") renderLocals();
+  if (request.view === "yardim") renderReport();
   if (request.view === "tercihler") {
     renderSpellings();
     void renderShortcuts();
@@ -89,6 +91,7 @@ export async function checkForUpdate(): Promise<void> {
 }
 
 export function initialise(): void {
+  watchErrors();
   void checkForUpdate();
   $("version").textContent = __VERSION__;
   $("about-version").textContent = __VERSION__;
@@ -100,6 +103,16 @@ export function initialise(): void {
   $("run-rapor").addEventListener("click", () => void run(createPersonReport, "Şahıs raporu hazırlanıyor"));
   $("spellings-clear").addEventListener("click", () => void run(clearSpellings));
   $("prefs-download").addEventListener("click", downloadPrefs);
+  $("report-copy").addEventListener("click", () => void copyReport());
+  $("report-mail").addEventListener("click", mailReport);
+  $("report-note").addEventListener("input", renderReport);
+  $("report-link").addEventListener("click", (event) => {
+    event.preventDefault();
+    showView("yardim");
+    renderReport();
+    $("report").scrollIntoView();
+    $("report-note").focus();
+  });
   $("shortcuts-save").addEventListener("click", () => void run(saveShortcuts));
   $("shortcuts-reset").addEventListener("click", () => void run(resetShortcuts));
   $("prefs-copy").addEventListener("click", () => void copyPrefs());
