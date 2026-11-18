@@ -2,7 +2,7 @@
 import { buildXlsx, inventoryTable, toTsv } from "../submit.js";
 import { NameIndex } from "../../core/index.js";
 import { auditRows } from "../logic.js";
-import { type InventoryRow, buildInventoryAsync, catalogLabel, hasDateIssue, statusLabel, summarize } from "../inventory.js";
+import { type InventoryFilter, type InventoryRow, FILTER_LABELS, buildInventoryAsync, filterRows, inFilter, catalogLabel, hasDateIssue, statusLabel, summarize } from "../inventory.js";
 import { parseBookmark, resumeIndex, rowKey } from "../bulk.js";
 import { readSpellings, readExclusions, readAuditBookmark, writeAuditBookmark, readConfirmations, readDocument, documentVersion, selectMention, documentName } from "../word.js";
 
@@ -30,10 +30,45 @@ export async function prepareInventory(): Promise<void> {
   renderInventory();
 }
 
+/** The rows the Şahıs dökümü süzgeci and the name search leave. */
+export function visibleRows(): InventoryRow[] {
+  return filterRows(state.rows, state.filter, state.query, state.settings.scope);
+}
+
+/** Süzgeç options with their counts ("Sorunlular (12)"). */
+function renderFilter(): void {
+  const select = $<HTMLSelectElement>("inventory-filter");
+  select.replaceChildren();
+  for (const [value, label] of Object.entries(FILTER_LABELS) as Array<[InventoryFilter, string]>) {
+    const count = value === "all" ? state.rows.length : state.rows.filter((r) => inFilter(r, value, state.settings.scope)).length;
+    if (count === 0 && value !== "all" && value !== state.filter) continue;
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = `${label} (${count})`;
+    option.selected = value === state.filter;
+    select.append(option);
+  }
+}
+
+export function setInventoryFilter(filter: InventoryFilter, query: string): void {
+  state.filter = filter;
+  state.query = query;
+  state.page = 0;
+  renderInventory();
+}
+
 export function renderInventory(): void {
   const list = $("inventory-list");
   list.replaceChildren();
-  const pageRows = state.rows.slice(state.page * PAGE_SIZE, (state.page + 1) * PAGE_SIZE);
+  renderFilter();
+  const shown = visibleRows();
+  if (shown.length === 0 && state.rows.length > 0) {
+    const empty = document.createElement("li");
+    empty.className = "muted";
+    empty.textContent = "Bu süzgece uyan geçiş yok.";
+    list.append(empty);
+  }
+  const pageRows = shown.slice(state.page * PAGE_SIZE, (state.page + 1) * PAGE_SIZE);
   for (const row of pageRows) {
     const item = document.createElement("li");
     item.setAttribute("role", "option");
@@ -55,7 +90,7 @@ export function renderInventory(): void {
     item.addEventListener("dblclick", () => void actOnRow());
     list.append(item);
   }
-  const pages = Math.ceil(state.rows.length / PAGE_SIZE);
+  const pages = Math.ceil(shown.length / PAGE_SIZE);
   $("inventory-pages").hidden = pages <= 1;
   $("inventory-page").textContent = pages > 1 ? `${state.page + 1} / ${pages}` : "";
   $<HTMLButtonElement>("inventory-act").disabled = state.selectedRow === null;

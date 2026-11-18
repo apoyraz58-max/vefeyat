@@ -133,7 +133,10 @@ seçince altında ne yazılacağı görünür ("Gazali'nin → Gazzâlî'nin"). 
 
 - **Şahıs dökümü:** metin, dipnot ve sonnotlardaki bütün geçişler; her satırda
   katalog kaydı, yazılı tarih ve durum. Özet satırı kaç dipnot ve sonnot
-  okunduğunu da yazar. Satıra tıklayınca geçiş belgede seçilir.
+  okunduğunu da yazar. Satıra tıklayınca geçiş belgede seçilir. Listenin üstündeki
+  süzgeç yalnız Sorunluları, Doğrulanacakları, İlk geçişte tarih olmayanları, Yazım
+  ya da Tarih uyarılarını veya Katalogda olmayanları gösterir (sayılarıyla); arama
+  kutusu ada göre süzer, şapka ve Türkçe harf farkına bakmaz ("gazali" Gazzâlî'yi bulur).
   **Excel'e aktar** dökümü .xlsx dosyası olarak kaydeder (başlık satırı sabit,
   süzgeçli); **Panoya kopyala** Excel'e ya da bir Word tablosuna yapıştırılır.
 - **Tüm belgeyi denetle:** geçişleri tek tek gezer; **Denetimi bitir** duraklatır,

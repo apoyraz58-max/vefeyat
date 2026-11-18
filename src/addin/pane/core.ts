@@ -1,7 +1,7 @@
 /** Vefeyât pane — shared state, messages, the busy bar and long-operation runner, the cached reading of the document, İşlem geçmişi. */
 import { Catalog, NameIndex, type Person } from "../../core/index.js";
 import { DEFAULT_SETTINGS, type Lookup, type Settings, type View, settingsSummary } from "../logic.js";
-import { type InventoryRow, type Segment, buildInventoryAsync, placeOf } from "../inventory.js";
+import { type InventoryFilter, type InventoryRow, type Segment, buildInventoryAsync, placeOf } from "../inventory.js";
 import { type HistoryEntry, type HistoryKind, addHistory, parseHistory } from "../bulk.js";
 import { readSpellings, readExclusions, readConfirmations, readDocument, documentVersion, readSettings, refreshSettings } from "../word.js";
 
@@ -24,6 +24,9 @@ export interface State {
   segments: Segment[];
   rows: InventoryRow[];
   page: number;
+  /** Şahıs dökümü süzgeci and name search. */
+  filter: InventoryFilter;
+  query: string;
   selectedRow: number | null;
   audit: InventoryRow[] | null;
   auditAt: number;
@@ -44,6 +47,8 @@ export const state: State = {
   segments: [],
   rows: [],
   page: 0,
+  filter: "all",
+  query: "",
   selectedRow: null,
   audit: null,
   auditAt: 0,

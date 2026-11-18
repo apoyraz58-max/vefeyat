@@ -202,3 +202,19 @@ describe("first mention per part", () => {
     ]);
   });
 });
+
+describe("Şahıs dökümü süzgeci", () => {
+  it("filters by status and finds names regardless of spelling", async () => {
+    const { filterRows, inFilter } = await import("../src/addin/inventory.js");
+    const { Catalog } = await import("../src/core/index.js");
+    const person = (shortName: string, deathDate: string) => ({ shortName, fullName: "", originalName: "", deathDate, description: "", source: "x" + shortName });
+    const cat = new Catalog([person("Gazzâlî", "(ö. 505/1111)"), person("Cüveynî", "(ö. 478/1085)")]);
+    const rows = buildInventory([{ part: "main", anchor: 0, order: 0, text: "Gazzâlî der. Gazali'nin eseri. Cüveynî (ö. 478/1085) der." }], cat);
+    expect(filterRows(rows, "all").length).toBe(rows.length);
+    expect(filterRows(rows, "undated").map((r) => r.text)).toEqual(["Gazzâlî"]);
+    expect(filterRows(rows, "all", "gazali").map((r) => r.text)).toEqual(["Gazzâlî", "Gazali'nin"]);
+    expect(filterRows(rows, "all", "CÜVEYNİ").map((r) => r.text)).toEqual(["Cüveynî"]);
+    expect(rows.filter((r) => inFilter(r, "problems")).map((r) => r.text)).toContain("Gazzâlî");
+    expect(rows.filter((r) => inFilter(r, "problems")).map((r) => r.text)).not.toContain("Cüveynî");
+  });
+});

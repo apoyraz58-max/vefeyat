@@ -24,6 +24,7 @@ import {
   words,
   lowerCaseWords,
   citationSpans,
+  collapseLetters,
   containsSpan,
   findMatches,
   findUnknownPeople,
@@ -483,4 +484,57 @@ export function summarize(rows: readonly InventoryRow[], scope = "first"): Inven
     uncertain: rows.filter((r) => r.status === "near" || r.status === "choose").length,
     dateIssues: rows.filter((r) => hasDateIssue(r)).length,
   };
+}
+
+// ---- Şahıs dökümü süzgeci ----
+
+export type InventoryFilter = "all" | "problems" | "verify" | "undated" | "spelling" | "dates" | "unknown";
+
+export const FILTER_LABELS: Readonly<Record<InventoryFilter, string>> = {
+  all: "Tümü",
+  problems: "Sorunlular",
+  verify: "Doğrulanacak",
+  undated: "İlk geçişte tarih yok",
+  spelling: "Yazım uyarısı",
+  dates: "Tarih uyarısı",
+  unknown: "Katalogda yok",
+};
+
+function undatedFirst(row: InventoryRow, scope: string): boolean {
+  return isFirstUse(row, scope) && !row.date && row.person !== null && isValidDate(row.person.deathDate);
+}
+
+/** Whether a row belongs to a filter of the Şahıs dökümü. */
+export function inFilter(row: InventoryRow, filter: InventoryFilter, scope = "first"): boolean {
+  switch (filter) {
+    case "all":
+      return true;
+    case "verify":
+      return row.status === "near" || row.status === "choose";
+    case "undated":
+      return undatedFirst(row, scope);
+    case "spelling":
+      return row.status === "spelling";
+    case "dates":
+      return hasDateIssue(row);
+    case "unknown":
+      return row.status === "unknown";
+    case "problems":
+      return row.status !== "match" || hasDateIssue(row) || undatedFirst(row, scope);
+  }
+}
+
+/**
+ * The rows a filter and a name search leave. The search ignores case,
+ * circumflexes and Turkish letters and looks at the written name and the
+ * catalog's short name ("gazali" finds "Gazzâlî'nin").
+ */
+export function filterRows(rows: readonly InventoryRow[], filter: InventoryFilter, query = "", scope = "first"): InventoryRow[] {
+  const wanted = collapseLetters(normalize(query).split(" ").join(""));
+  return rows.filter((row) => {
+    if (!inFilter(row, filter, scope)) return false;
+    if (!wanted) return true;
+    const names = [row.text, row.person?.shortName ?? "", ...row.candidates.slice(0, 3).map((c) => c.shortName)];
+    return names.some((n) => collapseLetters(normalize(n).split(" ").join("")).includes(wanted));
+  });
 }

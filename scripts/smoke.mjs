@@ -408,6 +408,18 @@ try {
   await tab.waitForTimeout(400);
   check("Tarihi buraya taşı: one date, at the first mention", (await docText(tab)) === "Önce Gazzâlî (ö. 505/1111) der.\rSonra Gazzâlî yazar.", await docText(tab));
   await tab.close();
+  // Şahıs dökümü süzgeci and name search.
+  tab = await open("?view=dokum", "Gazzâlî der.\rSonra Gazali'nin eseri.\rFahreddin er-Râzî (ö. 606/1210) de.");
+  await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length === 3);
+  const filterLabels = await tab.$$eval("#inventory-filter option", (o) => o.map((x) => x.textContent));
+  await tab.selectOption("#inventory-filter", "undated");
+  const undated = await tab.$$eval("#inventory-list li strong", (n) => n.map((x) => x.textContent));
+  await tab.selectOption("#inventory-filter", "all");
+  await tab.fill("#inventory-search", "gazali");
+  await tab.waitForTimeout(400);
+  const searched = await tab.$$eval("#inventory-list li strong", (n) => n.map((x) => x.textContent));
+  check("Şahıs dökümü filters by status and searches by name", filterLabels[0] === "Tümü (3)" && undated.join() === "Gazzâlî" && searched.join() === "Gazzâlî,Gazali'nin", `${filterLabels} | ${undated} | ${searched}`);
+  await tab.close();
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
   await tab.click("#insert");

@@ -8,7 +8,7 @@ import { onParagraphsEdited, watchDocument, canReadPages, selectionPage, writeAu
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
-import { actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
+import { setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
@@ -219,8 +219,16 @@ export function initialise(): void {
     renderInventory();
   });
   $("inventory-next").addEventListener("click", () => {
-    if ((state.page + 1) * PAGE_SIZE < state.rows.length) state.page++;
+    if ((state.page + 1) * PAGE_SIZE < visibleRows().length) state.page++;
     renderInventory();
+  });
+  const filterNow = (): void =>
+    setInventoryFilter($<HTMLSelectElement>("inventory-filter").value as typeof state.filter, $<HTMLInputElement>("inventory-search").value);
+  $("inventory-filter").addEventListener("change", filterNow);
+  let searchTimer: number | undefined;
+  $("inventory-search").addEventListener("input", () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(filterNow, 200);
   });
   $("audit-prev").addEventListener("click", () => void run(() => gotoAudit(state.auditAt - 1)));
   $("audit-next").addEventListener("click", () =>

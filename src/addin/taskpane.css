@@ -75,6 +75,9 @@ label { display: block; font-weight: 600; margin: 10px 0 4px; }
 
 .row { display: flex; gap: 6px; }
 .row select { flex: 1; min-width: 0; }
+.filter-row { margin: 8px 0 4px; }
+.filter-row select { flex: 0 0 auto; max-width: 55%; }
+.filter-row input { flex: 1; min-width: 0; }
 .actions { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 0; }
 .muted, small, .hint { color: var(--muted); }
 .selected { font-size: 16px; font-weight: 600; margin: 0 0 6px; overflow-wrap: anywhere; }
