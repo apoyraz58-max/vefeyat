@@ -20,7 +20,7 @@ const CSV = [
   "Pezdevî, Ebü’l-Yüsr;Sadrü’l-İslâm Ebü’l-Yüsr Muhammed b. Muhammed b. el-Hüseyn b. Abdilkerîm el-Pezdevî;;(ö. 493/1100);Mâtürîdî kelâmcısı.;https://islamansiklopedisi.org.tr/pezdevi-ebul-yusr",
 ].join("\r\n");
 
-const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".map": "application/json" };
+const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".json": "application/json", ".map": "application/json" };
 let serveCatalog = true;
 const server = createServer(async (req, res) => {
   try {
@@ -772,6 +772,17 @@ try {
   check("reset returns to the published catalog", (await tab.textContent("#catalog-status")).includes("5 şahıs · eklentiyle gelen katalog"), await tab.textContent("#catalog-status"));
   await tab.close();
 
+  // SMOKE_VIEWS=<folder>: a screenshot of every window at pane width, to look for cramped layouts.
+  if (process.env.SMOKE_VIEWS) {
+    const text = "Gazzâlî der.\rSonra Gazali'nin eseri ve Râzî.\rFahreddin er-Râzî (ö. 606/1210) de böyle der.";
+    for (const query of ["?view=dokum", "?view=toplu", "?view=saglik", "?view=teslim", "?view=katalog", "?view=tercihler", "?view=yardim", "?view=ara", "?view=gecmis", "?view=kimlik", "?view=istisna", "?view=kapsam"]) {
+      const shot = await open(query, text, "Râzî", { api: ["WordApi 1.6", "KeyboardShortcuts 1.1"] });
+      await shot.waitForTimeout(800);
+      await shot.screenshot({ path: `${process.env.SMOKE_VIEWS}/${query.slice(6)}.png`, fullPage: true });
+      await shot.close();
+    }
+    console.log("views written");
+  }
   // Without a published catalog the window asks for a CSV.
   serveCatalog = false;
   const fresh = await browser.newContext({ viewport: { width: 360, height: 900 } });

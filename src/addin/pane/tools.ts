@@ -196,7 +196,7 @@ export function renderIdentities(): void {
   const people = new Map((state.catalog?.people ?? []).map((p) => [personKey(p), p] as const));
   $("identity-summary").textContent = views.length
     ? `${views.length} geçiş için kimliği siz seçtiniz. Yanlış olanı silerseniz o geçiş yeniden "seçim gerekli" olur.`
-    : "Kayıtlı kimlik onayı yok. Birden fazla adayı olan bir adda aday seçip tarih eklediğinizde burada görünür.";
+    : "Kayıtlı kimlik onayı yok. Birden fazla adayı olan bir adda kişiyi seçip tarih eklediğinizde ya da “Bu yazımın bütün belirsiz geçişlerine uygula” dediğinizde burada görünür.";
   $("identity-clear").hidden = views.length === 0;
   const out = $("identity-list");
   out.replaceChildren();
