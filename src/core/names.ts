@@ -238,3 +238,6 @@ export function honorificAliases(fullName: string): string[] {
   const kunyas = head.flatMap((w, k) => (isKunya(w) ? [/[’'‘-]/.test(w) ? w : `${w} ${head[k + 1] ?? ""}`.trim()] : []));
   return honorifics.flatMap((h) => nisbas.flatMap((n) => [`${h} ${n}`, ...kunyas.map((c) => `${h} ${c} ${n}`)]));
 }
+
+/** Eponyms of a school whose catalog short name is longer than the school word: "Eş‘arî" alone is Ebü’l-Hasan. */
+export const EPONYMS: Readonly<Record<string, string>> = { esari: "Eş‘arî, Ebü’l-Hasan" };

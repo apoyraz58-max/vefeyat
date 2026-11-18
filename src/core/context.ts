@@ -326,8 +326,22 @@ const DICTIONARY_WORDS = new Set(
     .map(key),
 );
 
+// Endings a short stem may take ("soyu", "kolları", "dilinde"), back and front
+// forms apart: "soy" + "le" is "şöyle", not a lineage; "kolay", "beyan" are other words.
+const BACK_ENDINGS = new Set("|i|u|a|in|un|nin|nun|ina|una|ini|unu|inda|unda|indan|undan|da|ta|dan|tan|lar|lari|larin|larina|larinda|larindan|la|yla|ya|yi|yu|si|su".split("|"));
+const FRONT_ENDINGS = new Set("|i|u|e|in|un|nin|nun|ine|une|ini|unu|inde|unde|inden|unden|de|te|den|ten|ler|leri|lerin|lerine|lerinde|lerinden|le|yle|ye|yi|yu|si|su".split("|"));
+
 function startsGroupNoun(word: string): boolean {
-  return GROUP_NOUNS.some((stem) => word.startsWith(stem));
+  return GROUP_NOUNS.some((stem) => {
+    if (!word.startsWith(stem)) return false;
+    if (stem.length >= 4) return true;
+    const ending = word.slice(stem.length);
+    // The stem's last vowel picks the endings; "i" stands for ı and i alike.
+    const last = /[aeiou](?=[^aeiou]*$)/.exec(stem)?.[0];
+    if (last === "e") return FRONT_ENDINGS.has(ending);
+    if (last === "i") return FRONT_ENDINGS.has(ending) || BACK_ENDINGS.has(ending);
+    return BACK_ENDINGS.has(ending);
+  });
 }
 
 /**

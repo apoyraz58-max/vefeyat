@@ -7,8 +7,8 @@
 import { MAX_NAME_LENGTH } from "./alias.js";
 import type { Person } from "./catalog.js";
 import { personKey } from "./catalog.js";
-import { excludeMention, hasSuffix, isSentenceInitial, schoolRoot } from "./context.js";
-import { fuseLinks, honorificAliases, nameQuery, nameScore, prominence } from "./names.js";
+import { excludeMention, hasSuffix, isSentenceInitial, isWorkUsage, schoolRoot } from "./context.js";
+import { EPONYMS, fuseLinks, honorificAliases, nameQuery, nameScore, prominence } from "./names.js";
 import { collapseLetters, isSeparator, nameKey, normalize } from "./normalize.js";
 import { vbLower, vbTrim } from "./text.js";
 import { isValidAlias } from "./alias.js";
@@ -151,7 +151,9 @@ function compoundAlias(value: string): boolean {
 
 function independentAlias(value: string, shortName: string): boolean {
   const key = nameKey(value);
-  return schoolRoot(key).length > 0 ? key === nameKey(shortName) : true;
+  const root = schoolRoot(key);
+  // A school word alone names only its eponym ("Eş‘arî" → Ebü’l-Hasan el-Eş‘arî); the context rules tell adjective from person.
+  return root.length > 0 ? key === nameKey(shortName) || (key === root && EPONYMS[root] === shortName) : true;
 }
 
 /** Lookup of catalog spellings (`VfbBuildPatterns`, `VfbIndexRow`, `VfbAddPattern`). */
@@ -324,6 +326,9 @@ function nameSpanEnd(text: string, tokens: readonly Token[], first: number, inde
     // A lower-case word ("devlet", "medrese") never continues a name, catalog key or not.
     if (!isNameLink(key) && !initialUpper(raw)) break;
     if (i > first && !joinable(gapBetween(text, tokens[i - 1] as Token, token), (tokens[i - 1] as Token).key)) break;
+    // A title with an article after the name, inflected or called a work: "Şâfiî er-Risâle'yi",
+    // "Gazzâlî el-Mustasfâ'da", "Gazzâlî el-Mustasfâ adlı eserinde". The name stops before it.
+    if (i > first && /^(el|er|es|et|ez|en|ed|eş)[-‐]/i.test(raw) && (hasSuffix(raw) || isWorkUsage(text.slice(token.start + token.length, token.start + token.length + 40)))) break;
     if (!isNameLink(key)) end = i;
     if (hasSuffix(raw)) break;
   }

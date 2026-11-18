@@ -6,7 +6,7 @@
  * `VfaConfirmationCandidates`, `VfqStrength` and `VfqSingleSafe`.
  */
 import { collapseLetters, normalize } from "./normalize.js";
-import { containsTokens, fuseLinks, honorificAliases, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
+import { EPONYMS, containsTokens, fuseLinks, honorificAliases, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
 import { vbTrim } from "./text.js";
 
 /** One catalog row. Field order matches the CSV and the VBA arrays (0..5). */
@@ -37,7 +37,8 @@ function names(person: Person): readonly string[] {
   const comma = person.shortName.indexOf(",");
   const natural =
     comma < 0 || person.shortName.indexOf(",", comma + 1) >= 0 ? [] : [`${person.shortName.slice(comma + 1).trim()} ${person.shortName.slice(0, comma).trim()}`];
-  const list = [person.shortName, ...natural, person.fullName, person.originalName, ...honorificAliases(person.fullName).map(fuseLinks)];
+  const eponym = Object.values(EPONYMS).includes(person.shortName) ? [person.shortName.slice(0, comma).trim()] : [];
+  const list = [person.shortName, ...natural, ...eponym, person.fullName, person.originalName, ...honorificAliases(person.fullName).map(fuseLinks)];
   NAMES.set(person, list);
   return list;
 }

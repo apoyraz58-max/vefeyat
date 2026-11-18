@@ -75,3 +75,27 @@ describe("ordinary words are not certain persons on their own", () => {
     expect(first("Gazzâlî bu konuda şöyle der.")?.person?.shortName).toBe("Gazzâlî");
   });
 });
+
+describe("school eponyms and works after a name", () => {
+  const cat = new Catalog([
+    p("Şâfiî", "Ebû Abdillâh Muhammed b. İdrîs b. Abbâs eş-Şâfiî", "(ö. 204/820)"),
+    p("Eş‘arî, Ebü’l-Hasan", "Ebü’l-Hasen Alî b. İsmâîl b. Ebî Bişr İshâk b. Sâlim el-Eş‘arî el-Basrî", "(ö. 324/935-36)"),
+    p("Eş‘arî, Ebû Bürde", "Ebû Bürde Âmir b. Ebî Mûsâ Abdillâh b. Kays el-Eş‘arî", "(ö. 104/722)"),
+    p("Gazzâlî", "Ebû Hâmid Muhammed el-Gazzâlî", "(ö. 505/1111)"),
+  ]);
+  const index = new NameIndex(cat.people);
+  const who = (text: string) => buildInventory([{ part: "main", anchor: 0, order: 0, text }], cat, index).map((r) => [r.text, r.person?.shortName ?? null]);
+  it("\"şöyle\" is not a lineage word after a school name", () => {
+    expect(who("Bu konuda Şâfiî şöyle der.")).toEqual([["Şâfiî", "Şâfiî"]]);
+    expect(who("Şâfiî fakihler böyle düşünür.")).toEqual([]);
+  });
+  it("Eş‘arî alone is Ebü’l-Hasan; as an adjective it is no one", () => {
+    expect(who("Eş‘arî (ö. 324/935) bunu reddeder.")).toEqual([["Eş‘arî", "Eş‘arî, Ebü’l-Hasan"]]);
+    expect(who("Eş‘arî kelâmcılar buna itiraz eder.")).toEqual([]);
+  });
+  it("a work after the name is not part of it", () => {
+    expect(who("İmam Şâfiî er-Risâle'yi yazdı.")).toEqual([["Şâfiî", "Şâfiî"]]);
+    expect(who("Bu görüşü Gazzâlî el-Mustasfâ'da savunur.")).toEqual([["Gazzâlî", "Gazzâlî"]]);
+    expect(who("Gazzâlî el-Mustasfâ adlı eserinde bunu savunur.")).toEqual([["Gazzâlî", "Gazzâlî"]]);
+  });
+});
