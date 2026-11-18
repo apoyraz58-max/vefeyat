@@ -61,6 +61,7 @@ Kişisel CSV kataloğu, tezler ve derlenmiş `.dotm` dosyaları depoya eklenmez.
 
 Denemeciler `beta` dalını kullanır: <https://apoyraz58-max.github.io/vefeyat/beta/manifest.xml>
 (eski Word için `manifest-uyumlu.xml`). Kurulum ve sorun bildirme: [docs/BETA.md](docs/BETA.md).
-Main'deki bir sürümü betaya almak: `git push origin main:beta` (Pages iş akışı main'i
-kökte, beta dalını `/beta/` altında yayımlar; beta kendi kimliği ve adıyla geliştirme
+Main'deki bir sürümü betaya almak: `git push origin main:beta`, ardından
+`gh workflow run pages.yml --ref main` (Pages yalnız main'den yayın kabul eder; iş akışı
+main'i kökte, beta dalını `/beta/` altında yayımlar; beta kendi kimliği ve adıyla geliştirme
 sürümünün yanına kurulabilir).

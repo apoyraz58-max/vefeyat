@@ -1,11 +1,13 @@
 name: pages
 # Publishes the add-in to GitHub Pages: main at the site root (development,
-# every change at once), the beta branch under /beta/ (closed beta; changes only
-# when main is promoted: git push origin main:beta).
+# every change at once), the beta branch under /beta/ (closed beta). Pages takes
+# deployments from main only, so this always runs on main and builds the beta
+# branch alongside. Promoting main to the beta:
+#   git push origin main:beta && gh workflow run pages.yml --ref main
 # One-time setup: Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
 on:
   push:
-    branches: [main, beta]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
