@@ -431,6 +431,20 @@ try {
   await tab.waitForFunction(() => /geçiş/.test(document.getElementById("inventory-summary")?.textContent ?? ""));
   check("the inventory takes the confirmations", (await tab.textContent("#inventory-summary")).includes("0 doğrulanacak"), await tab.textContent("#inventory-summary"));
   await tab.close();
+  // İsim yazımı → Tümünü değiştir: every mention of this spelling of this person, endings kept, in notes too.
+  tab = await open("", "Gazzâlî der.\rSonra Gazali'nin eseri.\rGazali yine der; Gazali'ye göre.\rKAYNAKÇA\rGazali, Ebû Hâmid. el-Mustasfâ. Beyrut 1993.", "Gazali'nin", { api: ["WordApi 1.5"], notes: [{ kind: "foot", para: 1, text: "Gazali, el-Mustasfâ'da da böyle der." }] });
+  await tab.waitForTimeout(300);
+  if (await tab.isHidden("#details")) await tab.check("#candidate-0");
+  await tab.selectOption("#spelling", "Gazzâlî");
+  await tab.click("#respell-all");
+  await tab.waitForSelector("#respell-confirm:not([hidden])", { timeout: 5000 }).catch(() => {});
+  const plan = await tab.textContent("#respell-confirm-text");
+  check("Tümünü değiştir says how many mentions change before doing it", plan.includes("belgede 5 geçiş değişecek (1 tanesi dipnot/sonnotta, 1 tanesi atıf ya da kaynakçada)") && (await docText(tab)).includes("Gazali'nin"), plan);
+  await tab.click("#respell-all-go");
+  await tab.waitForTimeout(500);
+  const notesText = await tab.evaluate(() => window.__doc.notes.map((n) => n.text).join(" | "));
+  check("Tümünü değiştir changes every mention, endings kept, citations in notes too", (await docText(tab)) === "Gazzâlî der.\rSonra Gazzâlî'nin eseri.\rGazzâlî yine der; Gazzâlî'ye göre.\rKAYNAKÇA\rGazzâlî, Ebû Hâmid. el-Mustasfâ. Beyrut 1993." && notesText.includes("Gazzâlî, el-Mustasfâ"), `${await docText(tab)} || ${notesText} || ${await tab.textContent("#message")}`);
+  await tab.close();
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
   await tab.click("#insert");

@@ -1,12 +1,12 @@
 /** Vefeyât pane — the selected-name window: candidates, dates, spellings, earlier mentions, Şahıs değil. */
 import { isLocal } from "../persons.js";
 import { fillLocalForm, renderLocals } from "./catalog.js";
-import { type Person, alreadyHasDate, formatDate, isValidDate, nameKey, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
+import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
 import { type InventoryRow, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
-import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, replaceNameInSelection, writeConfirmations, selectionInNote, updateDateAfterSelection, removeDateAfter, selectMention } from "../word.js";
+import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, replaceNameInSelection, writeConfirmations, selectionInNote, updateDateAfterSelection, removeDateAfter, selectMention, replaceMentions } from "../word.js";
 
 import { $, documentRows, loadSettings, logHistory, setMessage, state, versions, showView } from "./core.js";
 
@@ -159,12 +159,98 @@ export function renderSpellingChoice(): void {
   const chosen = spelling.value;
   const preview = $("spelling-preview");
   $<HTMLButtonElement>("respell").disabled = !chosen || state.busy;
+  $<HTMLButtonElement>("respell-all").disabled = !chosen || state.busy;
   preview.hidden = !chosen || !state.alias;
   if (chosen && state.alias) preview.textContent = `Değiştir'e basınca: ${state.alias} → ${withEnding(state.alias, chosen)}`;
 }
 
+/** The mentions "Tümünü değiştir" would change: this spelling, this person, anywhere in the document. */
+interface RespellTarget {
+  readonly segment: number;
+  readonly start: number;
+  readonly literal: string;
+  readonly text: string;
+  readonly part: "main" | "note";
+  /** In a citation or the bibliography, which the inventory leaves out. */
+  readonly cited: boolean;
+}
+
+let respellPlan: RespellTarget[] = [];
+
+/**
+ * The mentions "Tümünü değiştir" changes: this spelling (with any ending) of
+ * this person anywhere in the document, and the selected one. Citations and
+ * the bibliography ("Gazali, el-Mustasfâ", "Gazali, Ebû Hâmid.") are not in
+ * the inventory; they change too when no other person is written this way in
+ * the document, as their bearer cannot be told there.
+ */
+async function respellTargets(spelling: string): Promise<RespellTarget[]> {
+  const person = state.chosen;
+  const alias = state.alias;
+  if (!person || !alias) return [];
+  const rows = await documentRows();
+  const key = nameKey(nameQuery(alias));
+  const target = personKey(person);
+  const same = rows.filter((r) => nameKey(nameQuery(r.text)) === key);
+  const out: RespellTarget[] = same
+    .filter((r) => (r.person !== null && personKey(r.person) === target) || (state.mention !== null && rowKey(r, state.segments) === state.mention))
+    .map((r) => ({ segment: r.segment, start: r.start, literal: r.text, text: withEnding(r.text, spelling), part: r.part, cited: false }));
+  const others = same.some((r) => r.person !== null && personKey(r.person) !== target);
+  if (!others && state.index) {
+    const known = new Set(rows.map((r) => `${r.segment}:${r.start}`));
+    state.segments.forEach((segment, i) => {
+      for (const hit of findMatches(segment.text, state.index as NameIndex, false)) {
+        if (known.has(`${i}:${hit.start}`) || nameKey(nameQuery(hit.text)) !== key) continue;
+        out.push({ segment: i, start: hit.start, literal: hit.text, text: withEnding(hit.text, spelling), part: segment.part, cited: true });
+      }
+    });
+  }
+  return out.filter((t) => t.text !== t.literal);
+}
+
+/** "Tümünü değiştir": first says how many mentions would change, then waits for Onayla. */
+export async function previewRespellAll(): Promise<void> {
+  const spelling = $<HTMLSelectElement>("spelling").value;
+  if (!spelling || !state.chosen || !state.alias) return;
+  respellPlan = await respellTargets(spelling);
+  if (respellPlan.length === 0) {
+    setMessage("Bu yazımla bu kişiye bağlı başka geçiş bulunamadı; seçili geçiş için Değiştir'i kullanın.", "info");
+    return;
+  }
+  const notes = respellPlan.filter((t) => t.part === "note").length;
+  const cited = respellPlan.filter((t) => t.cited).length;
+  const parts = [notes ? `${notes} tanesi dipnot/sonnotta` : "", cited ? `${cited} tanesi atıf ya da kaynakçada` : ""].filter(Boolean);
+  $("respell-confirm-text").textContent =
+    `${state.alias} → ${withEnding(state.alias, spelling)}: belgede ${respellPlan.length} geçiş değişecek` +
+    (parts.length ? ` (${parts.join(", ")})` : "") +
+    ". Bu yazımın başka bir kişiye bağlı ya da kimliği kesin olmayan geçişlerine dokunulmaz.";
+  $("respell-confirm").hidden = false;
+  setMessage("", "info");
+}
+
+export async function respellAll(): Promise<void> {
+  $("respell-confirm").hidden = true;
+  const plan = respellPlan;
+  respellPlan = [];
+  if (plan.length === 0) return;
+  versions.identity++;
+  const items = plan.flatMap((t) => {
+    const segment = state.segments[t.segment];
+    return segment ? [{ segment, start: t.start, literal: t.literal, text: t.text }] : [];
+  });
+  const done = await replaceMentions(items);
+  logHistory("spelling", `${state.alias ?? ""}: ${done} geçiş değiştirildi`);
+  setMessage(
+    done === plan.length ? `${done} geçişin yazımı değiştirildi.` : `${done} / ${plan.length} geçiş değiştirildi; kalanlar metinde bulunamadı (belge değişmiş olabilir). Dökümü yenileyip tekrar deneyin.`,
+    done === plan.length ? "success" : "warning",
+  );
+  state.alias = null;
+  await refresh();
+}
+
 export function hideEarlier(): void {
   $("earlier").hidden = true;
+  $("respell-confirm").hidden = true;
   $("existing").hidden = true;
   $("dated").hidden = true;
   existingDate = null;

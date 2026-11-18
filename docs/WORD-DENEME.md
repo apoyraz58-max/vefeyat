@@ -130,6 +130,11 @@ karşılaştırmada yok sayılır: "Ebû Bekir er-Râzî" ile "Ebû Bekir Râzî
 
 **İsim yazımı.** Liste metindeki yazımla başlar ve o seçilidir; başka bir yazım
 seçince altında ne yazılacağı görünür ("Gazali'nin → Gazzâlî'nin"). Türkçe ek korunur.
+**Değiştir** yalnız seçili geçişi değiştirir; **Tümünü değiştir** önce kaç geçişin
+değişeceğini söyler, **Onayla** deyince bu yazımın belgede o kişiye bağlı bütün
+geçişlerini (dipnotlar dahil, her biri kendi ekiyle) değiştirir. Atıflardaki ve
+kaynakçadaki aynı yazım da değişir; ama belgede bu yazımla başka bir kişi de geçiyorsa
+atıf ve kaynakçaya dokunulmaz.
 **Ayarlar → Seçili yazımı tercih et** bir kişinin yazımını bu belge için sabitler.
 
 ## 5. Bütün belge

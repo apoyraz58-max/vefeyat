@@ -99,8 +99,16 @@
         <div class="row">
           <select id="spelling"></select>
           <button id="respell" type="button" disabled>Değiştir</button>
+          <button id="respell-all" type="button" disabled>Tümünü değiştir</button>
         </div>
         <p id="spelling-preview" class="muted" hidden></p>
+        <div id="respell-confirm" class="message warning" hidden>
+          <p id="respell-confirm-text"></p>
+          <div class="actions">
+            <button id="respell-all-go" type="button" class="primary">Onayla</button>
+            <button id="respell-all-cancel" type="button">Vazgeç</button>
+          </div>
+        </div>
       </section>
     </div>
 

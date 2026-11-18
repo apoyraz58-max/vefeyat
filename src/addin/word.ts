@@ -390,6 +390,57 @@ export async function selectMention(segment: Segment, start: number, literal: st
   });
 }
 
+/**
+ * İsim yazımı → Tümünü değiştir: replaces many mentions found by the
+ * inventory, one search per paragraph or note. Later mentions in a paragraph
+ * go first so that earlier ones keep their place. Returns how many changed.
+ */
+export async function replaceMentions(items: ReadonlyArray<{ segment: Segment; start: number; literal: string; text: string }>): Promise<number> {
+  const groups = new Map<Segment, Array<{ segment: Segment; start: number; literal: string; text: string }>>();
+  for (const item of items) {
+    if (item.literal.length === 0 || item.literal.length > 250) continue;
+    const list = groups.get(item.segment) ?? [];
+    list.push(item);
+    groups.set(item.segment, list);
+  }
+  return Word.run(async (context) => {
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("items");
+    await context.sync();
+    let done = 0;
+    for (const [segment, list] of groups) {
+      const host = paragraphs.items[segment.anchor];
+      if (!host) continue;
+      let scope: Word.Body | Word.Range = host.getRange("Whole");
+      if (segment.part === "note") {
+        const foot = host.getRange("Whole").footnotes;
+        const end = host.getRange("Whole").endnotes;
+        foot.load("items");
+        end.load("items");
+        await context.sync();
+        const note = noteOf({ foot, end }, segment.order);
+        if (!note) continue;
+        scope = note.body;
+      }
+      const literals = [...new Set(list.map((i) => i.literal))];
+      const found = literals.map((literal) => {
+        const results = scope.search(searchText(literal), { matchCase: true, matchWholeWord: false });
+        results.load("items");
+        return results;
+      });
+      await context.sync();
+      for (const item of [...list].sort((a, b) => b.start - a.start)) {
+        const target = found[literals.indexOf(item.literal)]?.items[occurrenceBefore(segment.text, item.literal, item.start)];
+        if (!target) continue;
+        target.insertText(item.text, "Replace");
+        done++;
+      }
+      await context.sync();
+    }
+    return done;
+  });
+}
+
 // ---- Teslim ve dizin ----
 
 /** Opens a generated .docx as a new Word document (WordApi 1.3). */
