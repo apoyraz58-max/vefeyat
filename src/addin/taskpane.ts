@@ -9,7 +9,7 @@ import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, rende
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
-import { addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
+import { applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
 import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
@@ -176,6 +176,7 @@ export function initialise(): void {
   $("insert-anyway").addEventListener("click", () => void run(() => addDate(true)));
   $("update-date").addEventListener("click", () => void run(updateDate));
   $("goto-dated").addEventListener("click", () => void run(gotoDated));
+  $("apply-all").addEventListener("click", () => void run(applyToAll, "Geçişler onaylanıyor"));
   $("move-date").addEventListener("click", () => void run(moveDateHere));
   $("prefix-convert").addEventListener("click", () => void run(convertPrefix, "Tarihler çevriliyor"));
   $("prefix-keep").addEventListener("click", declinePrefix);

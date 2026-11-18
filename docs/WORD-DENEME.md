@@ -111,7 +111,10 @@ ayarı değiştirir. Elle yazılmış tarihler değişmez.
 
 **Eş adlılar.** Bir ad birden çok kişiye uyuyorsa pencere adayları gösterir; seçili
 olan renkli ve "seçili" etiketlidir. Seçiminiz o geçiş için belgeye kaydedilir
-(Diğer araçlar → Kimlik eşleşmelerini düzelt). Vefeyât önce şunlara bakar ve
+(Diğer araçlar → Kimlik eşleşmelerini düzelt). Aynı yazım belgede çok kez geçiyorsa
+(ör. "Râzî"), kişiyi seçtikten sonra **Bu yazımın bütün belirsiz geçişlerine uygula**
+seçiminizi o yazımın kimliği kesin olmayan bütün geçişlerine verir; kataloğa, yazılı
+tarihe ya da önceki bir onaya göre belli olanlara dokunmaz. Vefeyât önce şunlara bakar ve
 satırda nereden bildiğini yazar:
 - **yazılı tarih:** "Râzî (ö. 313/925)" → Ebû Bekir er-Râzî;
 - **belgedeki diğer geçişler:** belgede yalnız bir Gazzâlî tam adıyla geçiyorsa kısa

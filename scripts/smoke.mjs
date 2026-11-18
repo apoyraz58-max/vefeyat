@@ -420,6 +420,17 @@ try {
   const searched = await tab.$$eval("#inventory-list li strong", (n) => n.map((x) => x.textContent));
   check("Şahıs dökümü filters by status and searches by name", filterLabels[0] === "Tümü (3)" && undated.join() === "Gazzâlî" && searched.join() === "Gazzâlî,Gazali'nin", `${filterLabels} | ${undated} | ${searched}`);
   await tab.close();
+  // One choice for every uncertain mention of the same spelling.
+  tab = await open("", "Râzî der.\rSonra Râzî'nin eseri.\rRâzî yine der.", "Râzî");
+  check("apply-to-all appears once a bearer is chosen among several", (await tab.isHidden("#apply-all")));
+  await tab.check("#candidate-1");
+  await tab.click("#apply-all");
+  await tab.waitForTimeout(500);
+  check("apply-to-all confirms every uncertain mention of the spelling", (await tab.textContent("#message")).includes("3 belirsiz geçişi") && Object.keys(JSON.parse(await tab.evaluate(() => window.__doc.settings["vefeyat.confirmations"] ?? "{}"))).length === 3, await tab.textContent("#message"));
+  await tab.evaluate(() => window.go_view_dokum(undefined));
+  await tab.waitForFunction(() => /geçiş/.test(document.getElementById("inventory-summary")?.textContent ?? ""));
+  check("the inventory takes the confirmations", (await tab.textContent("#inventory-summary")).includes("0 doğrulanacak"), await tab.textContent("#inventory-summary"));
+  await tab.close();
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
   await tab.click("#insert");

@@ -1,7 +1,7 @@
 /** Vefeyât pane — the selected-name window: candidates, dates, spellings, earlier mentions, Şahıs değil. */
 import { isLocal } from "../persons.js";
 import { fillLocalForm, renderLocals } from "./catalog.js";
-import { type Person, alreadyHasDate, formatDate, isValidDate, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
+import { type Person, alreadyHasDate, formatDate, isValidDate, nameKey, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
 import { type InventoryRow, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
@@ -114,6 +114,8 @@ export let spellingOwner = "";
 export function renderDetails(): void {
   const person = state.chosen;
   $("details").hidden = person === null;
+  // A choice among several bearers can be given to every other uncertain mention of this spelling at once.
+  $("apply-all").hidden = person === null || !state.alias || !state.found || state.found.automatic !== null || state.found.candidates.length < 2;
   $<HTMLButtonElement>("insert").disabled = person === null || state.busy;
   const spelling = $<HTMLSelectElement>("spelling");
   const picked = spelling.value; // kept across re-renders (busy state, settings)
@@ -486,4 +488,40 @@ export async function preferSelection(): Promise<void> {
   await writeSpellings({ ...readSpellings(), [personKey(person)]: spelling });
   setMessage(`Bu belgede ${textName(person.shortName)} için tercih edilen yazım: ${spelling}. Döküm ve toplu düzeltme bu yazımı esas alır.`, "success");
   renderDetails();
+}
+
+/**
+ * "Bu yazımın bütün belirsiz geçişlerine uygula": every mention written like
+ * the selected one ("Râzî", "Râzî'nin") whose bearer is not certain yet — no
+ * identity, or one only guessed from the document or the sentence's subject —
+ * is confirmed as the chosen person. Mentions settled otherwise (catalog,
+ * written date, an earlier confirmation) keep theirs.
+ */
+export async function applyToAll(): Promise<void> {
+  const person = state.chosen;
+  const alias = state.alias;
+  if (!person || !alias) return;
+  const rows = await documentRows();
+  const key = nameKey(nameQuery(alias));
+  const target = personKey(person);
+  const open = rows.filter(
+    (r) =>
+      nameKey(nameQuery(r.text)) === key &&
+      r.candidates.some((c) => personKey(c) === target) &&
+      (r.person === null || r.resolved === "context" || r.resolved === "topic"),
+  );
+  let map = readConfirmations();
+  for (const row of open) map = addConfirmation(map, rowKey(row, state.segments), target);
+  if (state.mention) map = addConfirmation(map, state.mention, target);
+  await writeConfirmations(map);
+  versions.identity++;
+  state.confirmed = true;
+  logHistory("bulk", `${alias}: ${open.length} geçiş ${textName(person.shortName)} olarak onaylandı`);
+  setMessage(
+    open.length
+      ? `"${alias}" yazımının ${open.length} belirsiz geçişi ${textName(person.shortName)} olarak onaylandı. Kimlik eşleşmelerinden geri alınabilir.`
+      : `"${alias}" yazımının başka belirsiz geçişi yok; bu geçiş ${textName(person.shortName)} olarak onaylandı.`,
+    "success",
+  );
+  renderCandidates();
 }
