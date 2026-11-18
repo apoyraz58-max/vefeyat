@@ -97,7 +97,11 @@ uyuşanlar taşınır ya da kaldırılır, kimliği tahmine dayananlar işaretsi
 izleyebilen güncel Microsoft 365 Word'de kendiliğinden çıkar; diğerlerinde Toplu
 düzeltme önizlemesini açtığınızda öneriler yine görünür.)
 
-Adın arkasında zaten tarih varsa ikinci tarih eklenmez. Tarih katalogdakiyle aynıysa
+Bir kişiye tek tarih: "İlk kullanım" ve "Her bölümde ilk kullanım" ayarlarında, kişinin
+aynı kısımda (metin ya da notlar; bölüm kipinde aynı bölümde) Vefeyât'ın eklediği ya da
+elle yazılmış bir tarihi varsa başka bir geçişine tarih eklenmez; panel tarihin yerini
+gösterir (**Tarihe git**). Seçtiğiniz geçiş tarihli olandan önceyse **Tarihi buraya taşı**
+tarihi ilk geçişe alır. Adın arkasında zaten tarih varsa ikinci tarih eklenmez. Tarih katalogdakiyle aynıysa
 "zaten aynı" denir; farklıysa (başka yıl, başka kısaltma, elle yazılmış) **Güncelle**
 düğmesi çıkar ve tarihi katalogdakiyle değiştirir; elle yazılmış tarih de Vefeyât
 tarihine dönüşür. **Kısaltma** menüsü önek biçimini (ö. / öl. / v. / İngilizce metinler için d. / kaynaktaki gibi)

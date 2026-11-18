@@ -3,10 +3,10 @@ import { isLocal } from "../persons.js";
 import { fillLocalForm, renderLocals } from "./catalog.js";
 import { type Person, alreadyHasDate, formatDate, isValidDate, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
-import { type InventoryRow } from "../inventory.js";
+import { type InventoryRow, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
-import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, replaceNameInSelection, writeConfirmations, selectionInNote, updateDateAfterSelection } from "../word.js";
+import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, replaceNameInSelection, writeConfirmations, selectionInNote, updateDateAfterSelection, removeDateAfter, selectMention } from "../word.js";
 
 import { $, documentRows, loadSettings, logHistory, setMessage, state, versions, showView } from "./core.js";
 
@@ -164,7 +164,78 @@ export function renderSpellingChoice(): void {
 export function hideEarlier(): void {
   $("earlier").hidden = true;
   $("existing").hidden = true;
+  $("dated").hidden = true;
   existingDate = null;
+  datedRow = null;
+}
+
+/** Another mention of the same person that already carries a date (İlk kullanım: no second date). */
+export let datedRow: InventoryRow | null = null;
+let datedLater = false;
+
+/**
+ * The person's dated mention in the same part (text or notes; in the same
+ * chapter for "Her bölümde ilk kullanım"), other than the selected one. A
+ * Vefeyât date and a hand-written one count alike.
+ */
+async function datedMention(person: Person): Promise<InventoryRow | null> {
+  const rows = await documentRows();
+  const target = personKey(person);
+  const part = (await selectionInNote().catch(() => false)) ? "note" : "main";
+  const current = state.mention ? rows.find((r) => r.part === part && rowKey(r, state.segments) === state.mention) : undefined;
+  let same = rows.filter((r) => r !== current && r.part === part && r.date.trim() !== "" && r.person !== null && personKey(r.person) === target);
+  if (state.settings.scope === "chapter" && current) same = same.filter((r) => r.chapter === current.chapter);
+  const found = same[0] ?? null;
+  datedLater = found !== null && current !== undefined && rows.indexOf(current) < rows.indexOf(found);
+  return found;
+}
+
+function showDated(row: InventoryRow): void {
+  datedRow = row;
+  const where = placeOf(state.segments[row.segment]);
+  $("dated-text").textContent =
+    `Bu şahsın tarihi belgede zaten var: ${row.text} ${row.date.trim()} (${where}). Aynı kişiye ikinci tarih eklenmez.` +
+    (datedLater ? " Seçtiğiniz geçiş ondan önce geliyor; tarihi buraya taşıyabilirsiniz." : "");
+  $("move-date").hidden = !datedLater;
+  $("dated").hidden = false;
+  setMessage("", "info");
+}
+
+/** "Tarihe git": selects the mention that carries the date. */
+export async function gotoDated(): Promise<void> {
+  const row = datedRow;
+  const segment = row ? state.segments[row.segment] : undefined;
+  if (!row || !segment || !(await selectMention(segment, row.start, row.text))) {
+    setMessage("Tarihli geçiş metinde bulunamadı; metin değişmiş olabilir.", "warning");
+  }
+  hideEarlier();
+}
+
+/** "Tarihi buraya taşı": the later date goes, the selected (earlier) mention gets it. */
+export async function moveDateHere(): Promise<void> {
+  const person = state.chosen;
+  const row = datedRow;
+  const segment = row ? state.segments[row.segment] : undefined;
+  if (!person || !row || !segment) return;
+  await loadSettings();
+  const current = await currentSelection();
+  if (!current) return;
+  const plan = planDate(person, state.settings.prefix, current.following);
+  if (!plan.ok) {
+    setMessage(plan.reason, "warning");
+    return;
+  }
+  if (!(await removeDateAfter(segment, row.start, row.text, row.date.trim()))) {
+    hideEarlier();
+    setMessage("Öteki tarih metinde bulunamadı; hiçbir şey değişmedi. Belge değişmiş olabilir.", "warning");
+    return;
+  }
+  await rememberChoice();
+  const control = await insertDate(plan.text, dateTag(person), `Vefeyât: ${textName(person.shortName)}`);
+  logHistory("date", `${current.alias} ${plan.text} (${row.text} geçişinden taşındı)`, control);
+  hideEarlier();
+  setMessage(`Tarih buraya taşındı: ${plan.text}`, "success");
+  state.alias = null;
 }
 
 /** The date found after the name when Ölüm tarihi ekle was refused, for "Güncelle". */
@@ -289,6 +360,15 @@ export async function addDate(force: boolean): Promise<void> {
     if (offerUpdate(person, current.following)) return;
     setMessage(plan.reason, "warning");
     return;
+  }
+  // One date per person: a mention that already carries one blocks a second (also after "Yine de ekle").
+  if (rule.checkEarlier) {
+    const dated = await datedMention(person);
+    if (dated) {
+      $("earlier").hidden = true;
+      showDated(dated);
+      return;
+    }
   }
   if (!force && rule.checkEarlier && (await earlierMention(person))) {
     $("earlier").hidden = false;

@@ -248,20 +248,21 @@ try {
 
   await select(page, "Gazzâlî", 1);
   await page.click("#insert");
+  await page.waitForTimeout(300);
+  check("a person who already has a date gets no second one", (await page.isVisible("#dated")) && (await page.isHidden("#earlier")) && (await page.isHidden("#move-date")) && (await page.textContent("#dated-text")).includes("(ö. 505/1111)"), await page.textContent("#dated-text"));
+  check("nothing written for the second mention", !(await docText(page)).includes("Gazzâlî (ö. 505/1111) der"), await docText(page));
+  await page.click("#goto-dated");
   await page.waitForTimeout(200);
-  check("earlier mention warning", await page.isVisible("#earlier"));
-  check("nothing written before confirmation", !(await docText(page)).includes("Gazzâlî (ö. 505/1111) der"));
-  await page.click("#insert-anyway");
-  await page.waitForTimeout(200);
-  check("insert anyway writes the date", (await docText(page)).includes("Sonra Gazzâlî (ö. 505/1111) der"), await docText(page));
+  check("Tarihe git selects the dated mention", (await page.evaluate(() => window.__doc.sel[0])) === 0 && (await page.isHidden("#dated")));
 
   await select(page, "Gazzâlî", 0);
   await page.click("#insert");
   await page.waitForTimeout(200);
-  check("existing date is not duplicated", (await page.textContent("#message")).includes("zaten katalogdakiyle aynı") && (await docText(page)).split("(ö. 505/1111)").length === 3, await docText(page));
+  check("existing date is not duplicated", (await page.textContent("#message")).includes("zaten katalogdakiyle aynı") && (await docText(page)).split("(ö. 505/1111)").length === 2, await docText(page));
 
   await select(page, "Gazali'nin");
-  check("weak spelling is not chosen automatically", !(await page.isVisible("#details")));
+  const weak = (await page.textContent("#view-secili")).replace(/\s+/g, " ");
+  check("weak spelling is not chosen automatically (at most suggested from the document, to verify)", !(await page.isVisible("#details")) || weak.includes("doğrulayın"), weak.slice(0, 300));
   await page.check("#candidate-0");
   const options = await page.$$eval("#spelling option", (o) => o.map((x) => x.value));
   check("spelling suggestion offered", options[0] === "" && options[1] === "Gazzâlî", options.join(" | "));
@@ -398,6 +399,15 @@ try {
     check("long thesis: inventory keeps the window responsive", longest < 1000, `${longest} ms`);
     await tab.close();
   }
+  // The date stands on a later mention: it moves to the selected, earlier one.
+  tab = await open("", "Önce Gazzâlî der.\rSonra Gazzâlî (ö. 505/1111) yazar.", "Gazzâlî");
+  await tab.click("#insert");
+  await tab.waitForTimeout(400);
+  check("an earlier mention offers to move the date here", (await tab.isVisible("#dated")) && (await tab.isVisible("#move-date")), await tab.textContent("#dated-text"));
+  await tab.click("#move-date");
+  await tab.waitForTimeout(400);
+  check("Tarihi buraya taşı: one date, at the first mention", (await docText(tab)) === "Önce Gazzâlî (ö. 505/1111) der.\rSonra Gazzâlî yazar.", await docText(tab));
+  await tab.close();
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
   await tab.click("#insert");
