@@ -28,6 +28,8 @@ import {
   findMatches,
   findUnknownPeople,
   isValidDate,
+  isSentenceInitial,
+  nameKey,
   nameQuery,
   naturalOrder,
   normalize,
@@ -38,6 +40,7 @@ import {
   textName,
 } from "../core/index.js";
 import { type Confirmations, confirmedPerson, exclusionKey, mentionKey } from "./logic.js";
+import { COMMON_WORDS } from "../core/common-words.js";
 
 /** Segment.order of an endnote: ENDNOTE_BASE + its number in the paragraph (footnotes are 1, 2 …). */
 export const ENDNOTE_BASE = 1000;
@@ -175,6 +178,34 @@ interface Draft {
   chapter: number;
 }
 
+/**
+ * Letters of a name as Turkish spelling sees them: case, circumflexes, macrons,
+ * dots below and ayn/hamza marks go; ı/i, ş/s, ç/c, ğ/g, ö/o, ü/u stay apart.
+ */
+function letters(value: string): string {
+  return nameQuery(value)
+    .toLocaleLowerCase("tr")
+    .normalize("NFD")
+    .replace(/[\u0302\u0304\u0301\u0300\u0323\u0331]/g, "")
+    .replace(/[‘’'ʿʾ`\s-]/g, "")
+    .normalize("NFC");
+}
+
+/**
+ * A one-word mention that is not certain on its own, though the catalog has a
+ * single bearer: another Turkish letter than the catalog's ("Halı" for Hâlî,
+ * "Kanı" for Kânî), or an ordinary word at the start of a sentence ("Bahar
+ * bu konuda…"). A written date, a confirmation or a certain mention elsewhere
+ * in the document still settles it.
+ */
+export function doubtfulWord(text: string, start: number, written: string, person: Person): boolean {
+  const query = nameQuery(written).trim();
+  if (/\s/.test(query)) return false;
+  const own = [person.shortName, naturalOrder(person.shortName)].filter((n) => n && !/\s/.test(textName(n).trim()));
+  if (own.length > 0 && !own.some((n) => letters(textName(n)) === letters(query))) return true;
+  return isSentenceInitial(text, start) && COMMON_WORDS.has(nameKey(query));
+}
+
 export function buildInventory(
   segments: readonly Segment[],
   catalog: Catalog,
@@ -285,8 +316,9 @@ function* inventorySteps(
         }
       }
       const safe = safeCandidate(candidates, hit.text);
-      if (!person && (safe || (candidates.length === 1 && wordsContained(candidates[0] as Person, hit.text)))) {
-        person = safe ?? (candidates[0] as Person);
+      const only = safe ?? (candidates.length === 1 && wordsContained(candidates[0] as Person, hit.text) ? (candidates[0] as Person) : null);
+      if (!person && only && !doubtfulWord(segment.text, hit.start, hit.text, only)) {
+        person = only;
         resolved = "catalog";
       }
       if (!person) {
@@ -294,7 +326,7 @@ function* inventorySteps(
         person = confirmedPerson(confirmations, key, candidates);
         if (person) resolved = "confirmed";
       }
-      if (!person && candidates.length > 1) {
+      if (!person && candidates.length >= 1) {
         // "Râzî (ö. 313/925)": the date written after the name picks the bearer.
         const dated = candidates.filter((c) => isValidDate(c.deathDate) && alreadyHasDate(after, c.deathDate));
         if (dated.length === 1) {

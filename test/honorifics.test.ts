@@ -55,3 +55,23 @@ describe("running text: ayn, eş- and article-less nisbas", () => {
     expect(rows.map((r) => [r.text, r.person?.shortName])).toEqual([[written, expected]]);
   });
 });
+
+describe("ordinary words are not certain persons on their own", () => {
+  const cat = new Catalog([
+    p("Hâlî", "Hâlî Ahmed Efendi", "(ö. 1100/1688)"),
+    p("Bahâr", "Bahâr Mehmed", "(ö. 1200/1785)"),
+    p("Gazzâlî", "Ebû Hâmid Muhammed el-Gazzâlî", "(ö. 505/1111)"),
+  ]);
+  const index = new NameIndex(cat.people);
+  const first = (text: string) => buildInventory([{ part: "main", anchor: 0, order: 0, text }], cat, index)[0];
+  it("another Turkish letter than the catalog's: a candidate, not certain", () => {
+    expect(first("Bu konuda Halı önemlidir.")?.person).toBeNull();
+    expect(first("Bu konuda Hali önemlidir.")?.person?.shortName).toBe("Hâlî");
+  });
+  it("an ordinary word at the start of a sentence: a candidate; inside a sentence: certain", () => {
+    expect(first("Bahar bu konuda önemlidir.")?.person).toBeNull();
+    expect(first("Bu konuda Bahar şöyle der.")?.person?.shortName).toBe("Bahâr");
+    expect(first("Bahar (ö. 1200/1785) bu konuda şöyle der.")?.person?.shortName).toBe("Bahâr");
+    expect(first("Gazzâlî bu konuda şöyle der.")?.person?.shortName).toBe("Gazzâlî");
+  });
+});
