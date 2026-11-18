@@ -6,7 +6,7 @@ import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLa
 import { type InventoryRow } from "../inventory.js";
 import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
-import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, writeConfirmations, selectionInNote, updateDateAfterSelection } from "../word.js";
+import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, replaceNameInSelection, writeConfirmations, selectionInNote, updateDateAfterSelection } from "../word.js";
 
 import { $, documentRows, loadSettings, logHistory, setMessage, state, versions, showView } from "./core.js";
 
@@ -347,19 +347,25 @@ export async function respell(): Promise<void> {
   const spelling = $<HTMLSelectElement>("spelling").value;
   if (!spelling) return;
   const selection = await readSelection();
-  if (selection.text !== state.alias) {
-    setMessage("Yalnız adı seçin (boşluk veya noktalama olmadan); yazım yalnız seçili metinde değişir.", "warning");
+  const name = state.alias;
+  // The selection may also hold the space a double click takes, a comma or a quote: only the name changes.
+  if (!name || selectionAlias(selection.text) !== name) {
+    setMessage("Seçim değişti. Adı yeniden seçip Değiştir'e basın.", "warning");
+    await refresh();
     return;
   }
-  const replacement = withEnding(selection.text, spelling);
+  const replacement = withEnding(name, spelling);
   if (state.chosen && state.found && !state.found.automatic && state.mention) {
     // The sentence keeps its words; only the name changes, so key the new spelling.
     const [before, , after] = state.mention.split("|");
     const key = `${before ?? ""}|${replacement}|${after ?? ""}`;
     await writeConfirmations(addConfirmation(readConfirmations(), key, personKey(state.chosen)));
   }
-  await replaceSelection(replacement);
-  logHistory("spelling", `${selection.text} → ${replacement}`);
+  if (!(await replaceNameInSelection(name, replacement))) {
+    setMessage("Ad seçimin içinde bulunamadı; yazım değiştirilmedi. Adı yeniden seçin.", "warning");
+    return;
+  }
+  logHistory("spelling", `${name} → ${replacement}`);
   setMessage(`Yazım değiştirildi: ${replacement}`, "success");
   state.alias = null;
   await refresh();

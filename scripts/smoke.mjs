@@ -229,6 +229,14 @@ try {
   const lakap = (await lakapTab.textContent("#view-secili")).replace(/\s+/g, " ");
   check("joined lakap + nisba is found and the right bearer chosen", lakap.includes("Ebü’l-Usr") && lakap.includes("482/1089") && !(await lakapTab.isDisabled("#insert")), lakap.slice(0, 300));
   await lakapTab.close();
+  // İsim yazımı with a double-click selection (the name and the space after it).
+  const spellTab = await open("", "Bu konuda Gazali'nin eseri önemlidir.", "Gazali'nin ");
+  await spellTab.check("#candidate-0");
+  await spellTab.selectOption("#spelling", "Gazzâlî");
+  await spellTab.click("#respell");
+  await spellTab.waitForTimeout(300);
+  check("İsim yazımı works when the space after the name is selected too", (await docText(spellTab)) === "Bu konuda Gazzâlî'nin eseri önemlidir.", await docText(spellTab));
+  await spellTab.close();
   check("settings summary at the top", (await page.textContent("#settings-summary")) === "Kısaltma: ö. · Yalnız ilk kullanım · Ad biçimi: Her seferinde sor");
 
   await select(page, "Gazzâlî");

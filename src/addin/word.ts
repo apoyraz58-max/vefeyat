@@ -81,6 +81,26 @@ export async function insertDate(dateText: string, tag: string, title: string): 
   return Word.run(async (context) => writeDateAfter(context, await selectedName(context), dateText, tag, title));
 }
 
+/**
+ * İsim yazımı: replaces the name inside the selection (the selection may also
+ * hold the space a double click takes, a comma or a quote) and keeps the new
+ * name selected. Returns false when the name is not in the selection.
+ */
+export async function replaceNameInSelection(name: string, text: string): Promise<boolean> {
+  return Word.run(async (context) => {
+    const selection = context.document.getSelection();
+    const hits = selection.search(searchText(name), { matchCase: true, matchWholeWord: false });
+    hits.load("items");
+    await context.sync();
+    const target = hits.items[0];
+    if (!target) return false;
+    const replaced = target.insertText(text, "Replace");
+    replaced.select("Select");
+    await context.sync();
+    return true;
+  });
+}
+
 /** Replaces the selected text and keeps the new text selected. */
 export async function replaceSelection(text: string): Promise<void> {
   await Word.run(async (context) => {
