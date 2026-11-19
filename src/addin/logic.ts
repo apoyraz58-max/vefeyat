@@ -31,6 +31,20 @@ export interface Lookup {
   readonly scores: ReadonlyMap<string, number>;
   /** Set when exactly one strong candidate exists: no choice needed. */
   readonly automatic: Person | null;
+  /** A title before the name that the lookup left out ("Hz. ", "İmam "), or "". */
+  readonly title?: string;
+}
+
+/** Titles written before a name: "Hz. Hatice", "Hazret-i Ömer", "İmam Şâfiî", "Şeyh Şâzelî". */
+const TITLE = /^(hz\.|hz|hazret-?i|hazreti|hazret|imam|imâm|şeyh|şeyhülislâm|şeyhülislam|mevlânâ|mevlana|hâce|hace|seyyid|şerif|hâfız|hafız)(?:\s+|(?<=\.)(?=\p{L}))/iu;
+
+/** The title before a selected name and the name itself: "Hz. Hatice" → ["Hz. ", "Hatice"]. */
+export function splitTitle(alias: string): [string, string] {
+  // "İ" does not match "i" case-insensitively in JavaScript; the same length "I" does.
+  const match = TITLE.exec(alias.replace(/^İ/, "I"));
+  if (!match) return ["", alias];
+  const rest = alias.slice(match[0].length);
+  return rest.trim().length >= 2 ? [alias.slice(0, match[0].length), rest] : ["", alias];
 }
 
 /**
@@ -39,6 +53,17 @@ export interface Lookup {
  * person, strong matches first.
  */
 export function lookup(catalog: Catalog, alias: string): Lookup {
+  const first = lookupName(catalog, alias);
+  const [title, rest] = splitTitle(alias);
+  if (!title) return first;
+  // A title written before the name ("Hz. Hatice", "İmam Şâfiî"); when it is part of
+  // the catalog name ("Molla Hüsrev", "Kadı Abdülcebbâr") the name as written wins.
+  if (first.strong.size > 0) return first;
+  const bare = lookupName(catalog, rest);
+  return bare.candidates.length > 0 ? { ...bare, title } : first;
+}
+
+function lookupName(catalog: Catalog, alias: string): Lookup {
   const found = confirmationCandidates(catalog.find(alias, false), alias);
   const { exact, partial } = nameCandidates(found, alias);
   const strong = new Set(exact.map(personKey));

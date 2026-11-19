@@ -41,3 +41,20 @@ describe("buildInventoryAsync", () => {
     expect(rows).toEqual(buildInventory(segments, catalog));
   });
 });
+
+describe("titles before a selected name", () => {
+  it("Hz., Hazret-i, İmam, Şeyh are left out; a title that is part of the name stays", async () => {
+    const { lookup, splitTitle } = await import("../src/addin/logic.js");
+    const { Catalog } = await import("../src/core/index.js");
+    const p = (shortName: string, deathDate: string) => ({ shortName, fullName: "", originalName: "", deathDate, description: "", source: "x" + shortName });
+    const cat = new Catalog([p("Hatice", "(ö. 3/619)"), p("Molla Hüsrev", "(ö. 885/1480)"), p("Şâfiî", "(ö. 204/820)")]);
+    expect(splitTitle("Hz. Hatice")).toEqual(["Hz. ", "Hatice"]);
+    expect(splitTitle("Hz.Hatice")).toEqual(["Hz.", "Hatice"]);
+    expect(splitTitle("İmam Şâfiî")).toEqual(["İmam ", "Şâfiî"]);
+    expect(splitTitle("Hatice")).toEqual(["", "Hatice"]);
+    for (const alias of ["Hz. Hatice", "Hz. Hatice'nin", "Hazret-i Hatice", "Hz.Hatice"]) expect(lookup(cat, alias).automatic?.shortName, alias).toBe("Hatice");
+    expect(lookup(cat, "İmam Şâfiî").automatic?.shortName).toBe("Şâfiî");
+    expect(lookup(cat, "Molla Hüsrev").automatic?.shortName).toBe("Molla Hüsrev");
+    expect(lookup(cat, "Molla Hüsrev").title).toBeUndefined();
+  });
+});

@@ -111,6 +111,13 @@ export function renderCandidates(): void {
 
 export let spellingOwner = "";
 
+/** The selected name without a title the lookup left out: "Hz. Hatice" → "Hatice". */
+function bareAlias(): string {
+  const alias = state.alias ?? "";
+  const title = state.found?.title ?? "";
+  return title && alias.startsWith(title) ? alias.slice(title.length) : alias;
+}
+
 export function renderDetails(): void {
   const person = state.chosen;
   $("details").hidden = person === null;
@@ -136,8 +143,9 @@ export function renderDetails(): void {
   current.selected = true;
   spelling.append(current);
   let alternatives = 0;
-  for (const option of withPreferred(orderByNameForm(nameOptions(person, state.alias), state.settings.nameForm), preferredSpelling(readSpellings(), person))) {
-    if (option.value === state.alias || option.value === nameQuery(state.alias)) continue;
+  const bare = bareAlias();
+  for (const option of withPreferred(orderByNameForm(nameOptions(person, bare), state.settings.nameForm), preferredSpelling(readSpellings(), person))) {
+    if (option.value === bare || option.value === nameQuery(bare)) continue;
     const element = document.createElement("option");
     element.value = option.value;
     element.textContent = `${option.value} (${option.label})`;
@@ -161,7 +169,7 @@ export function renderSpellingChoice(): void {
   $<HTMLButtonElement>("respell").disabled = !chosen || state.busy;
   $<HTMLButtonElement>("respell-all").disabled = !chosen || state.busy;
   preview.hidden = !chosen || !state.alias;
-  if (chosen && state.alias) preview.textContent = `Değiştir'e basınca: ${state.alias} → ${withEnding(state.alias, chosen)}`;
+  if (chosen && state.alias) preview.textContent = `Değiştir'e basınca: ${state.alias} → ${state.found?.title ?? ""}${withEnding(bareAlias(), chosen)}`;
 }
 
 /** The mentions "Tümünü değiştir" would change: this spelling, this person, anywhere in the document. */
@@ -186,7 +194,7 @@ let respellPlan: RespellTarget[] = [];
  */
 async function respellTargets(spelling: string): Promise<RespellTarget[]> {
   const person = state.chosen;
-  const alias = state.alias;
+  const alias = state.alias ? bareAlias() : null;
   if (!person || !alias) return [];
   const rows = await documentRows();
   const key = nameKey(nameQuery(alias));
@@ -221,7 +229,7 @@ export async function previewRespellAll(): Promise<void> {
   const cited = respellPlan.filter((t) => t.cited).length;
   const parts = [notes ? `${notes} tanesi dipnot/sonnotta` : "", cited ? `${cited} tanesi atıf ya da kaynakçada` : ""].filter(Boolean);
   $("respell-confirm-text").textContent =
-    `${state.alias} → ${withEnding(state.alias, spelling)}: belgede ${respellPlan.length} geçiş değişecek` +
+    `${bareAlias()} → ${withEnding(bareAlias(), spelling)}: belgede ${respellPlan.length} geçiş değişecek` +
     (parts.length ? ` (${parts.join(", ")})` : "") +
     ". Bu yazımın başka bir kişiye bağlı ya da kimliği kesin olmayan geçişlerine dokunulmaz.";
   $("respell-confirm").hidden = false;
@@ -515,9 +523,11 @@ export async function respell(): Promise<void> {
   const spelling = $<HTMLSelectElement>("spelling").value;
   if (!spelling) return;
   const selection = await readSelection();
-  const name = state.alias;
-  // The selection may also hold the space a double click takes, a comma or a quote: only the name changes.
-  if (!name || selectionAlias(selection.text) !== name) {
+  const name = state.alias ? bareAlias() : null;
+  const title = state.found?.title ?? "";
+  // The selection may also hold the space a double click takes, a comma or a quote: only the name changes
+  // (a title before it, "Hz. ", stays).
+  if (!name || selectionAlias(selection.text) !== state.alias) {
     setMessage("Seçim değişti. Adı yeniden seçip Değiştir'e basın.", "warning");
     await refresh();
     return;
@@ -526,7 +536,7 @@ export async function respell(): Promise<void> {
   if (state.chosen && state.found && !state.found.automatic && state.mention) {
     // The sentence keeps its words; only the name changes, so key the new spelling.
     const [before, , after] = state.mention.split("|");
-    const key = `${before ?? ""}|${replacement}|${after ?? ""}`;
+    const key = `${before ?? ""}|${title}${replacement}|${after ?? ""}`;
     await writeConfirmations(addConfirmation(readConfirmations(), key, personKey(state.chosen)));
   }
   if (!(await replaceNameInSelection(name, replacement))) {
@@ -534,7 +544,7 @@ export async function respell(): Promise<void> {
     return;
   }
   logHistory("spelling", `${name} → ${replacement}`);
-  setMessage(`Yazım değiştirildi: ${replacement}`, "success");
+  setMessage(`Yazım değiştirildi: ${title}${replacement}`, "success");
   state.alias = null;
   await refresh();
 }
@@ -585,7 +595,7 @@ export async function preferSelection(): Promise<void> {
  */
 export async function applyToAll(): Promise<void> {
   const person = state.chosen;
-  const alias = state.alias;
+  const alias = state.alias ? bareAlias() : null;
   if (!person || !alias) return;
   const rows = await documentRows();
   const key = nameKey(nameQuery(alias));

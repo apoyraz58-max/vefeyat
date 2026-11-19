@@ -454,6 +454,16 @@ try {
   await tab.click("#report-mail").catch(() => {});
   check("e-mail link goes to the beta address", (await tab.getAttribute("#report-mail", "href")).startsWith("mailto:apoyraz@cumhuriyet.edu.tr?subject="));
   await tab.close();
+  // A title before the name: found without it, kept when the spelling changes.
+  tab = await open("", "Gazzâlî der.\rSonra İmam Gazali'nin eseri.", "İmam Gazali'nin");
+  await tab.waitForTimeout(300);
+  if (await tab.isHidden("#details")) await tab.check("#candidate-0");
+  await tab.selectOption("#spelling", "Gazzâlî");
+  check("a title before the name: the preview keeps it", (await tab.textContent("#spelling-preview")).includes("İmam Gazali'nin → İmam Gazzâlî'nin"), await tab.textContent("#spelling-preview"));
+  await tab.click("#respell");
+  await tab.waitForTimeout(300);
+  check("Değiştir keeps the title", (await docText(tab)) === "Gazzâlî der.\rSonra İmam Gazzâlî'nin eseri.", await docText(tab));
+  await tab.close();
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
   await tab.click("#insert");
