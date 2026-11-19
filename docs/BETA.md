@@ -22,7 +22,10 @@ kapalı beta denemecileri içindir.
      Dosya imzasız olduğu için bu uyarı çıkar; dosya yalnız aşağıdakileri yapar.
 3. Siyah bir pencere açılır. Pencere Word sürümünüze uygun manifesti indirir, eklentiyi
    Word'e kaydeder ve "Tamam" yazar. Herhangi bir tuşa basıp pencereyi kapatın.
-4. Word'ü açın: şeritte **Vefeyât (beta)** sekmesi görünür.
+4. Word'ü açın. Şeritte **Vefeyât (beta)** sekmesi görünmezse (yalnız ilk seferde):
+   **Giriş → Eklentiler** (bazı sürümlerde **Ekle → Eklentilerim**) → gerekirse
+   **Diğer Eklentiler** → açılan pencerede **Geliştirici Eklentileri** bölümünde
+   **Vefeyât (beta)** → **Ekle**. Sonraki açılışlarda Word eklentiyi kendisi yükler.
 
 Dosya yönetici izni istemez; yalnız sizin kullanıcı hesabınıza kayıt yapar
 (`HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\WEF\Developer`) ve manifesti

@@ -112,6 +112,8 @@ installers["OKUBENI.txt"] = strToU8(
     "2. Word'u kapatin.",
     "3. Vefeyat-Kur.cmd dosyasina cift tiklayin. Windows 'bilgisayarinizi korudu' derse: Ek bilgi -> Yine de calistir.",
     "4. Pencerede 'Tamam' yazinca Word'u acin.",
+    "5. Seritte sekme gorunmezse (yalniz ilk seferde): Giris -> Eklentiler (ya da Ekle -> Eklentilerim) -> Diger Eklentiler",
+    `   -> 'Gelistirici Eklentileri' bolumunde '${addinName}' -> Ekle.`,
     "",
     "Kaldirmak icin: Vefeyat-Kaldir.cmd",
     "Sorun ve oneriler: apoyraz@cumhuriyet.edu.tr",

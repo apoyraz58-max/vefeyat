@@ -54,7 +54,12 @@ try {
     New-ItemProperty -Path $Key -Name $Id -Value $manifest -PropertyType String -Force | Out-Null
 
     Write-Host ''
-    Write-Host "  Tamam. Word'u acin: seritte '$Name' sekmesi gorunur." -ForegroundColor Green
+    Write-Host "  Tamam, eklenti Word'e kaydedildi." -ForegroundColor Green
+    Write-Host ''
+    Write-Host "  Simdi Word'u acin. Seritte '$Name' sekmesi gorunmezse (yalniz ilk seferde):" -ForegroundColor Yellow
+    Write-Host '    Giris -> Eklentiler (ya da Ekle -> Eklentilerim) -> Diger Eklentiler'
+    Write-Host "    -> 'Gelistirici Eklentileri' bolumunde '$Name' -> Ekle"
+    Write-Host ''
     Write-Host '  Guncelleme gerektiginde bu dosyayi yeniden calistirmaniz yeterli.'
     Write-Host '  Kaldirmak icin: Vefeyat-Kaldir.cmd'
 } catch {
