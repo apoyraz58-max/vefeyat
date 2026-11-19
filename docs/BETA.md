@@ -14,9 +14,10 @@ kapalı beta denemecileri içindir.
 
 ## 1. Windows'ta kurulum (önerilen: tek tıkla)
 
-1. [Vefeyat-Kur.cmd](https://apoyraz58-max.github.io/vefeyat/beta/Vefeyat-Kur.cmd) dosyasını
-   indirin (bağlantıya sağ tıklayıp **Bağlantıyı farklı kaydet** de olur).
-2. Word'ü kapatın ve indirdiğiniz dosyaya **çift tıklayın**.
+1. [Vefeyat-Kurulum.zip](https://apoyraz58-max.github.io/vefeyat/beta/Vefeyat-Kurulum.zip)
+   dosyasını indirin, sağ tıklayıp **Tümünü ayıkla** deyin (ya da açıp içindekileri
+   masaüstüne sürükleyin).
+2. Word'ü kapatın ve çıkan **Vefeyat-Kur.cmd** dosyasına **çift tıklayın**.
    - Windows "Windows bilgisayarınızı korudu" derse **Ek bilgi → Yine de çalıştır**'a basın.
      Dosya imzasız olduğu için bu uyarı çıkar; dosya yalnız aşağıdakileri yapar.
 3. Siyah bir pencere açılır. Pencere Word sürümünüze uygun manifesti indirir, eklentiyi
@@ -25,8 +26,8 @@ kapalı beta denemecileri içindir.
 
 Dosya yönetici izni istemez; yalnız sizin kullanıcı hesabınıza kayıt yapar
 (`HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\WEF\Developer`) ve manifesti
-`%LOCALAPPDATA%\Vefeyat` klasörüne koyar. Kaldırmak için
-[Vefeyat-Kaldir.cmd](https://apoyraz58-max.github.io/vefeyat/beta/Vefeyat-Kaldir.cmd).
+`%LOCALAPPDATA%\Vefeyat` klasörüne koyar. Kaldırmak için aynı ZIP'teki
+**Vefeyat-Kaldir.cmd**.
 
 Kurulum olmazsa pencerenin ekran görüntüsünü apoyraz@cumhuriyet.edu.tr adresine gönderin
 ya da aşağıdaki elle kurulumu deneyin.

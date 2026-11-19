@@ -16,10 +16,10 @@ hemen gelir. Eski Word (2408 öncesi, Office 2019/2021) için geliştirme sürü
 
 Manifest: `https://apoyraz58-max.github.io/vefeyat/manifest.xml`
 
-**Windows'ta tek tıkla:** [Vefeyat-Kur.cmd](https://apoyraz58-max.github.io/vefeyat/Vefeyat-Kur.cmd)
-dosyasını indirip Word kapalıyken çift tıklayın; Word sürümüne uygun manifesti indirir ve
-eklentiyi Word'e kaydeder (yönetici izni gerekmez). Kaldırmak için
-[Vefeyat-Kaldir.cmd](https://apoyraz58-max.github.io/vefeyat/Vefeyat-Kaldir.cmd).
+**Windows'ta tek tıkla:** [Vefeyat-Kurulum.zip](https://apoyraz58-max.github.io/vefeyat/Vefeyat-Kurulum.zip)
+dosyasını indirip ayıklayın, Word kapalıyken **Vefeyat-Kur.cmd**'ye çift tıklayın; Word
+sürümüne uygun manifesti indirir ve eklentiyi Word'e kaydeder (yönetici izni gerekmez).
+Kaldırmak için aynı ZIP'teki **Vefeyat-Kaldir.cmd**.
 Aşağıdaki paylaşılan klasör yöntemi bunun elle yapılışıdır.
 
 **Windows masaüstü Word:** Manifesti bir klasöre koyun ve klasörü paylaşın (sağ tık →

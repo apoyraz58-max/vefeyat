@@ -5,6 +5,7 @@
 //             the development one), numbered by BETA_NUMBER instead of the CI run.
 //   OUT_DIR   output folder (default dist/addin/).
 import { build } from "esbuild";
+import { strToU8, zipSync } from "fflate";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 
@@ -93,13 +94,30 @@ await cp(new URL("manifest/shortcuts.json", root), new URL("shortcuts.json", out
 // no administrator rights), and to remove it. Windows line endings for cmd.exe.
 const addinId = channel === "beta" ? BETA.id : /<Id>([^<]+)<\/Id>/.exec(await readFile(new URL("manifest/manifest.template.xml", root), "utf8"))[1];
 const addinName = channel === "beta" ? BETA.name : "Vefeyât";
+const installers = {};
 for (const file of ["Vefeyat-Kur.cmd", "Vefeyat-Kaldir.cmd"]) {
   const text = (await readFile(new URL(`installer/${file}`, root), "utf8"))
     .replaceAll("{{BASE_URL}}", baseUrl).replaceAll("{{ID}}", addinId).replaceAll("{{NAME}}", addinName)
     .replace(/\r?\n/g, "\r\n");
   if (/\{\{/.test(text)) throw new Error(`${file}: placeholder left`);
   await writeFile(new URL(file, out), text);
+  installers[file] = strToU8(text);
 }
+// Browsers often refuse to download a bare .cmd: the same files in a zip.
+installers["OKUBENI.txt"] = strToU8(
+  [
+    `${addinName} kurulumu`,
+    "",
+    "1. Bu ZIP dosyasina sag tiklayip 'Tumunu ayikla' deyin (ya da acip dosyalari masaustune surukleyin).",
+    "2. Word'u kapatin.",
+    "3. Vefeyat-Kur.cmd dosyasina cift tiklayin. Windows 'bilgisayarinizi korudu' derse: Ek bilgi -> Yine de calistir.",
+    "4. Pencerede 'Tamam' yazinca Word'u acin.",
+    "",
+    "Kaldirmak icin: Vefeyat-Kaldir.cmd",
+    "Sorun ve oneriler: apoyraz@cumhuriyet.edu.tr",
+  ].join("\r\n"),
+);
+await writeFile(new URL("Vefeyat-Kurulum.zip", out), zipSync(installers));
 
 console.log(`Built Vefeyât ${version} [${channel}] (manifest ${manifestVersion}) for ${baseUrl}`);
 
