@@ -89,6 +89,18 @@ for (const [file, source] of [["manifest.xml", "manifest.template.xml"], ["manif
 }
 await cp(new URL("manifest/shortcuts.json", root), new URL("shortcuts.json", out));
 
+// Windows installers: double-click to register the add-in with Word (HKCU WEF\Developer,
+// no administrator rights), and to remove it. Windows line endings for cmd.exe.
+const addinId = channel === "beta" ? BETA.id : /<Id>([^<]+)<\/Id>/.exec(await readFile(new URL("manifest/manifest.template.xml", root), "utf8"))[1];
+const addinName = channel === "beta" ? BETA.name : "Vefeyât";
+for (const file of ["Vefeyat-Kur.cmd", "Vefeyat-Kaldir.cmd"]) {
+  const text = (await readFile(new URL(`installer/${file}`, root), "utf8"))
+    .replaceAll("{{BASE_URL}}", baseUrl).replaceAll("{{ID}}", addinId).replaceAll("{{NAME}}", addinName)
+    .replace(/\r?\n/g, "\r\n");
+  if (/\{\{/.test(text)) throw new Error(`${file}: placeholder left`);
+  await writeFile(new URL(file, out), text);
+}
+
 console.log(`Built Vefeyât ${version} [${channel}] (manifest ${manifestVersion}) for ${baseUrl}`);
 
 // Test thesis for trying every command in real Word (scripts/test-doc.mjs).

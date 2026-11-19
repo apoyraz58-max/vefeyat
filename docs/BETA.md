@@ -12,50 +12,58 @@ kapalı beta denemecileri içindir.
 > Önce bir **kopya** üzerinde deneyin. Vefeyât'ın yaptığı her değişiklik Ctrl+Z ile geri
 > alınabilir, ama beta sürümünde beklenmedik bir durum olabilir.
 
-## 1. Hangi manifest?
+## 1. Windows'ta kurulum (önerilen: tek tıkla)
 
-Manifest, Word'e eklentiyi tanıtan küçük bir dosyadır. Word sürümünüze göre birini seçin:
+1. [Vefeyat-Kur.cmd](https://apoyraz58-max.github.io/vefeyat/beta/Vefeyat-Kur.cmd) dosyasını
+   indirin (bağlantıya sağ tıklayıp **Bağlantıyı farklı kaydet** de olur).
+2. Word'ü kapatın ve indirdiğiniz dosyaya **çift tıklayın**.
+   - Windows "Windows bilgisayarınızı korudu" derse **Ek bilgi → Yine de çalıştır**'a basın.
+     Dosya imzasız olduğu için bu uyarı çıkar; dosya yalnız aşağıdakileri yapar.
+3. Siyah bir pencere açılır. Pencere Word sürümünüze uygun manifesti indirir, eklentiyi
+   Word'e kaydeder ve "Tamam" yazar. Herhangi bir tuşa basıp pencereyi kapatın.
+4. Word'ü açın: şeritte **Vefeyât (beta)** sekmesi görünür.
+
+Dosya yönetici izni istemez; yalnız sizin kullanıcı hesabınıza kayıt yapar
+(`HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\WEF\Developer`) ve manifesti
+`%LOCALAPPDATA%\Vefeyat` klasörüne koyar. Kaldırmak için
+[Vefeyat-Kaldir.cmd](https://apoyraz58-max.github.io/vefeyat/beta/Vefeyat-Kaldir.cmd).
+
+Kurulum olmazsa pencerenin ekran görüntüsünü apoyraz@cumhuriyet.edu.tr adresine gönderin
+ya da aşağıdaki elle kurulumu deneyin.
+
+## 2. Mac'te kurulum
+
+**Uygulamalar → İzlenceler → Terminal**'i açın, aşağıdaki satırı yapıştırıp Enter'a basın,
+sonra Word'ü tamamen kapatıp (Cmd+Q) yeniden açın:
+
+```
+mkdir -p ~/Library/Containers/com.microsoft.Word/Data/Documents/wef && curl -fsSL https://apoyraz58-max.github.io/vefeyat/beta/manifest.xml -o ~/Library/Containers/com.microsoft.Word/Data/Documents/wef/vefeyat-beta.xml && echo Tamam
+```
+
+Word'de **Ekle → Eklentilerim** → **Vefeyât (beta)**'yı ekleyin. Mac Word 16.88'den
+eskiyse satırdaki `manifest.xml` yerine `manifest-uyumlu.xml` yazın. Mac'te kısayollar
+Alt+Shift yerine **Cmd+Option** ile çalışır (ör. Cmd+Option+V).
+
+## 3. Elle kurulum (Windows, kurulum dosyası çalışmazsa)
+
+Word sürümünüze göre manifesti seçin:
 
 | Word | Dosya |
 |---|---|
-| Microsoft 365, sürüm **2408 veya sonrası** (Windows) / **16.88 veya sonrası** (Mac) | [manifest.xml](https://apoyraz58-max.github.io/vefeyat/beta/manifest.xml) |
+| Microsoft 365, sürüm **2408 veya sonrası** | [manifest.xml](https://apoyraz58-max.github.io/vefeyat/beta/manifest.xml) |
 | Daha eski Word, Office 2019/2021 | [manifest-uyumlu.xml](https://apoyraz58-max.github.io/vefeyat/beta/manifest-uyumlu.xml) |
 
-Sürümünüzü görmek için: Word → **Dosya → Hesap → Word Hakkında**. En üstte "Sürüm 2410"
-gibi bir numara yazar. Emin değilseniz önce `manifest.xml` ile deneyin; Word eklentiyi
-kurmazsa `manifest-uyumlu.xml` kullanın.
+Sürümünüzü görmek için: Word → **Dosya → Hesap → Word Hakkında**. İki manifest arasındaki
+tek fark klavye kısayollarıdır; uyumlu sürümde bütün komutlar şeritte ve sağ tık menüsünde
+aynen bulunur.
 
-İkisi arasındaki tek fark klavye kısayollarıdır (Alt+Shift+V ile tarih ekleme gibi). Uyumlu
-sürümde kısayol yoktur; bütün komutlar şeritte ve sağ tık menüsünde aynen bulunur.
-
-Bağlantıya tıklayınca dosya tarayıcıda açılırsa sayfaya sağ tıklayıp **Farklı kaydet** deyin.
-Dosyanın adı `manifest.xml` ya da `manifest-uyumlu.xml` olarak kalmalı.
-
-## 2. Windows'ta kurulum
-
-1. Bilgisayarınızda bir klasör açın, ör. `C:\Vefeyat`, ve manifest dosyasını içine koyun.
+1. Bir klasör açın, ör. `C:\Vefeyat`, ve manifest dosyasını içine koyun.
 2. Klasöre sağ tıklayın → **Özellikler → Paylaşım → Paylaş…** → kendinizi seçip
-   **Paylaş**'a basın. Pencerede klasörün ağ yolu görünür: `\\BILGISAYARADI\Vefeyat`.
-   Bu yolu kopyalayın.
+   **Paylaş**. Pencerede görünen ağ yolunu (`\\BILGISAYARADI\Vefeyat`) kopyalayın.
 3. Word → **Dosya → Seçenekler → Güven Merkezi → Güven Merkezi Ayarları → Güvenilen
-   Eklenti Katalogları**. "Katalog URL'si" kutusuna kopyaladığınız yolu yapıştırın,
-   **Katalog Ekle**'ye basın, **Menüde göster** kutusunu işaretleyin, **Tamam** deyin.
-4. Word'ü tamamen kapatıp yeniden açın.
-5. **Ekle → Eklentilerim** (bazı sürümlerde **Giriş → Eklentiler → Diğer Eklentiler**) →
-   **Paylaşılan Klasör** sekmesi → **Vefeyât (beta)** → **Ekle**.
-
-Şeritte **Vefeyât (beta)** sekmesi görünür.
-
-## 3. Mac'te kurulum
-
-1. Finder'da **Git → Klasöre Git…** (Shift+Cmd+G) seçip şunu yazın:
-   `~/Library/Containers/com.microsoft.Word/Data/Documents/wef`
-   Klasör yoksa `Documents` içinde `wef` adıyla oluşturun.
-2. Manifest dosyasını bu klasöre kopyalayın.
-3. Word'ü tamamen kapatıp (Cmd+Q) yeniden açın.
-4. **Ekle → Eklentilerim** → listede **Vefeyât (beta)** → ekleyin.
-
-Mac'te kısayollar Alt+Shift yerine **Cmd+Option** ile çalışır (ör. Cmd+Option+V).
+   Eklenti Katalogları**: yolu yapıştırın, **Katalog Ekle**, **Menüde göster**'i işaretleyin,
+   **Tamam**.
+4. Word'ü kapatıp açın → **Ekle → Eklentilerim → Paylaşılan Klasör → Vefeyât (beta)**.
 
 ## 4. İlk deneme
 
@@ -72,7 +80,8 @@ Ayrıntılı kullanım: [kılavuz](https://github.com/apoyraz58-max/vefeyat/blob
 
 Pencerenin içindeki yenilikler kendiliğinden gelir; pencerenin en altında sürüm numarası
 yazar (ör. `0.4.0-beta.12`). Şeride yeni bir düğme eklendiğinde size haber verilir; o zaman
-manifest dosyasını yenisiyle değiştirip Word'ü kapatıp açmanız gerekir. Değiştirdikten
+**Vefeyat-Kur.cmd**'yi yeniden çalıştırın (Mac'te Terminal satırını yeniden yapıştırın;
+elle kurduysanız manifest dosyasını yenisiyle değiştirin) ve Word'ü kapatıp açın. Değiştirdikten
 sonra şerit eski kalırsa Word kapalıyken şu klasörü silin:
 `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\` (Mac'te: `~/Library/Containers/com.microsoft.Word/Data/Library/Caches`).
 
@@ -90,6 +99,7 @@ Paneldeki mesajın ekran görüntüsü de çok işe yarar.
 
 ## 7. Kaldırmak
 
-**Ekle → Eklentilerim** → Vefeyât (beta) üzerinde **…** → **Kaldır**. Ardından Güven
-Merkezi'ndeki katalog yolunu silebilirsiniz. Vefeyât'ın eklediği tarihler belgede kalır;
+Windows'ta **Vefeyat-Kaldir.cmd**'yi çalıştırın. Elle kurduysanız **Ekle → Eklentilerim** →
+Vefeyât (beta) üzerinde **…** → **Kaldır**, ardından Güven Merkezi'ndeki katalog yolunu
+silin. Mac'te `wef` klasöründeki `vefeyat-beta.xml` dosyasını silin. Vefeyât'ın eklediği tarihler belgede kalır;
 teslimden önce **Teslim öncesi temizle** ile gizli Vefeyât işaretlerini kaldırabilirsiniz.
