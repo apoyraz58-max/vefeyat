@@ -219,7 +219,32 @@ işaretle**; o belgede bir daha listelenmez (Diğer araçlar → Belge istisnala
   Vefeyât denetimleri, gizli dizin işaretleri, onaylar, istisnalar, tercihler ve
   kendi şahıs kayıtlarınız belgeden kaldırılır.
 
-## 9. Kendi şahıslarım ve tercihler
+## 9. Ek kataloglar (sosyal bilimler)
+
+DİA'nın yanına alanınızın kataloğunu ekleyebilirsiniz: **Veri ve yardım → Veri bilgisi →
+Ek kataloglar**. Şu an dört alan var, hepsi Wikidata'dan (CC0) üretildi:
+
+| Katalog | Kişi |
+|---|---|
+| Sosyoloji ve felsefe | 6.556 |
+| Osmanlı-Türk tarihi | 6.839 |
+| Edebiyat | 4.635 |
+| İktisat ve siyaset | 3.327 |
+
+İşaretlediğiniz kataloglar bu bilgisayarda hatırlanır. Bir kişi DİA'da da varsa **DİA kaydı
+esas alınır**; Wikidata kaydı hiç kullanılmaz. Adaylarda Wikidata kayıtları "Wikidata"
+notuyla görünür, kişi ayrıntısında **Wikidata kaydını aç** bağlantısı çıkar. Batılı adlar
+soyadıyla da tanınır (Durkheim, Weber, de Saussure). Tarihler "(1858-1917)" gibi yaşam
+aralığıyla gelir; yalnız yüzyılı bilinenler "(ö. 4. yy)" olarak yazılır.
+
+**Tarih biçimi** (Tercihler): *Kaynaktaki gibi* (DİA "(ö. 505/1111)", Wikidata
+"(1858-1917)"), *Yalnız milâdî* ("(ö. 1111)"; yaşam aralıkları kalır) ya da *Yalnız ölüm
+yılı* (her kayıt "(ö. 1917)"). Kısaltma ayarı (ö./öl./v./d.) bununla birlikte uygulanır;
+değiştirince belgedeki Vefeyât tarihlerinin çevrilmesi önerilir.
+
+Kataloglar `scripts/wikidata.mjs` ile yeniden üretilir.
+
+## 10. Kendi şahıslarım ve tercihler
 
 **Kendi şahıslarım:** katalogda olmayan kişiler (modern yazarlar, DİA'da maddesi
 olmayanlar). **Veri bilgisi** penceresindeki bölümden ya da seçili ad katalogda yoksa
@@ -233,14 +258,14 @@ onayları ve kendi şahıslarınız bir dosyada; başka bir tezde aynen kullanı
 **Katalog:** eklentiyle gelen DİA kataloğu kendiliğinden yüklenir; **CSV seç** ile
 kendi dosyanızı kullanabilirsiniz.
 
-## 10. VBA sürümünden geçiş
+## 11. VBA sürümünden geçiş
 
 VBA sürümünün eklediği tarihler Word alanıdır. **Belge sağlığı** bunları sayar ve
 **VBA tarihlerini dönüştür** ile aynı metni taşıyan Vefeyât tarihlerine çevirir. Kişi
 tarihin önündeki addan, eş adlılarda tarihin kendisinden bulunur; önündeki ad
 bulunamayan alana dokunulmaz. Dönüştürdükten sonra VBA eklentisini kaldırabilirsiniz.
 
-## 11. Bilinen sınırlar
+## 12. Bilinen sınırlar
 
 - Üst/alt bilgiler, açıklamalar ve metin kutuları taranmaz (Diğer araçlar → Denetim
   kapsamını göster).
@@ -250,7 +275,7 @@ bulunamayan alana dokunulmaz. Dönüştürdükten sonra VBA eklentisini kaldıra
 - Şahıs raporu yeni belge açar; Word Online'da açılır pencere engelleyicisi buna
   izin vermeyebilir.
 
-## 12. Deneme tezi ve geri bildirim
+## 13. Deneme tezi ve geri bildirim
 
 Bütün komutları denemek için `https://apoyraz58-max.github.io/vefeyat/vefeyat-deneme.docx`
 dosyasını açın; ilk sayfadaki kontrol listesini izleyin.

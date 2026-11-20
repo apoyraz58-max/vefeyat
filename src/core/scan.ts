@@ -327,7 +327,8 @@ function gapBetween(text: string, previous: Token, token: Token): string {
  */
 const SPAN_STOP = new Set(
   ("turk|turkiye|turkce|turkcu|islam|islami|arap|arapca|fars|farsca|osmanli|osmanlica|selcuklu|bati|batili|dogu|dogulu|avrupa|avrupali|yunan|yunanca|roma|latin|latince|" +
-    "hint|cin|alman|almanca|ingiliz|ingilizce|fransiz|fransizca|rus|rusca|amerikan|amerika|hiristiyan|hiristiyanlik|yahudi|yahudilik|sunni|sii|emevi|abbasi|endulus|iran|misir|anadolu|kuran|cumhuriyet|tanzimat|mesrutiyet")
+    "hint|cin|alman|almanca|ingiliz|ingilizce|fransiz|fransizca|rus|rusca|amerikan|amerika|hiristiyan|hiristiyanlik|yahudi|yahudilik|sunni|sii|emevi|abbasi|endulus|iran|misir|anadolu|kuran|cumhuriyet|tanzimat|mesrutiyet|" +
+    "almanya|fransa|ingiltere|britanya|italya|ispanya|portekiz|rusya|sovyet|avusturya|macaristan|polonya|yunanistan|hindistan|japonya|irak|suriye|lubnan|filistin|arabistan|hicaz|yemen|afganistan|pakistan|misir|cezayir|fas|tunus|libya|sudan|balkan|kafkasya|azerbaycan|bosna|bulgaristan|romanya|sirbistan|istanbul|ankara|izmir|konya|bursa|edirne|kudus|mekke|medine|bagdat|sam|kahire")
     .split("|")
     .map(collapseLetters),
 );
