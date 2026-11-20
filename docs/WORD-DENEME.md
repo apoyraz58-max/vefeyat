@@ -256,7 +256,7 @@ kullanılır ("kendi kaydınız" notuyla).
 
 **Wikidata'da ara:** seçili ad hiçbir katalogda yoksa (ya da adaylar arasında aradığınız
 kişi yoksa) **Wikidata'da ara**'ya basın. Vefeyât adı yazıldığı gibi, şapkasız ve
-Arapça harfi tarifi "al-" ile ("et-Türâbî" → "al-Turabi") arar; ölüm tarihi bilinen
+Arapça harf-i tarifi "al-" biçimine çevirerek ("et-Türâbî" → "al-Turabi") arar; ölüm tarihi bilinen
 kişileri tarihleriyle listeler. Doğru kişide **Ekle ve seç** deyin: kişi kendi
 şahıslarınıza eklenir, metindeki yazım da onun bir adı olarak kaydedilir ve hemen
 seçilir. Wikidata'ya yalnız seçili ad gönderilir; belge metni gönderilmez. İnternet
