@@ -221,7 +221,7 @@ işaretle**; o belgede bir daha listelenmez (Diğer araçlar → Belge istisnala
 
 ## 9. Ek kataloglar (sosyal bilimler)
 
-DİA'nın yanında dört alan kataloğu da **ilk açılıştan itibaren kendiliğinden** kullanılır; bir şey işaretlemeniz gerekmez. İstemediğiniz alanı **Veri ve yardım → Veri bilgisi → Ek kataloglar**'dan kapatabilirsiniz. Şu an dört alan var, hepsi Wikidata'dan (CC0) üretildi:
+DİA'nın yanında altı alan kataloğu da **ilk açılıştan itibaren kendiliğinden** kullanılır; bir şey işaretlemeniz gerekmez. İstemediğiniz alanı **Veri ve yardım → Veri bilgisi → Ek kataloglar**'dan kapatabilirsiniz. Şu an altı alan var, hepsi Wikidata'dan (CC0) üretildi:
 
 | Katalog | Kişi |
 |---|---|
@@ -229,6 +229,8 @@ DİA'nın yanında dört alan kataloğu da **ilk açılıştan itibaren kendili�
 | Osmanlı-Türk tarihi | 6.839 |
 | Edebiyat | 4.636 |
 | İktisat ve siyaset | 5.425 |
+| Çağdaş İslâm dünyası | 7.838 |
+| Bilim ve tıp | 5.083 |
 
 Seçiminiz bu bilgisayarda hatırlanır. Bir kişi DİA'da da varsa **DİA kaydı
 esas alınır**; Wikidata kaydı hiç kullanılmaz. Adaylarda Wikidata kayıtları "Wikidata"

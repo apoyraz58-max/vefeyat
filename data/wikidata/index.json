@@ -11,7 +11,8 @@
     "title": "Osmanlı-Türk tarihi",
     "file": "catalogs/osmanli-turk-tarihi.csv",
     "count": 6839,
-    "source": "Wikidata"
+    "source": "Wikidata",
+    "built": "2026-11-20"
   },
   {
     "id": "edebiyat",
@@ -26,5 +27,21 @@
     "file": "catalogs/iktisat-siyaset.csv",
     "count": 5425,
     "source": "Wikidata"
+  },
+  {
+    "id": "islam-dunyasi",
+    "title": "Çağdaş İslâm dünyası",
+    "file": "catalogs/islam-dunyasi.csv",
+    "count": 7838,
+    "source": "Wikidata",
+    "built": "2026-11-20"
+  },
+  {
+    "id": "bilim",
+    "title": "Bilim ve tıp",
+    "file": "catalogs/bilim.csv",
+    "count": 5083,
+    "source": "Wikidata",
+    "built": "2026-11-20"
   }
 ]
