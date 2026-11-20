@@ -194,7 +194,8 @@ export function standardName(name: string, standard: SpellingStandard, share = 0
     const withArticle = ARTICLE.exec(word);
     if (withArticle && withArticle[1]) {
       const core = standardWord(withArticle[1].charAt(0).toLocaleUpperCase("tr") + withArticle[1].slice(1), standard, arabicOf.get(index));
-      out.push(article(core) + core);
+      // DİA does not begin a short name with the article: "Ad-Dardir" is "Dardir".
+      out.push(index === 0 ? core : article(core) + core);
     } else if (index > 0 && index < words.length - 1 && (lower === "bin" || lower === "ibn" || lower === "ibni")) {
       out.push("b.");
     } else {

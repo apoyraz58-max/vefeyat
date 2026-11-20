@@ -15,6 +15,7 @@ import {
   nameCandidates,
   nameQuery,
   normalize,
+  notability,
   personKey,
   safeCandidate,
   startsWithDate,
@@ -54,6 +55,30 @@ export function splitTitle(alias: string): [string, string] {
  * person, strong matches first.
  */
 export function lookup(catalog: Catalog, alias: string): Lookup {
+  return ordered(lookupUnordered(catalog, alias));
+}
+
+/**
+ * The order the candidates are shown in: the one chosen by itself first, then
+ * the same-name ones before the partial ones; within each, DİA before the
+ * field catalogs, and among the field catalogs the best known first (Immanuel
+ * Kant before the other Kants). Ties keep catalog order.
+ */
+function ordered(found: Lookup): Lookup {
+  const auto = found.automatic ? personKey(found.automatic) : null;
+  const rank = (p: Person): [number, number, number, number] => {
+    const key = personKey(p);
+    const known = notability(p);
+    return [key === auto ? 0 : 1, found.strong.has(key) ? 0 : 1, known === null ? 0 : 1, -(known ?? 0)];
+  };
+  const candidates = found.candidates
+    .map((person, index) => ({ person, index, rank: rank(person) }))
+    .sort((a, b) => a.rank[0] - b.rank[0] || a.rank[1] - b.rank[1] || a.rank[2] - b.rank[2] || a.rank[3] - b.rank[3] || a.index - b.index)
+    .map((c) => c.person);
+  return { ...found, candidates };
+}
+
+function lookupUnordered(catalog: Catalog, alias: string): Lookup {
   const first = lookupName(catalog, alias);
   const initials = withoutInitials(catalog, alias, first);
   if (initials) return initials;

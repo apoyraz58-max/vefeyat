@@ -44,7 +44,8 @@ describe("standart yazım (DİA esas)", () => {
     expect(standardName("Ahmad al-Razi", small)).toBe("Ahmad er-Razi");
     expect(standardName("Halid al-Şafii", small)).toBe("Halid eş-Şafii");
     expect(standardName("Ali al-Cezeri", small)).toBe("Ali el-Cezeri");
-    expect(standardName("İbn Haldun", small)).toBe("İbn Haldun"); // "İbn" at the start is a name, not "b."
+    expect(standardName("İbn Haldun", small)).toBe("İbn Haldun");
+    expect(standardName("Ad-Dardir Malik", small)).toBe("Dardir Mâlik"); // no short name begins with the article // "İbn" at the start is a name, not "b."
   });
 
   it("leaves a name most of whose words DİA does not have", () => {
