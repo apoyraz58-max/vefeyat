@@ -176,7 +176,7 @@ export function looseNameMatch(name: string, query: string): number {
 
 /** `VefeyatNameMatch`: score of a raw catalog name against a raw query. */
 const ARTICLES = new Set(["el", "er", "es", "et", "ez", "en", "ed"]);
-const dropArticles = (value: string): string => value.split(" ").filter((w) => w && !ARTICLES.has(w)).join(" ");
+export const dropArticles = (value: string): string => value.split(" ").filter((w) => w && !ARTICLES.has(w)).join(" ");
 
 export function nameScore(name: string, query: string): number {
   const term = normalize(nameQuery(query));
@@ -241,3 +241,30 @@ export function honorificAliases(fullName: string): string[] {
 
 /** Eponyms of a school whose catalog short name is longer than the school word: "Eş‘arî" alone is Ebü’l-Hasan. */
 export const EPONYMS: Readonly<Record<string, string>> = { esari: "Eş‘arî, Ebü’l-Hasan" };
+
+/** Words before a name that are no part of it: "Molla", "Şeyh" … */
+const HEAD_TITLES = new Set(["molla", "seyh", "imam", "hz", "hazret", "hazreti", "kadi", "kadı", "mevlana", "seyyid", "hace", "baba", "dede", "sultan", "emir"]);
+
+/**
+ * Short-name word + nisba from the full name, the way a text often writes a
+ * person: "Ahund Molla" / "Muhammed Kâzım-ı Horasânî" → "Ahund Horasânî"
+ * (in text also "Ahund el-Horasânî"). The head is the first word of the short
+ * name that is not a title; the nisbas are the full name's last two words
+ * ending in -î, article and izafet left out.
+ */
+export function headNisbaAliases(shortName: string, fullName: string): string[] {
+  if (!fullName || fullName === "---") return [];
+  const head = shortName
+    .split(",")[0]!
+    .trim()
+    .split(/\s+/)
+    .find((w) => w.length >= 3 && !HEAD_TITLES.has(normalize(w).replace(/\s/g, "")));
+  if (!head) return [];
+  const nisbas = fullName
+    .split(/\s+/)
+    .map((w) => w.replace(/^(el|er|es|et|ez|en|ed|eş)[-‐]/i, "").replace(/[,;)]+$/, ""))
+    .filter((w) => /^\p{Lu}\p{L}{2,}î$/u.test(w))
+    .slice(-2);
+  const own = normalize(head);
+  return nisbas.filter((n) => normalize(n) !== own).map((n) => `${head} ${n}`);
+}

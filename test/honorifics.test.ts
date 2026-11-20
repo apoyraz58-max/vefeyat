@@ -99,3 +99,26 @@ describe("school eponyms and works after a name", () => {
     expect(who("Gazzâlî el-Mustasfâ adlı eserinde bunu savunur.")).toEqual([["Gazzâlî", "Gazzâlî"]]);
   });
 });
+
+describe("epithets and short name + nisba", () => {
+  const cat = new Catalog([
+    p("Muhammed", "---", "(ö. 11/632)"),
+    p("Ebû Hanîfe", "Ebû Hanîfe Nu‘mân b. Sâbit b. Zûtâ b. Mâh", "(ö. 150/767)"),
+    p("Ahund Molla", "Muhammed Kâzım-ı Horasânî", "(1839-1911)"),
+    p("Gazzâlî", "Hüccetü’l-İslâm Ebû Hâmid Muhammed b. Muhammed b. Ahmed el-Gazzâlî et-Tûsî", "(ö. 505/1111)"),
+  ]);
+  const index = new NameIndex(cat.people);
+  const who = (text: string) => buildInventory([{ part: "main", anchor: 0, order: 0, text }], cat, index).map((r) => [r.text, r.person?.shortName ?? null]);
+  it("Hz. Peygamber, Resûlullah, İmâm-ı Âzam: the person, in text and in the selected name", () => {
+    expect(who("Bu konuda Hz. Peygamber şöyle buyurur.")).toEqual([["Peygamber", "Muhammed"]]);
+    expect(who("Resûlullah'ın sünneti böyledir.")).toEqual([["Resûlullah'ın", "Muhammed"]]);
+    expect(who("İmâm-ı Âzam bu görüştedir.")).toEqual([["İmâm-ı Âzam", "Ebû Hanîfe"]]);
+    expect(lookup(cat, "Resûl-i Ekrem").automatic?.shortName).toBe("Muhammed");
+    expect(who("Bu peygamber kıssası bilinir.")).toEqual([]);
+  });
+  it("a word of the short name with a nisba of the full name", () => {
+    expect(who("Bu konuda Ahund el-Horasani şöyle der.")).toEqual([["Ahund el-Horasani", "Ahund Molla"]]);
+    expect(lookup(cat, "Ahund el-Horasani").automatic?.shortName).toBe("Ahund Molla");
+    expect(who("Gazzâlî et-Tûsî bunu savunur.")).toEqual([["Gazzâlî et-Tûsî", "Gazzâlî"]]);
+  });
+});

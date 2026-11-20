@@ -15,3 +15,4 @@ export * from "./bibliography.js";
 export * from "./topics.js";
 export * from "./scan.js";
 export * from "./citation.js";
+export * from "./epithets.js";

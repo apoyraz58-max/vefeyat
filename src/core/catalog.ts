@@ -6,7 +6,8 @@
  * `VfaConfirmationCandidates`, `VfqStrength` and `VfqSingleSafe`.
  */
 import { collapseLetters, normalize } from "./normalize.js";
-import { EPONYMS, containsTokens, fuseLinks, honorificAliases, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
+import { EPITHETS } from "./epithets.js";
+import { EPONYMS, containsTokens, dropArticles, fuseLinks, headNisbaAliases, honorificAliases, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
 import { vbTrim } from "./text.js";
 
 /** One catalog row. Field order matches the CSV and the VBA arrays (0..5). */
@@ -31,6 +32,21 @@ export function personFields(person: Person): readonly [string, string, string, 
  * reading order, and lakap + nisba short forms ("Fahrülİslâm el-Pezdevî").
  */
 const NAMES = new WeakMap<Person, readonly string[]>();
+const EXTRA = new WeakMap<Person, readonly string[]>();
+
+/** Short forms built from the catalog names: epithets, lakap + nisba, short name + nisba. */
+function extraNames(person: Person): readonly string[] {
+  const known = EXTRA.get(person);
+  if (known) return known;
+  const list = [
+    ...(EPITHETS[person.shortName] ?? []),
+    ...honorificAliases(person.fullName).map(fuseLinks),
+    ...headNisbaAliases(person.shortName, person.fullName),
+  ];
+  EXTRA.set(person, list);
+  return list;
+}
+
 function names(person: Person): readonly string[] {
   const known = NAMES.get(person);
   if (known) return known;
@@ -38,7 +54,7 @@ function names(person: Person): readonly string[] {
   const natural =
     comma < 0 || person.shortName.indexOf(",", comma + 1) >= 0 ? [] : [`${person.shortName.slice(comma + 1).trim()} ${person.shortName.slice(0, comma).trim()}`];
   const eponym = Object.values(EPONYMS).includes(person.shortName) ? [person.shortName.slice(0, comma).trim()] : [];
-  const list = [person.shortName, ...natural, ...eponym, person.fullName, person.originalName, ...honorificAliases(person.fullName).map(fuseLinks)];
+  const list = [person.shortName, ...natural, ...eponym, person.fullName, person.originalName, ...extraNames(person)];
   NAMES.set(person, list);
   return list;
 }
@@ -249,6 +265,15 @@ export class Catalog {
       for (let j = 0; j < 3; j++) {
         const score = nameMatch(row.text[j] as string, row.keys[j] as string, term, compact, row.folded[j] as string, folded);
         if (score > best) best = score;
+      }
+      // Short forms built from the names (epithets, lakap + nisba, short name + nisba):
+      // "Resûlullah", "Fahrülislâm el-Pezdevî", "Ahund el-Horasânî".
+      if (best < 3) {
+        const bare = collapseLetters(dropArticles(term).split(" ").join(""));
+        for (const alias of extraNames(row.person)) {
+          const key = collapseLetters(dropArticles(normalize(nameQuery(alias))).split(" ").join(""));
+          if (key && key === bare) best = 4;
+        }
       }
       if (best > 0) insert(best * 1000 + prominence(row.person.shortName, compact), row.person);
       else if (includeDescriptions && containsTokens(row.search, term)) insert(1, row.person);

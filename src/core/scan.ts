@@ -8,7 +8,8 @@ import { MAX_NAME_LENGTH } from "./alias.js";
 import type { Person } from "./catalog.js";
 import { personKey } from "./catalog.js";
 import { excludeMention, hasSuffix, isSentenceInitial, isWorkUsage, schoolRoot } from "./context.js";
-import { EPONYMS, fuseLinks, honorificAliases, nameQuery, nameScore, prominence } from "./names.js";
+import { EPITHETS, EPITHET_KEYS } from "./epithets.js";
+import { EPONYMS, fuseLinks, headNisbaAliases, honorificAliases, nameQuery, nameScore, prominence } from "./names.js";
 import { collapseLetters, isSeparator, nameKey, normalize } from "./normalize.js";
 import { vbLower, vbTrim } from "./text.js";
 import { isValidAlias } from "./alias.js";
@@ -170,14 +171,15 @@ export class NameIndex {
     people.forEach((person, i) => this.indexRow(person, i));
   }
 
-  private add(value: string, index: number): void {
+  private add(value: string, index: number, epithet = false): void {
     let key = this.cache.get(value);
     if (key === undefined) {
       key = nameKey(value);
       this.cache.set(value, key);
     }
     if (key.length < 3 || value.length > MAX_NAME_LENGTH || value === "---") return;
-    if (isNoise(key) || isCommonWord(key)) return;
+    // An epithet ("Mevlânâ", "Resûlullah") is a name although the word is a title elsewhere.
+    if (!epithet && (isNoise(key) || isCommonWord(key))) return;
     let ids = this.patterns.get(key);
     if (!ids) {
       ids = new Set();
@@ -209,6 +211,9 @@ export class NameIndex {
   }
 
   private indexRow(person: Person, i: number): void {
+    for (const epithet of EPITHETS[person.shortName] ?? []) this.add(epithet, i, true);
+    // "Ahund el-Horasânî": a word of the short name with a nisba of the full name.
+    for (const alias of headNisbaAliases(person.shortName, person.fullName)) this.add(alias, i);
     const values = [person.shortName, person.fullName, person.originalName];
     values.forEach((value, j) => {
       this.add(value, i);
@@ -402,7 +407,8 @@ export function findMatches(text: string, index: NameIndex, strict = false, cita
         if (spanEnd > bestIndex) accepted = false;
         if (bestIndex === i) {
           const raw = mid(text, first + 1, bestEnd - first);
-          if (isCommonWord(nameKey(nameQuery(raw))) || !initialUpper(raw)) accepted = false;
+          const own = nameKey(nameQuery(raw));
+          if ((isCommonWord(own) && !EPITHET_KEYS.has(own)) || !initialUpper(raw)) accepted = false;
         }
         if (accepted) accepted = !excludeMention(text, first, bestEnd - first, bestKey, citationCheck);
       }
