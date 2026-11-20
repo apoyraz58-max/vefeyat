@@ -3,8 +3,9 @@
     "id": "sosyoloji-felsefe",
     "title": "Sosyoloji ve felsefe",
     "file": "catalogs/sosyoloji-felsefe.csv",
-    "count": 6556,
-    "source": "Wikidata"
+    "count": 6566,
+    "source": "Wikidata",
+    "built": "2026-11-20"
   },
   {
     "id": "osmanli-turk-tarihi",
