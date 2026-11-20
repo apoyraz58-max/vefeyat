@@ -257,6 +257,7 @@ export function writeConfirmations(map: Record<string, string>): Promise<void> {
 
 const SETTING_KEYS: Record<SettingName, string> = {
   prefix: "vefeyat.prefix",
+  dateForm: "vefeyat.dateForm",
   scope: "vefeyat.scope",
   nameForm: "vefeyat.nameForm",
   auditMode: "vefeyat.auditMode",
@@ -273,6 +274,7 @@ export function readSettings(): Settings {
   const get = (name: SettingName): unknown => Office.context.document.settings.get(SETTING_KEYS[name]);
   return {
     prefix: settingValue("prefix", get("prefix")),
+    dateForm: settingValue("dateForm", get("dateForm")),
     scope: settingValue("scope", get("scope")),
     nameForm: settingValue("nameForm", get("nameForm")),
     auditMode: settingValue("auditMode", get("auditMode")),

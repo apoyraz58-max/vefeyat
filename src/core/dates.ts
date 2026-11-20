@@ -79,8 +79,33 @@ export function markerLength(value: string, start: number): number {
  * `VfpFormatDate`: replaces only the leading marker of a catalog date.
  * Lifespans, B.C. dates, other events and unknown dates are returned unchanged.
  */
-export function formatDate(raw: string, prefix: string): string {
+/**
+ * Tarih biçimi: "source" as the catalog writes it ("(ö. 505/1111)", "(1858-1917)");
+ * "gregorian" the Gregorian year only ("(ö. 1111)"), a lifespan as it is;
+ * "death" the Gregorian death year only, also for a lifespan ("(ö. 1917)").
+ */
+export type DateForm = "source" | "gregorian" | "death";
+export const DATE_FORMS: readonly DateForm[] = ["source", "gregorian", "death"];
+
+function reshape(raw: string, form: DateForm): string {
+  if (form === "source" || raw.length === 0) return raw;
+  // "(ö. 505/1111)", "(ö. 505/1111-12)", "(v. 505/1111 [?])": the part after the slash.
+  let out = raw.replace(/(\d{1,4})(?:\s*-\s*\d{1,4})?\s*\/\s*(\d{1,4}(?:\s*-\s*\d{1,4})?)/, "$2");
+  if (form === "death") {
+    // "(1858-1917)" → "(ö. 1917)"; B.C. and century dates stay as they are.
+    const span = /^\(\s*(\d{3,4})\s*-\s*(\d{2,4})\s*\)$/.exec(out.trim());
+    if (span) {
+      const a = span[1] as string;
+      const b = (span[2] as string).length < a.length ? a.slice(0, a.length - (span[2] as string).length) + span[2] : (span[2] as string);
+      out = `(ö. ${b})`;
+    }
+  }
+  return out;
+}
+
+export function formatDate(raw: string, prefix: string, form: DateForm = "source"): string {
   const key = requirePrefix(prefix);
+  raw = reshape(raw, form);
   if (key === "original" || raw.length === 0) return raw;
   let start = skipSpaces(raw, 0);
   if (start >= raw.length) return raw;
@@ -141,8 +166,8 @@ export function alreadyHasDate(afterText: string, rawDate: string): boolean {
   const stop = afterText.search(/[\r\u0007\u000b]/);
   if (stop >= 0) afterText = afterText.slice(0, stop);
   afterText = normalizeWhitespace(afterText);
-  for (const key of PREFIX_KEYS) {
-    const dateText = normalizeWhitespace(formatDate(rawDate, key));
+  for (const key of PREFIX_KEYS.flatMap((k) => DATE_FORMS.map((f) => [k, f] as const))) {
+    const dateText = normalizeWhitespace(formatDate(rawDate, key[0], key[1]));
     if (dateText.length === 0 || afterText.length < dateText.length) continue;
     if (vbLower(afterText.slice(0, dateText.length)) !== vbLower(dateText)) continue;
     if (afterText.length === dateText.length) return true;

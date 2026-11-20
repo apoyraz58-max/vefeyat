@@ -39,7 +39,7 @@ export async function checkHealth(): Promise<void> {
   await tidyEmptyDates();
   await refreshSettings();
   state.settings = readSettings();
-  healthRows = checkControls(await readDateControls(), index, state.settings.prefix);
+  healthRows = checkControls(await readDateControls(), index, state.settings.prefix, state.settings.dateForm);
   const legacy = await countLegacyDates().catch(() => 0);
   $("legacy").hidden = legacy === 0;
   $("legacy-text").textContent =
@@ -153,7 +153,7 @@ export async function showSource(): Promise<void> {
   const index = tags();
   if (!index) return;
   const control = await selectedDateControl();
-  sourceRow = control ? (checkControls([control], index, state.settings.prefix)[0] ?? null) : null;
+  sourceRow = control ? (checkControls([control], index, state.settings.prefix, state.settings.dateForm)[0] ?? null) : null;
   $("source-details").hidden = sourceRow === null;
   $("source-repair").hidden = !(sourceRow && repairable(sourceRow));
   if (!sourceRow) {
@@ -199,7 +199,7 @@ export async function offerPrefix(): Promise<void> {
   if (!index) return;
   await refreshSettings();
   state.settings = readSettings();
-  prefixRows = checkControls(await readDateControls(), index, state.settings.prefix).filter((r) => r.health === "prefix" && repairable(r));
+  prefixRows = checkControls(await readDateControls(), index, state.settings.prefix, state.settings.dateForm).filter((r) => r.health === "prefix" && repairable(r));
   $("prefix-offer").hidden = prefixRows.length === 0;
   if (!prefixRows.length) return;
   const label = SETTING_CHOICES.prefix[state.settings.prefix];

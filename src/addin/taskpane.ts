@@ -1,11 +1,11 @@
 /**
  * Vefeyât pane entry: launch and wiring. The views live in ./pane/.
  */
-import { type Launch, earlierSpellings, parseLaunch, quickInsertBlocker } from "./logic.js";
+import { type Launch, earlierSpellings, parseLaunch, quickInsertBlocker, sourceLabel } from "./logic.js";
 import { GO_FUNCTIONS, goQuery, register, registerSettingCommands } from "./actions.js";
 import { onParagraphsEdited, watchDocument, canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
 
-import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals } from "./pane/catalog.js";
+import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals, loadExtras, showExtras } from "./pane/catalog.js";
 import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
@@ -27,7 +27,10 @@ export async function launch(request: Launch): Promise<void> {
   if (request.view === "toplu") await run(prepareBulk, "Öneriler hazırlanıyor");
   if (request.view === "gecmis") renderHistory();
   if (request.view === "kimlik") renderIdentities();
-  if (request.view === "katalog") renderLocals();
+  if (request.view === "katalog") {
+    renderLocals();
+    void showExtras();
+  }
   if (request.view === "yardim") renderReport();
   if (request.view === "tercihler") {
     renderSpellings();
@@ -49,8 +52,8 @@ export async function launch(request: Launch): Promise<void> {
   if (request.action === "audit") await run(startAudit, "Belge taranıyor");
   if (request.action === "dia") {
     const person = state.chosen;
-    if (person && person.source.startsWith("https://islamansiklopedisi.org.tr/")) {
-      setMessage("DİA maddesini açmak için aşağıdaki bağlantıya tıklayın.", "info");
+    if (person && sourceLabel(person.source)) {
+      setMessage(`${sourceLabel(person.source) === "Wikidata" ? "Wikidata kaydını" : "DİA maddesini"} açmak için aşağıdaki bağlantıya tıklayın.`, "info");
       $("detail-link").focus();
     } else {
       setMessage(quickInsertBlocker(state.catalog !== null, state.alias, state.found) ?? "Bu şahıs için DİA bağlantısı yok.", "info");
@@ -276,6 +279,7 @@ export function initialise(): void {
   const request = parseLaunch(window.location.search);
   showView(request.view);
   ready = restoreCatalog()
+    .then(() => loadExtras())
     .then(() => refresh())
     .catch(() => undefined);
   void ready.then(() => launch(request)).then(() => tidyEmptyDates());
@@ -337,7 +341,7 @@ function registerRibbonFunctions(): void {
   }
   registerSettingCommands(async (setting) => {
     await refresh();
-    if (setting === "prefix") await offerPrefix();
+    if (setting === "prefix" || setting === "dateForm") await offerPrefix();
   });
 }
 

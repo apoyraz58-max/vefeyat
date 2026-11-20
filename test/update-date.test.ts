@@ -58,3 +58,17 @@ describe("titles before a selected name", () => {
     expect(lookup(cat, "Molla Hüsrev").title).toBeUndefined();
   });
 });
+
+describe("Tarih biçimi", () => {
+  it("source, Gregorian only, death year only; with any Kısaltma", async () => {
+    const { formatDate, alreadyHasDate } = await import("../src/core/index.js");
+    expect(formatDate("(ö. 505/1111)", "o", "gregorian")).toBe("(ö. 1111)");
+    expect(formatDate("(ö. 505/1111)", "v", "death")).toBe("(v. 1111)");
+    expect(formatDate("(1858-1917)", "o", "gregorian")).toBe("(1858-1917)");
+    expect(formatDate("(1858-1917)", "o", "death")).toBe("(ö. 1917)");
+    expect(formatDate("(1858-1917)", "d", "death")).toBe("(d. 1917)");
+    expect(formatDate("(m.ö. 384-322)", "o", "death")).toBe("(m.ö. 384-322)");
+    expect(formatDate("(ö. 505/1111)", "o")).toBe("(ö. 505/1111)");
+    expect(alreadyHasDate(" (ö. 1111) der", "(ö. 505/1111)")).toBe(true);
+  });
+});

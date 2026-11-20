@@ -77,12 +77,12 @@ export function bulkSuggestions(rows: readonly InventoryRow[], settings: Setting
     }
     // A written date that the catalog contradicts: offered, never preselected (another source may be meant).
     if (row.date && (row.dateCheck === "different" || row.dateCheck === "inconsistent") && isValidDate(person.deathDate)) {
-      const value = formatDate(person.deathDate, settings.prefix);
+      const value = formatDate(person.deathDate, settings.prefix, settings.dateForm);
       if (value !== row.date) out.push({ id: `f${row.id}`, kind: "fixdate", row, person, value, old: row.date, preselected: false });
     }
     const wantsDate = settings.scope === "all" || ((settings.scope === "first" || settings.scope === "chapter") && isFirstUse(row, settings.scope));
     if (wantsDate && !row.date && isValidDate(person.deathDate) && !receiving.has(row.id)) {
-      out.push({ id: `d${row.id}`, kind: "date", row, person, value: formatDate(person.deathDate, settings.prefix), preselected: true });
+      out.push({ id: `d${row.id}`, kind: "date", row, person, value: formatDate(person.deathDate, settings.prefix, settings.dateForm), preselected: true });
     }
   }
   return out;

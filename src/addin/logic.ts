@@ -6,6 +6,7 @@ import {
   type Catalog,
   type Person,
   type PrefixKey,
+  type DateForm,
   alreadyHasDate,
   confirmationCandidates,
   formatDate,
@@ -84,14 +85,14 @@ export type DatePlan =
  * Whether a date may be written after the name, and its text. `following` is
  * the rest of the paragraph after the selected name.
  */
-export function planDate(person: Person, prefix: PrefixKey, following: string): DatePlan {
+export function planDate(person: Person, prefix: PrefixKey, following: string, form: DateForm = "source"): DatePlan {
   if (!isValidDate(person.deathDate)) {
     return { ok: false, reason: "Katalogda bu şahıs için kullanılabilir bir ölüm tarihi yok; tarih eklenmedi." };
   }
   if (startsWithDate(following) || alreadyHasDate(following, person.deathDate)) {
     return { ok: false, reason: "Adın hemen arkasında zaten bir tarih var; mevcut tarihe dokunulmadı." };
   }
-  return { ok: true, text: formatDate(person.deathDate, prefix) };
+  return { ok: true, text: formatDate(person.deathDate, prefix, form) };
 }
 
 /**
@@ -223,15 +224,17 @@ export type AuditMode = "all" | "undated";
 
 export interface Settings {
   readonly prefix: PrefixKey;
+  readonly dateForm: DateForm;
   readonly scope: Scope;
   readonly nameForm: NameForm;
   readonly auditMode: AuditMode;
 }
 
-export const DEFAULT_SETTINGS: Settings = { prefix: "o", scope: "first", nameForm: "ask", auditMode: "all" };
+export const DEFAULT_SETTINGS: Settings = { prefix: "o", dateForm: "source", scope: "first", nameForm: "ask", auditMode: "all" };
 
 export const SETTING_CHOICES = {
   prefix: { original: "Kaynakta olduğu gibi", o: "ö.", ol: "öl.", v: "v.", d: "d. (İngilizce)" },
+  dateForm: { source: "Kaynaktaki gibi", gregorian: "Yalnız milâdî", death: "Yalnız ölüm yılı" },
   scope: { first: "Yalnız ilk kullanım", chapter: "Her bölümde ilk kullanım", all: "Bütün kullanımlar", none: "Yalnız denetle" },
   nameForm: { ask: "Her seferinde sor", near: "Seçili ada yakın", short: "Kısa ad", full: "Tam / uzun ad", original: "Orijinal ad" },
   auditMode: { all: "Tüm geçişler", undated: "Tarihi olmayanlar" },
@@ -248,7 +251,7 @@ export function settingValue<K extends SettingName>(name: K, stored: unknown): S
 /** One-line summary shown at the top of the pane. */
 export function settingsSummary(settings: Settings): string {
   return [
-    `Kısaltma: ${SETTING_CHOICES.prefix[settings.prefix]}`,
+    `Kısaltma: ${SETTING_CHOICES.prefix[settings.prefix]}` + (settings.dateForm !== "source" ? ` · ${SETTING_CHOICES.dateForm[settings.dateForm]}` : ""),
     SETTING_CHOICES.scope[settings.scope],
     `Ad biçimi: ${SETTING_CHOICES.nameForm[settings.nameForm]}`,
   ].join(" · ");
@@ -379,4 +382,11 @@ export function listConfirmations(map: Confirmations): ConfirmationView[] {
     const [before = "", literal = "", after = ""] = key.split("|");
     return { key, before, literal, after, personKey: person };
   }).sort((a, b) => a.literal.localeCompare(b.literal, "tr"));
+}
+
+/** Where a catalog entry comes from: "DİA", "Wikidata", or "" (own records, other CSVs). */
+export function sourceLabel(source: string): "DİA" | "Wikidata" | "" {
+  if (source.startsWith("https://islamansiklopedisi.org.tr/")) return "DİA";
+  if (source.startsWith("https://www.wikidata.org/")) return "Wikidata";
+  return "";
 }

@@ -761,6 +761,65 @@
                     </Item>
                   </Items>
                 </Control>
+                <Control xsi:type="Menu" id="Vefeyat.S.dateForm">
+                  <Label resid="S.dateForm"/>
+                  <Supertip>
+                    <Title resid="S.dateForm"/>
+                    <Description resid="S.dateForm.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Ic.prefix.16"/>
+                    <bt:Image size="32" resid="Ic.prefix.32"/>
+                    <bt:Image size="80" resid="Ic.prefix.80"/>
+                  </Icon>
+                  <Items>
+                    <Item id="Vefeyat.S.dateForm.source">
+                      <Label resid="S.dateForm.source"/>
+                      <Supertip>
+                        <Title resid="S.dateForm.source"/>
+                        <Description resid="S.dateForm.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.prefix.16"/>
+                        <bt:Image size="32" resid="Ic.prefix.32"/>
+                        <bt:Image size="80" resid="Ic.prefix.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_dateForm_source</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.dateForm.gregorian">
+                      <Label resid="S.dateForm.gregorian"/>
+                      <Supertip>
+                        <Title resid="S.dateForm.gregorian"/>
+                        <Description resid="S.dateForm.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.prefix.16"/>
+                        <bt:Image size="32" resid="Ic.prefix.32"/>
+                        <bt:Image size="80" resid="Ic.prefix.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_dateForm_gregorian</FunctionName>
+                      </Action>
+                    </Item>
+                    <Item id="Vefeyat.S.dateForm.death">
+                      <Label resid="S.dateForm.death"/>
+                      <Supertip>
+                        <Title resid="S.dateForm.death"/>
+                        <Description resid="S.dateForm.Tip"/>
+                      </Supertip>
+                      <Icon>
+                        <bt:Image size="16" resid="Ic.prefix.16"/>
+                        <bt:Image size="32" resid="Ic.prefix.32"/>
+                        <bt:Image size="80" resid="Ic.prefix.80"/>
+                      </Icon>
+                      <Action xsi:type="ExecuteFunction">
+                        <FunctionName>set_dateForm_death</FunctionName>
+                      </Action>
+                    </Item>
+                  </Items>
+                </Control>
                 <Control xsi:type="Menu" id="Vefeyat.Prefs">
                   <Label resid="Prefs"/>
                   <Supertip>
@@ -1184,6 +1243,10 @@
         <bt:String id="S.prefix.v" DefaultValue="v."/>
         <bt:String id="S.prefix.d" DefaultValue="d. (İngilizce metinler)"/>
         <bt:String id="S.prefix" DefaultValue="Kısaltma"/>
+        <bt:String id="S.dateForm.source" DefaultValue="Kaynaktaki gibi (505/1111, 1858-1917)"/>
+        <bt:String id="S.dateForm.gregorian" DefaultValue="Yalnız milâdî (1111)"/>
+        <bt:String id="S.dateForm.death" DefaultValue="Yalnız ölüm yılı (ö. 1917)"/>
+        <bt:String id="S.dateForm" DefaultValue="Tarih biçimi"/>
         <bt:String id="Prefs" DefaultValue="Ayarlar"/>
         <bt:String id="Prefer" DefaultValue="Seçili yazımı tercih et"/>
         <bt:String id="ClearSpelling" DefaultValue="Yazım tercihlerini temizle"/>
@@ -1236,6 +1299,7 @@
         <bt:String id="Finalize.Tip" DefaultValue="Teslim kopyası için Vefeyât izlerini kaldırır; görünen metin değişmez."/>
         <bt:String id="S.nameForm.Tip" DefaultValue="İsim yazımında önce önerilecek biçim. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="S.prefix.Tip" DefaultValue="Ölüm tarihinin başındaki kısaltma. Seçili değer Vefeyât penceresinin üstünde yazar."/>
+        <bt:String id="S.dateForm.Tip" DefaultValue="Hicrî/milâdî, yalnız milâdî ya da yalnız ölüm yılı. Seçili değer Vefeyât penceresinin üstünde yazar."/>
         <bt:String id="Prefs.Tip" DefaultValue="Yazım tercihleri ve görünüm ayarları."/>
         <bt:String id="Prefer.Tip" DefaultValue="Seçili adın yazımını bu şahıs için belgeye özgü tercih olarak kaydeder."/>
         <bt:String id="ClearSpelling.Tip" DefaultValue="Belgeye özgü yazım tercihlerini siler."/>

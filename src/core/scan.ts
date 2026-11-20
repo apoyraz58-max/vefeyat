@@ -9,7 +9,7 @@ import type { Person } from "./catalog.js";
 import { personKey } from "./catalog.js";
 import { excludeMention, hasSuffix, isSentenceInitial, isWorkUsage, schoolRoot } from "./context.js";
 import { EPITHETS, EPITHET_KEYS } from "./epithets.js";
-import { EPONYMS, fuseLinks, headNisbaAliases, honorificAliases, nameQuery, nameScore, prominence } from "./names.js";
+import { EPONYMS, fuseLinks, headNisbaAliases, surnameAliases, honorificAliases, nameQuery, nameScore, prominence } from "./names.js";
 import { collapseLetters, isSeparator, nameKey, normalize } from "./normalize.js";
 import { vbLower, vbTrim } from "./text.js";
 import { isValidAlias } from "./alias.js";
@@ -214,6 +214,7 @@ export class NameIndex {
     for (const epithet of EPITHETS[person.shortName] ?? []) this.add(epithet, i, true);
     // "Ahund el-Horasânî": a word of the short name with a nisba of the full name.
     for (const alias of headNisbaAliases(person.shortName, person.fullName)) this.add(alias, i);
+    for (const alias of surnameAliases(person.shortName, person.source)) this.add(alias, i);
     const values = [person.shortName, person.fullName, person.originalName];
     values.forEach((value, j) => {
       this.add(value, i);

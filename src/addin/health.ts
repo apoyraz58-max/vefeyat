@@ -3,7 +3,7 @@
  * (tag vefeyat:date:<hash>) against the catalog. Word-independent; port of
  * VBA 0.3.41 `VfhCheck`. Nothing is repaired without the user's choice.
  */
-import { type Catalog, type NameIndex, type Person, PREFIX_KEYS, type PrefixKey, alreadyHasDate, findMatches, formatDate, isValidDate, nameQuery, safeCandidate, startsWithDate } from "../core/index.js";
+import { type Catalog, type NameIndex, type Person, PREFIX_KEYS, DATE_FORMS, type DateForm, type PrefixKey, alreadyHasDate, findMatches, formatDate, isValidDate, nameQuery, safeCandidate, startsWithDate } from "../core/index.js";
 import { dateTag } from "./logic.js";
 
 export const DATE_TAG_PREFIX = "vefeyat:date:";
@@ -37,21 +37,22 @@ export interface HealthRow extends DateControl {
 
 const squash = (s: string) => s.replace(/[  \t]+/g, " ").trim();
 
-export function checkDate(text: string, person: Person | null, prefix: PrefixKey): { health: Health; expected: string } {
+export function checkDate(text: string, person: Person | null, prefix: PrefixKey, form: DateForm = "source"): { health: Health; expected: string } {
   if (!person || !isValidDate(person.deathDate)) return { health: "unknown", expected: "" };
-  const expected = formatDate(person.deathDate, prefix);
+  const expected = formatDate(person.deathDate, prefix, form);
   const value = squash(text);
   if (value.length === 0) return { health: "empty", expected };
   if (value === squash(expected)) return { health: "ok", expected };
-  if (PREFIX_KEYS.some((k) => value === squash(formatDate(person.deathDate, k)))) return { health: "prefix", expected };
+  // Another Kısaltma or Tarih biçimi of the same catalog date: the setting changed, the date did not.
+  if (PREFIX_KEYS.some((k) => DATE_FORMS.some((f) => value === squash(formatDate(person.deathDate, k, f))))) return { health: "prefix", expected };
   if (startsWithDate(value)) return { health: "changed", expected };
   return { health: "broken", expected };
 }
 
-export function checkControls(controls: readonly DateControl[], tags: TagIndex, prefix: PrefixKey): HealthRow[] {
+export function checkControls(controls: readonly DateControl[], tags: TagIndex, prefix: PrefixKey, form: DateForm = "source"): HealthRow[] {
   return controls.map((c) => {
     const person = tags.person(c.tag);
-    return { ...c, person, ...checkDate(c.text, person, prefix) };
+    return { ...c, person, ...checkDate(c.text, person, prefix, form) };
   });
 }
 

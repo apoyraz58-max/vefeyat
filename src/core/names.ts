@@ -268,3 +268,20 @@ export function headNisbaAliases(shortName: string, fullName: string): string[] 
   const own = normalize(head);
   return nisbas.filter((n) => normalize(n) !== own).map((n) => `${head} ${n}`);
 }
+
+/**
+ * A Western name used by its surname, as social sciences do: "Émile Durkheim" →
+ * "Durkheim", "Ferdinand de Saussure" → "Saussure", "de Saussure". For entries
+ * from Wikidata only (DİA names follow other rules).
+ */
+export function surnameAliases(shortName: string, source: string): string[] {
+  if (!source.startsWith("https://www.wikidata.org/") || shortName.includes(",")) return [];
+  const words = shortName.replace(/\s*\(.*\)\s*$/, "").trim().split(/\s+/);
+  if (words.length < 2) return [];
+  const last = words[words.length - 1] as string;
+  if (last.length < 3 || /^(I|II|III|IV|V|VI|VII|VIII|IX|X|Jr\.?|Sr\.?)$/.test(last)) return [];
+  const particle = words[words.length - 2] as string;
+  const out = [last];
+  if (/^(de|da|di|du|van|von|der|den|le|la|del|della|ibn|bin)$/i.test(particle)) out.push(`${particle} ${last}`);
+  return out;
+}

@@ -24,6 +24,15 @@ const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/cs
 let serveCatalog = true;
 const server = createServer(async (req, res) => {
   try {
+    // Ek kataloglar: one small field catalog (a DİA person in it must give way to DİA).
+    if (req.url.startsWith("/catalogs.json")) {
+      res.writeHead(200, { "content-type": "application/json" });
+      return res.end(JSON.stringify([{ id: "deneme", title: "Deneme alanı", file: "catalogs/deneme.csv", count: 2 }]));
+    }
+    if (req.url.startsWith("/catalogs/deneme.csv")) {
+      res.writeHead(200, { "content-type": "text/csv; charset=utf-8" });
+      return res.end(["Kısa Ad;Tam Ad;Orijinal Ad;Vefat Tarihi;Tanıtım;Kaynak Link", "Émile Durkheim;---;---;(1858-1917);Fransız sosyolog;https://www.wikidata.org/wiki/Q15948", "Gazzâlî;---;---;(ö. 505/1111);Wikidata kopyası;https://www.wikidata.org/wiki/Q9546"].join("\r\n"));
+    }
     if (req.url.startsWith("/catalog.csv")) {
       if (!serveCatalog) return res.writeHead(404).end();
       res.writeHead(200, { "content-type": "text/csv; charset=utf-8" });
@@ -279,7 +288,7 @@ try {
   await commands.waitForFunction(() => typeof window.set_prefix_v === "function");
   const done = await commands.evaluate(() => new Promise((resolve) => window.set_prefix_v({ completed: () => resolve(window.__doc.settings["vefeyat.prefix"]) })));
   check("Kısaltma menu stores the setting", done === "v");
-  check("all 16 setting commands registered", (await commands.evaluate(() => Object.keys(window).filter((k) => k.startsWith("set_")).length)) === 16);
+  check("all 19 setting commands registered", (await commands.evaluate(() => Object.keys(window).filter((k) => k.startsWith("set_")).length)) === 19);
   await commands.close();
 
   await page.evaluate(() => { window.__doc.settings["vefeyat.prefix"] = "v"; window.__doc.settings["vefeyat.nameForm"] = "full"; });
@@ -463,6 +472,22 @@ try {
   await tab.click("#respell");
   await tab.waitForTimeout(300);
   check("Değiştir keeps the title", (await docText(tab)) === "Gazzâlî der.\rSonra İmam Gazzâlî'nin eseri.", await docText(tab));
+  await tab.close();
+  // Ek kataloglar: Durkheim comes from the field catalog; Gazzâlî stays DİA's.
+  tab = await open("?view=katalog", "Durkheim ve Gazzâlî der.", "");
+  await tab.waitForSelector("#extras:not([hidden])", { timeout: 3000 }).catch(() => {});
+  await tab.check("#extras-list input");
+  await tab.waitForTimeout(600);
+  check("an extra catalog can be added", (await tab.textContent("#message")).includes("Deneme alanı kataloğu eklendi") && (await tab.textContent("#catalog-status")).includes("+ 1 kişi ek kataloglardan"), `${await tab.textContent("#message")} | ${await tab.textContent("#catalog-status")}`);
+  await select(tab, "Durkheim");
+  const durkheim = (await tab.textContent("#view-secili")).replace(/\s+/g, " ");
+  check("a Wikidata person is found, with its source and link", durkheim.includes("Émile Durkheim") && durkheim.includes("Wikidata") && (await tab.textContent("#detail-link")) === "Wikidata kaydını aç", durkheim.slice(0, 200));
+  await select(tab, "Gazzâlî");
+  check("DİA is authoritative where the catalogs meet", (await tab.getAttribute("#detail-link", "href")).startsWith("https://islamansiklopedisi.org.tr/") && (await tab.$$("#candidates .candidate")).length === 1);
+  await tab.evaluate(() => window.go_view_katalog(undefined));
+  await tab.waitForTimeout(300);
+  await tab.uncheck("#extras-list input");
+  await tab.waitForTimeout(300);
   await tab.close();
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");

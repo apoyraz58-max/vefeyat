@@ -14,6 +14,8 @@ export interface State {
   catalog: Catalog | null;
   /** The catalog from the CSV alone; `catalog` adds Kendi şahıslarım to it. */
   baseCatalog: Catalog | null;
+  /** People of the chosen Ek kataloglar (Wikidata fields), DİA's left out. */
+  extraPeople: Person[];
   catalogSource: "user" | "embedded" | null;
   alias: string | null;
   found: Lookup | null;
@@ -37,6 +39,7 @@ export interface State {
 export const state: State = {
   catalog: null,
   baseCatalog: null,
+  extraPeople: [],
   catalogSource: null,
   alias: null,
   found: null,

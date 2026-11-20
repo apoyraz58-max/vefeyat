@@ -63,6 +63,16 @@ for (const size of [16, 32, 64, 80, 128]) {
   await cp(new URL(`assets/icon-${size}.png`, root), new URL(`assets/icon-${size}.png`, out));
 }
 
+// Ek kataloglar: field catalogs from Wikidata (scripts/wikidata.mjs), offered next to DİA.
+const extrasIndex = new URL("data/wikidata/index.json", root);
+if (existsSync(extrasIndex)) {
+  const extras = JSON.parse(await readFile(extrasIndex, "utf8"));
+  await mkdir(new URL("catalogs/", out), { recursive: true });
+  for (const extra of extras) await cp(new URL(`data/wikidata/${extra.id}.csv`, root), new URL(extra.file, out));
+  await writeFile(new URL("catalogs.json", out), JSON.stringify(extras));
+  console.log(`Ek kataloglar: ${extras.map((e) => `${e.id} (${e.count})`).join(", ")}`);
+}
+
 // Catalog published with the add-in (loaded automatically by the pane).
 const catalog = new URL("data/catalog.csv", root);
 if (existsSync(catalog)) {

@@ -2,7 +2,7 @@
 import { isLocal } from "../persons.js";
 import { fillLocalForm, renderLocals } from "./catalog.js";
 import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
-import { addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
+import { sourceLabel, addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
 import { type InventoryRow, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
@@ -92,7 +92,7 @@ export function renderCandidates(): void {
         : contextNote && chosenHere
           ? contextNote
           : matchHint(found.scores.get(personKey(person)) ?? 0);
-    const own = isLocal(person) ? "kendi kaydınız" : "";
+    const own = isLocal(person) ? "kendi kaydınız" : sourceLabel(person.source) === "Wikidata" ? "Wikidata" : "";
     if (note || own) {
       const hint = document.createElement("span");
       hint.className = "hint";
@@ -133,8 +133,10 @@ export function renderDetails(): void {
   $("detail-original").textContent = person.originalName || "—";
   $("detail-date").textContent = person.deathDate || "Katalogda tarih yok";
   const link = $<HTMLAnchorElement>("detail-link");
-  link.hidden = !person.source.startsWith("https://islamansiklopedisi.org.tr/");
+  const origin = sourceLabel(person.source);
+  link.hidden = origin === "";
   link.href = link.hidden ? "#" : person.source;
+  link.textContent = origin === "Wikidata" ? "Wikidata kaydını aç" : "DİA maddesini aç";
   $("details-heading").textContent = `Seçili şahıs: ${textName(person.shortName)}`;
   // The current spelling heads the list and is what is selected: nothing changes until another one is picked.
   const current = document.createElement("option");
@@ -316,7 +318,7 @@ export async function moveDateHere(): Promise<void> {
   await loadSettings();
   const current = await currentSelection();
   if (!current) return;
-  const plan = planDate(person, state.settings.prefix, current.following);
+  const plan = planDate(person, state.settings.prefix, current.following, state.settings.dateForm);
   if (!plan.ok) {
     setMessage(plan.reason, "warning");
     return;
@@ -345,7 +347,7 @@ let existingDate: string | null = null;
 function offerUpdate(person: Person, following: string): boolean {
   const old = leadingDate(following);
   if (!old || !isValidDate(person.deathDate)) return false;
-  const value = formatDate(person.deathDate, state.settings.prefix);
+  const value = formatDate(person.deathDate, state.settings.prefix, state.settings.dateForm);
   if (sameDate(old, value)) {
     setMessage(`Adın arkasındaki tarih zaten katalogdakiyle aynı: ${value}`, "success");
     return true;
@@ -370,7 +372,7 @@ export async function updateDate(): Promise<void> {
     setMessage("Adın arkasındaki tarih değişti. Yeniden Ölüm tarihi ekle'ye basın.", "warning");
     return;
   }
-  const value = formatDate(person.deathDate, state.settings.prefix);
+  const value = formatDate(person.deathDate, state.settings.prefix, state.settings.dateForm);
   await rememberChoice();
   const control = await updateDateAfterSelection(old, value, dateTag(person), `Vefeyât: ${textName(person.shortName)}`);
   hideEarlier();
@@ -451,7 +453,7 @@ export async function addDate(force: boolean): Promise<void> {
   }
   const current = await currentSelection();
   if (!current) return;
-  const plan = planDate(person, state.settings.prefix, current.following);
+  const plan = planDate(person, state.settings.prefix, current.following, state.settings.dateForm);
   if (!plan.ok) {
     if (offerUpdate(person, current.following)) return;
     setMessage(plan.reason, "warning");

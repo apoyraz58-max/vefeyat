@@ -2,12 +2,13 @@
 import { type LocalPerson, upsertLocal, validateLocal, withLocal } from "../persons.js";
 import { readLocalPersons, writeLocalPersons } from "../word.js";
 import { Catalog, CatalogError } from "../../core/index.js";
-import { candidateLabel } from "../logic.js";
+import { candidateLabel, sourceLabel } from "../logic.js";
 import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, saveCatalog } from "../store.js";
 
 import { $, run, setMessage, showView, state, versions } from "./core.js";
 import { resetTags } from "./health.js";
 import { refresh } from "./selected.js";
+import { extraPeople, renderExtras } from "./extras.js";
 
 export function runSearch(): void {
   const query = $<HTMLInputElement>("search-query").value;
@@ -24,12 +25,13 @@ export function runSearch(): void {
     const title = document.createElement("strong");
     title.textContent = candidateLabel(person);
     item.append(title);
-    if (person.source.startsWith("https://islamansiklopedisi.org.tr/")) {
+    const origin = sourceLabel(person.source);
+    if (origin) {
       const link = document.createElement("a");
       link.href = person.source;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      link.textContent = "DİA";
+      link.textContent = origin;
       item.append(link);
     }
     if (person.description) {
@@ -96,6 +98,7 @@ export async function chooseCatalog(file: File): Promise<void> {
     Catalog.fromCsv(csv); // validate before replacing anything
     const persisted = await saveCatalog({ csv, fileName: file.name, savedAt: new Date().toISOString(), source: "user" });
     useCatalog(csv, file.name, "user", persisted);
+    await loadExtras();
     setMessage("Katalog yüklendi. CSV dosyanız bilgisayarınızda kalır.", "success");
     state.alias = null;
     showView("secili");
@@ -109,7 +112,33 @@ export async function chooseCatalog(file: File): Promise<void> {
 export async function resetCatalog(): Promise<void> {
   await clearCatalog();
   await restoreCatalog();
+  await loadExtras();
   setMessage(state.catalogSource === "embedded" ? "Eklentinin kataloğuna dönüldü." : "Eklentiyle gelen katalog bulunamadı.", "info");
+}
+
+// ---- Ek kataloglar ----
+
+/** Adds the chosen Ek kataloglar (Wikidata fields) to the base catalog; DİA wins where they meet. */
+export async function loadExtras(): Promise<void> {
+  if (!state.baseCatalog) return;
+  try {
+    state.extraPeople = await extraPeople(state.baseCatalog);
+  } catch (error) {
+    state.extraPeople = [];
+    setMessage(`Ek katalog yüklenemedi: ${error instanceof Error ? error.message : String(error)}`, "warning");
+  }
+  applyLocalPersons();
+  const status = $("catalog-status");
+  const base = status.textContent?.replace(/ · \+ .*$/, "") ?? "";
+  status.textContent = state.extraPeople.length ? `${base} · + ${state.extraPeople.length.toLocaleString("tr-TR")} kişi ek kataloglardan` : base;
+}
+
+export async function showExtras(): Promise<void> {
+  await renderExtras(async () => {
+    await loadExtras();
+    state.alias = null;
+    await refresh();
+  });
 }
 
 // ---- Kendi şahıslarım ----
@@ -117,7 +146,8 @@ export async function resetCatalog(): Promise<void> {
 /** Rebuilds the working catalog: the CSV plus the document's own people. */
 export function applyLocalPersons(): void {
   if (!state.baseCatalog) return;
-  state.catalog = withLocal(state.baseCatalog, readLocalPersons());
+  const base = state.extraPeople.length ? new Catalog([...state.baseCatalog.people, ...state.extraPeople]) : state.baseCatalog;
+  state.catalog = withLocal(base, readLocalPersons());
   versions.identity++;
   resetTags();
   state.index = null; // rebuilt on the next inventory

@@ -7,7 +7,7 @@
  */
 import { collapseLetters, normalize } from "./normalize.js";
 import { EPITHETS } from "./epithets.js";
-import { EPONYMS, containsTokens, dropArticles, fuseLinks, headNisbaAliases, honorificAliases, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
+import { EPONYMS, containsTokens, dropArticles, fuseLinks, headNisbaAliases, surnameAliases, honorificAliases, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
 import { vbTrim } from "./text.js";
 
 /** One catalog row. Field order matches the CSV and the VBA arrays (0..5). */
@@ -42,6 +42,7 @@ function extraNames(person: Person): readonly string[] {
     ...(EPITHETS[person.shortName] ?? []),
     ...honorificAliases(person.fullName).map(fuseLinks),
     ...headNisbaAliases(person.shortName, person.fullName),
+    ...surnameAliases(person.shortName, person.source),
   ];
   EXTRA.set(person, list);
   return list;
