@@ -16,6 +16,7 @@
  * Arabic words is left alone.
  */
 import type { Person } from "./catalog.js";
+import { nearWord } from "./names.js";
 
 export interface SpellingStandard {
   /** Word key → DİA's form ("" when DİA writes it more than one way). */
@@ -400,4 +401,42 @@ export function standardPerson(person: Person, standard: SpellingStandard, share
   const others = person.fullName && person.fullName !== "---" ? person.fullName.split(" | ") : [];
   const fullName = [person.shortName, ...others.filter((n) => n !== person.shortName && n !== shortName)].join(" | ");
   return { ...person, shortName, fullName };
+}
+
+/**
+ * Countries that write their people's names in Latin letters, as Turkish keeps
+ * them ("Schleiermacher", "Descartes"): Western Europe, the Americas, Oceania
+ * and the states before them.
+ */
+export const LATIN_WEST: ReadonlySet<string> = new Set([
+  "Q183", "Q40", "Q39", "Q142", "Q31", "Q55", "Q145", "Q161885", "Q174193", "Q27", "Q30", "Q16", "Q408", "Q664", "Q38",
+  "Q29", "Q45", "Q34", "Q20", "Q35", "Q33", "Q189", "Q36", "Q213", "Q214", "Q28", "Q27306", "Q12548", "Q151624", "Q43287",
+  "Q41304", "Q7318", "Q70972", "Q28513", "Q131964", "Q172579", "Q179876", "Q230791", "Q155", "Q414", "Q96", "Q298", "Q32",
+  "Q154195", "Q153015", "Q4948", "Q170072",
+]);
+
+const TURKISH_LETTERS = /[çşğıöüİÇŞĞÖÜ]/;
+
+/**
+ * A slip in a Western name's Turkish label ("Friedrich Scleirmacher"): for a
+ * person of a Latin-alphabet country, a label written with no Turkish letter,
+ * the same as no other language's, one or two letters from a spelling that at
+ * least two languages share ("Friedrich Schleiermacher" in German, English,
+ * French …) is that spelling. Turkish renderings ("Mihail Lomonosov", "Platon")
+ * are left: their people are not of those countries, or another language
+ * writes them so. Null when nothing is to change.
+ */
+export function westernSpelling(written: string, labels: readonly string[], countries: readonly string[]): string | null {
+  if (!countries.some((c) => LATIN_WEST.has(c)) || TURKISH_LETTERS.test(written)) return null;
+  if (labels.includes(written)) return null;
+  const words = written.split(" ").length;
+  const key = spellingKey(written);
+  const near = new Map<string, number>();
+  for (const label of labels) {
+    if (label.split(" ").length !== words || /[^\p{Script=Latin}\s.'’-]/u.test(label)) continue;
+    const other = spellingKey(label);
+    if (other !== key && nearWord(other, key, 2)) near.set(label, (near.get(label) ?? 0) + 1);
+  }
+  const [best] = [...near.entries()].sort((a, b) => b[1] - a[1]);
+  return best && best[1] >= 2 ? best[0] : null;
 }

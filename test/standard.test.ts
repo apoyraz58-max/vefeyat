@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { Catalog, arabicSkeleton, buildSpellingStandard, longVowels, pairWords, wantsLongVowels, onlyAdds, parseCatalogCsv, spellingKey, standardName, standardPerson, wantsStandard } from "../src/core/index.js";
+import { Catalog, arabicSkeleton, badCase, nameOptions, westernSpelling, buildSpellingStandard, longVowels, pairWords, wantsLongVowels, onlyAdds, parseCatalogCsv, spellingKey, standardName, standardPerson, wantsStandard } from "../src/core/index.js";
 
 const dia = (short: string, full = "---") => ({ shortName: short, fullName: full, originalName: "", deathDate: "(ö. 1900)", description: "", source: `https://islamansiklopedisi.org.tr/${spellingKey(short)}` });
 const small = buildSpellingStandard([
@@ -140,5 +140,26 @@ describe("standart yazım (DİA esas)", () => {
     expect(standardName("Abdul Halim", real, 0.5, "عبد الحليم", true)).toBe("Abdülhalîm");
     expect(longVowels("Eslaiah", "اصليح") ?? "").not.toContain("î");
     expect(longVowels("Said", "سعيد")).toBe("Saîd");
+  });
+
+  it("mends a slip in a Western name's Turkish label, and keeps Turkish renderings", () => {
+    const labels = ["Friedrich Schleiermacher", "Friedrich Schleiermacher", "Friedrich Schleiermacher", "Friedrich Daniel Ernst Schleiermacher"];
+    expect(westernSpelling("Friedrich Scleirmacher", labels, ["Q27306"])).toBe("Friedrich Schleiermacher");
+    expect(westernSpelling("Friedrich Scleirmacher", labels, ["Q159"])).toBeNull(); // not a Latin-alphabet country
+    expect(westernSpelling("Emanuel Swedenborg", ["Emanuel Swedenborg", "Emmanuel Swedenborg", "Emmanuel Swedenborg"], ["Q34"])).toBeNull(); // Swedish writes it so
+    expect(westernSpelling("Jerome Kağan", ["Jerome Kagan", "Jerome Kagan"], ["Q30"])).toBeNull(); // a Turkish letter: a rendering
+    expect(westernSpelling("Platon", ["Plato", "Platon", "Platone"], ["Q30"])).toBeNull();
+    expect(westernSpelling("Alejo Carpentier", ["Alejo Carpentier", "Alejo Carpanter"], ["Q241"])).toBeNull();
+  });
+
+  it("never offers a spelling with wrong capitals", () => {
+    expect(badCase("Friedrich daniel ernst schleiermacher")).toBe(true);
+    expect(badCase("Levis carroll")).toBe(true);
+    expect(badCase("Ludwig van Beethoven")).toBe(false);
+    expect(badCase("Alî b. Ebû Tâlib")).toBe(false);
+    expect(badCase("José Ortega y Gasset")).toBe(false);
+    expect(badCase("Hasan et-Turâbî")).toBe(false);
+    const person = { shortName: "Friedrich Schleiermacher", fullName: "Friedrich daniel ernst schleiermacher", originalName: "", deathDate: "(1768-1834)", description: "", source: "x" };
+    expect(nameOptions(person, "Friedrich daniel ernst schleiermacher").map((o) => o.value)).toEqual(["Friedrich Schleiermacher"]);
   });
 });

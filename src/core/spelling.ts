@@ -74,12 +74,31 @@ export function sourceName(person: Person, query: string): string {
  * `VfnNameOptions`: distinct spellings to offer for a selected name, closest
  * first. `query` is the selected name; a Turkish ending is ignored.
  */
+/** Small words that stay lower-case inside a name: "Ludwig van Beethoven", "Alî b. Ebû Tâlib", "Ortega y Gasset". */
+const NAME_PARTICLES = new Set(
+  "von van der den de du la le les di da del della des dos das do d y e of the zu zur ten ter und bin ibn bint b ve oğlu dî et al el".split(" "),
+);
+
+/**
+ * A spelling whose capitals are wrong: a name word written all in lower case
+ * ("Friedrich daniel ernst schleiermacher", "Levis carroll"). Such forms come
+ * from careless aliases; they are never offered as a spelling.
+ */
+export function badCase(value: string): boolean {
+  const words = value.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return false;
+  return words.some((word, index) => {
+    if (!/^\p{Ll}[\p{Ll}\p{M}]+$/u.test(word)) return false; // capitalised, or with an article, apostrophe or period
+    return index === 0 || !NAME_PARTICLES.has(word);
+  });
+}
+
 export function nameOptions(person: Person, query: string): NameOption[] {
   const bare = nameQuery(query);
   const options: NameOption[] = [];
   const seen = new Set<string>();
   const add = (value: string, label: string): void => {
-    if (value === "---" || !isValidAlias(value) || seen.has(value)) return;
+    if (value === "---" || !isValidAlias(value) || seen.has(value) || badCase(value)) return;
     seen.add(value);
     options.push({ value, label });
   };

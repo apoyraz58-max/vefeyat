@@ -218,6 +218,40 @@ const cell = (s) => {
  * the material of a Turkish description where Wikidata has none
  * ("filozof, sosyolog (Almanya)").
  */
+/** Labels in the main Latin-alphabet languages and citizenships of the people, by id. */
+async function westernLabels(ids) {
+  const out = new Map();
+  for (let k = 0; k < ids.length; k += 200) {
+    const batch = ids.slice(k, k + 200);
+    let rows = [];
+    try {
+      rows = await cached({
+        raw: `SELECT ?p ?l ?c WHERE { VALUES ?p { ${batch.map((id) => `wd:${id}`).join(" ")} } OPTIONAL { ?p rdfs:label ?l FILTER(LANG(?l) IN ("de", "en", "fr", "it", "es", "nl", "sv", "pt", "pl", "da", "nb", "cs", "hu")) } OPTIONAL { ?p wdt:P27 ?c } }`,
+      });
+    } catch (error) {
+      console.log(`  Batı dillerindeki adlar alınamadı (${batch.length} kişi): ${error.message}`);
+    }
+    // Each label once per language: the rows repeat it for every citizenship.
+    const seen = new Map();
+    for (const r of rows) {
+      const id = r.p.value.split("/").pop();
+      const facts = out.get(id) ?? { labels: [], countries: [] };
+      if (r.l?.value) {
+        const lang = r.l["xml:lang"] ?? "";
+        const key = `${id}|${lang}`;
+        if (!seen.has(key)) {
+          seen.set(key, true);
+          facts.labels.push(r.l.value);
+        }
+      }
+      const country = r.c?.value?.split("/").pop();
+      if (country && !facts.countries.includes(country)) facts.countries.push(country);
+      out.set(id, facts);
+    }
+  }
+  return out;
+}
+
 /** Arabic labels (Persian when there is none) of the people, by id. */
 async function arabicLabels(ids) {
   const out = new Map();
@@ -307,7 +341,13 @@ async function spellingStandard() {
   const core = await import(outfile.href);
   const dia = core.parseCatalogCsv(await readFile(new URL("../data/catalog.csv", import.meta.url), "utf8"));
   const table = core.buildSpellingStandard(dia);
-  standardTools = { wants: (countries, death) => core.wantsStandard(countries, death ?? null), name: (n, arabic, countries = []) => core.standardName(n, table, 0.5, arabic ?? "", core.wantsLongVowels(countries)) };
+  standardTools = {
+    wants: (countries, death) => core.wantsStandard(countries, death ?? null),
+    name: (n, arabic, countries = []) => core.standardName(n, table, 0.5, arabic ?? "", core.wantsLongVowels(countries)),
+    western: (n, labels, countries) => core.westernSpelling(n, labels, countries),
+    near: (a, b) => core.nearWord(core.spellingKey(a), core.spellingKey(b), 2),
+    badCase: (n) => core.badCase(n),
+  };
   return standardTools;
 }
 
@@ -361,9 +401,20 @@ async function buildField(name, field, dia) {
   const standard = await spellingStandard();
   // The Arabic (or Persian) names of those whose names take DİA's spelling: they tell apart Hâmid and Hamîd.
   const arabic = await arabicLabels(list.filter((p) => p.standard || standard.wants([...p.countries], p.death)).map((p) => p.id));
+  // Western names whose Turkish label is a letter or two from the English one: a slip, or a Turkish rendering.
+  const western = await westernLabels(
+    list.filter((p) => !(p.standard || standard.wants([...p.countries], p.death)) && p.tr && p.en && p.tr !== p.en && standard.near(p.tr, p.en)).map((p) => p.id),
+  );
+  let mended = 0;
   let standardized = 0;
   for (const p of list) {
-    const written = p.tr ?? p.en;
+    const facts = western.get(p.id);
+    const fixed = facts && p.tr ? standard.western(p.tr, facts.labels, facts.countries) : null;
+    if (fixed) {
+      mended++;
+      p.alts.add(p.tr);
+    }
+    const written = fixed ?? p.tr ?? p.en;
     // Names of the Muslim world and of Ottoman subjects in DİA's spelling; Wikidata's is kept among the names.
     const short = p.standard || standard.wants([...p.countries], p.death) ? standard.name(written, arabic.get(p.id), [...p.countries]) : written;
     if (p.dia || [written, short, p.en].some((n) => n && dia.has(`${fold(n)}|${p.death}`))) {
@@ -378,7 +429,8 @@ async function buildField(name, field, dia) {
     const original = arabic.has(p.id) ? arabic.get(p.id) : english;
     if (original !== english && english !== "---") p.alts = new Set([...p.alts].slice(0, 1).concat(english, [...p.alts].slice(1)));
     // Turkish aliases ("Aristoteles" for "Aristo") go into the full-name column, which the add-in also searches.
-    const alts = [...p.alts].filter((a) => a !== short && a !== original && a.length <= 60 && !a.includes(",") && !/\.$/.test(a) && (a.match(/\p{L}/gu) ?? []).length >= 3).slice(0, 3);
+    // An alias with wrong capitals ("Friedrich daniel ernst schleiermacher") is a careless one: left out.
+    const alts = [...p.alts].filter((a) => !standard.badCase(a) && a !== short && a !== original && a.length <= 60 && !a.includes(",") && !/\.$/.test(a) && (a.match(/\p{L}/gu) ?? []).length >= 3).slice(0, 3);
     // Other Turkish spellings, separated by " | ": the add-in takes each as a name of its own.
     const full = alts.length ? alts.join(" | ") : "---";
     const description = p.trDesc ?? (turkishDescription(facts.get(p.id)) || p.enDesc || "");
@@ -386,7 +438,7 @@ async function buildField(name, field, dia) {
   }
   await mkdir(new URL("../data/wikidata/", import.meta.url), { recursive: true });
   await writeFile(new URL(`../data/wikidata/${name}.csv`, import.meta.url), "﻿" + out.join("\r\n") + "\r\n");
-  console.log(`${name}: ${out.length - 1} kişi (${skippedDia} kişi DİA'da olduğu için alınmadı; ${standardized} ad DİA yazımına çevrildi)${skipped.length ? `; atlanan sorgu: ${skipped.length}` : ""}`);
+  console.log(`${name}: ${out.length - 1} kişi (${skippedDia} kişi DİA'da olduğu için alınmadı; ${standardized} ad DİA yazımına çevrildi; ${mended} Batılı adın yazım hatası düzeltildi)${skipped.length ? `; atlanan sorgu: ${skipped.length}` : ""}`);
   // data/wikidata/index.json: the fields the add-in offers (title, file, count).
   const indexUrl = new URL("../data/wikidata/index.json", import.meta.url);
   let index = [];
