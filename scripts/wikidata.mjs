@@ -414,7 +414,10 @@ async function buildField(name, field, dia) {
       mended++;
       p.alts.add(p.tr);
     }
-    const written = fixed ?? p.tr ?? p.en;
+    // A label garbled by a wrong encoding ("Ko≈õciuszko", "√ñzal"): the English one instead.
+    const garbled = p.tr && p.en && /[≈√∂ƒ∆Ã]/.test(p.tr) && !/[≈√∂ƒ∆Ã]/.test(p.en);
+    if (garbled) mended++;
+    const written = garbled ? p.en : (fixed ?? p.tr ?? p.en);
     // Names of the Muslim world and of Ottoman subjects in DİA's spelling; Wikidata's is kept among the names.
     const short = p.standard || standard.wants([...p.countries], p.death) ? standard.name(written, arabic.get(p.id), [...p.countries]) : written;
     if (p.dia || [written, short, p.en].some((n) => n && dia.has(`${fold(n)}|${p.death}`))) {
