@@ -277,6 +277,8 @@ export function longVowels(word: string, arabicWord: string): string | null {
   return j === a.length ? out.join("") : null;
 }
 
+const FOREIGN_SURNAME = /(yan|yân|ian|ov|ev|ova|eva|opoulos|poulos|idis|akis|escu|ović|evič|evich|ski|sky|ska)$/i;
+
 /** Words that look like DİA's but name someone else: the Greek "Mihail" is not the Arabic "Mîhâîl". */
 const NOT_ARABIC = new Set(["mihail"]);
 
@@ -317,6 +319,9 @@ export function standardName(name: string, standard: SpellingStandard, share = 0
   const names = words.filter((w) => /^\p{Lu}/u.test(w) || ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w));
   const known = names.filter((w) => ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w) || (standard.forms.has(spellingKey(w)) && !NOT_ARABIC.has(spellingKey(w))));
   if (names.length === 0 || known.length < names.length * share) return name;
+  // An Armenian, Slavic, Greek or Romanian surname: a Christian or a Soviet-era name, spelled as its people spell it
+  // ("Serkis Minasyan", "Kuzman Şapkarev", "Tahir Salahov"), not in DİA's manner.
+  if (words.slice(1).some((w) => w.length >= 5 && /^\p{Lu}/u.test(w) && FOREIGN_SURNAME.test(w))) return name;
   // The Arabic word of each Latin word, when the two names pair up.
   const arabicOf = new Map<number, string>();
   const pairs = arabicName ? pairWords(words.join(" "), arabicName) : null;

@@ -164,4 +164,12 @@ describe("standart yazım (DİA esas)", () => {
     const person = { shortName: "Friedrich Schleiermacher", fullName: "Friedrich daniel ernst schleiermacher", originalName: "", deathDate: "(1768-1834)", description: "", source: "x" };
     expect(nameOptions(person, "Friedrich daniel ernst schleiermacher").map((o) => o.value)).toEqual(["Friedrich Schleiermacher"]);
   });
+
+  it("leaves Armenian, Slavic, Greek and Romanian surnames' names as their people write them", () => {
+    const real = buildSpellingStandard(parseCatalogCsv(readFileSync(new URL("../data/catalog.csv", import.meta.url), "utf8")));
+    expect(standardName("Serkis Minasyan", real)).toBe("Serkis Minasyan");
+    expect(standardName("Kuzman Şapkarev", real)).toBe("Kuzman Şapkarev");
+    expect(standardName("Tahir Salahov", real)).toBe("Tahir Salahov");
+    expect(standardName("Yusuf Ziya Paşa", real)).toBe("Yûsuf Ziya Paşa"); // others as before
+  });
 });
