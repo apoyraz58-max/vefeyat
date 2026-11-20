@@ -249,6 +249,16 @@ try {
   await manyTab.fill("#candidate-filter", "yokböyle");
   check("candidate search says when nothing fits", await manyTab.isVisible("#candidates .filter-empty"));
   await manyTab.close();
+  const keyTab = await open("", "Ahmed Kemal bu yazıyı yazdı.", "Ahmed Kemal");
+  await keyTab.focus("#candidate-0");
+  await keyTab.keyboard.press("ArrowDown");
+  await keyTab.keyboard.press("ArrowDown");
+  const walked = await keyTab.evaluate(() => ({ rows: document.querySelectorAll("#candidates .candidate").length, focus: document.activeElement?.id, chosen: document.querySelector("#candidates .chosen")?.querySelector("input")?.id }));
+  check("arrow keys walk the candidates without shortening the list", walked.rows === 5 && walked.focus === "candidate-2" && walked.chosen === "candidate-2", JSON.stringify(walked));
+  await keyTab.keyboard.press("Enter");
+  await keyTab.waitForTimeout(200);
+  check("Enter on a candidate adds the date", (await docText(keyTab)).includes("Ahmed Kemal (ö. 1854-1910)") || (await docText(keyTab)).includes("Ahmed Kemal (1854-1910)"), await docText(keyTab));
+  await keyTab.close();
   // İsim yazımı with a double-click selection (the name and the space after it).
   const spellTab = await open("", "Bu konuda Gazali'nin eseri önemlidir.", "Gazali'nin ");
   await spellTab.check("#candidate-0");

@@ -99,12 +99,32 @@ export function renderCandidates(): void {
     radio.id = id;
     radio.checked = state.chosen !== null && personKey(state.chosen) === personKey(person);
     row.classList.toggle("chosen", radio.checked);
+    row.addEventListener("pointerdown", () => {
+      pointerChoice = true;
+    });
     radio.addEventListener("change", () => {
       state.chosen = person;
-      expanded = false;
       hideEarlier();
-      renderCandidates();
+      if (pointerChoice) {
+        // A click settles the choice: the list shortens to the chosen person.
+        pointerChoice = false;
+        expanded = false;
+        renderCandidates();
+      } else {
+        // Arrow keys walk the list: it stays as it is, only the mark moves.
+        markChosen(list, row);
+      }
       renderDetails();
+    });
+    radio.addEventListener("keydown", (event) => {
+      pointerChoice = false;
+      // Enter on a candidate adds the date (when it can be added straight away).
+      if (event.key !== "Enter") return;
+      const insert = document.getElementById("insert") as HTMLButtonElement | null;
+      if (insert && !insert.disabled && !insert.closest("[hidden]")) {
+        event.preventDefault();
+        insert.click();
+      }
     });
     const text = document.createElement("span");
     const title = document.createElement("strong");
@@ -179,6 +199,18 @@ function applyFilter(rows: HTMLElement[], query: string): void {
   }
 }
 
+/** Moves the "seçili" mark to the given row without rebuilding the list (keeps keyboard focus). */
+function markChosen(list: HTMLElement, row: HTMLElement): void {
+  for (const other of list.querySelectorAll<HTMLElement>(".candidate.chosen")) other.classList.remove("chosen");
+  list.querySelectorAll(".chosen-tag").forEach((tag) => tag.remove());
+  row.classList.add("chosen");
+  const tag = document.createElement("span");
+  tag.className = "chosen-tag";
+  tag.textContent = "seçili";
+  row.querySelector("strong")?.after(" ", tag);
+}
+
+let pointerChoice = false;
 const CANDIDATE_FILTER_FROM = 8;
 let filterText = "";
 const CANDIDATE_PREVIEW = 5;
