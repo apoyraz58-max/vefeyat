@@ -1,0 +1,16 @@
+[
+  {
+    "id": "sosyoloji-felsefe",
+    "title": "Sosyoloji ve felsefe",
+    "file": "catalogs/sosyoloji-felsefe.csv",
+    "count": 6556,
+    "source": "Wikidata"
+  },
+  {
+    "id": "osmanli-turk-tarihi",
+    "title": "Osmanlı-Türk tarihi",
+    "file": "catalogs/osmanli-turk-tarihi.csv",
+    "count": 6839,
+    "source": "Wikidata"
+  }
+]

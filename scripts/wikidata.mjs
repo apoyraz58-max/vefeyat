@@ -48,10 +48,15 @@ export const FIELDS = {
 };
 
 function sparql({ where, min }) {
+  // The people first (occupation or citizenship, notability, death date), the details after:
+  // Wikidata answers a large occupation ("writer") within its time limit this way.
   return `SELECT ?p ?links ?death ?dprec ?birth ?bprec ?dia ?trLabel ?enLabel ?trDesc ?enDesc ?alt WHERE {
-  ${where}
-  ?p wdt:P31 wd:Q5 ; wikibase:sitelinks ?links .
-  FILTER(?links >= ${min})
+  { SELECT DISTINCT ?p ?links WHERE {
+      ${where}
+      ?p wikibase:sitelinks ?links .
+      FILTER(?links >= ${min})
+      ?p wdt:P31 wd:Q5 ; wdt:P570 [] .
+  } }
   ?p p:P570/psv:P570 [ wikibase:timeValue ?death ; wikibase:timePrecision ?dprec ] .
   OPTIONAL { ?p p:P569/psv:P569 [ wikibase:timeValue ?birth ; wikibase:timePrecision ?bprec ] }
   OPTIONAL { ?p wdt:P7314 ?dia }
@@ -190,9 +195,26 @@ async function buildField(name, field, dia) {
   await writeFile(indexUrl, JSON.stringify(index, null, 2) + "\n");
 }
 
-const wanted = process.argv[2];
-const dia = await diaKeys();
-for (const [name, field] of Object.entries(FIELDS)) {
-  if (wanted && wanted !== name) continue;
-  await buildField(name, field, dia);
+// node scripts/wikidata.mjs --index: rewrite data/wikidata/index.json from the CSV files present.
+if (process.argv[2] === "--index") {
+  const index = [];
+  for (const [name, field] of Object.entries(FIELDS)) {
+    let text;
+    try {
+      text = await readFile(new URL(`../data/wikidata/${name}.csv`, import.meta.url), "utf8");
+    } catch {
+      continue;
+    }
+    const count = text.split(/\r?\n/).filter((l) => l.trim()).length - 1;
+    index.push({ id: name, title: field.title, file: `catalogs/${name}.csv`, count, source: "Wikidata" });
+  }
+  await writeFile(new URL("../data/wikidata/index.json", import.meta.url), JSON.stringify(index, null, 2) + "\n");
+  console.log(index.map((e) => `${e.id}: ${e.count}`).join(", "));
+} else {
+  const wanted = process.argv[2];
+  const dia = await diaKeys();
+  for (const [name, field] of Object.entries(FIELDS)) {
+    if (wanted && wanted !== name) continue;
+    await buildField(name, field, dia);
+  }
 }
