@@ -22,15 +22,18 @@ const Q = {
 
 /**
  * Countries and states whose politicians a social-science text names most:
- * Germany, France, United Kingdom (and Great Britain), USA, Russia (Empire, USSR),
+ * Germany, France, United Kingdom (and Great Britain), Russia (Empire, USSR),
  * Italy, Spain, Austria (Austria-Hungary), Prussia, Netherlands, Greece, Poland,
  * Hungary, Iran, Egypt, India, China, Japan, Israel, Iraq, Syria, Saudi Arabia,
  * Pakistan, Afghanistan, Bulgaria, Serbia, Romania, Roman and Byzantine Empires.
  */
 const POLITICAL_COUNTRIES = [
-  "Q183", "Q142", "Q145", "Q174193", "Q30", "Q159", "Q34266", "Q15180", "Q38", "Q29", "Q40", "Q28513", "Q27306", "Q55", "Q41", "Q36", "Q28",
+  "Q183", "Q142", "Q145", "Q174193", "Q159", "Q34266", "Q15180", "Q38", "Q29", "Q40", "Q28513", "Q27306", "Q55", "Q41", "Q36", "Q28",
   "Q794", "Q79", "Q668", "Q148", "Q17", "Q801", "Q796", "Q858", "Q851", "Q843", "Q889", "Q219", "Q403", "Q218", "Q2277", "Q12544",
 ];
+
+/** People who held one of the offices (P39). */
+const office = (items, min) => ({ where: `?p wdt:P39 ?office . VALUES ?office { ${items.map((o) => `wd:${o}`).join(" ")} }`, min });
 
 /** One query: people with the occupation (or citizenship) and at least `min` sitelinks. */
 const occupation = (item, min) => ({ where: `?p wdt:P106 wd:${item} .`, min });
@@ -60,7 +63,10 @@ export const FIELDS = {
     // "politician" is too large for one query: country by country (Turkish ones are in Osmanlı-Türk tarihi).
     queries: [occupation(Q.economist, 8), occupation(Q.politicalScientist, 8), occupation(Q.statesman, 20), occupation(Q.monarch, 40),
       citizen(Q.turkey, 2, [Q.economist, Q.politicalScientist, Q.jurist]),
-      ...POLITICAL_COUNTRIES.map((country) => citizen(country, 30, [Q.politician]))],
+      ...POLITICAL_COUNTRIES.map((country) => citizen(country, 30, [Q.politician])),
+      // Holders of the great offices, whatever their occupation is recorded as: US presidents, vice presidents and
+      // secretaries of state, German chancellors, French presidents, UN secretaries-general, popes.
+      office(["Q11696", "Q11699", "Q14213", "Q4970706", "Q191954", "Q81066", "Q19546"], 0)],
   },
 };
 
