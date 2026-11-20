@@ -173,8 +173,11 @@ export function onlyAdds(written: string, form: string): boolean {
   return a.every((ch, k) => ch === b[k] || (ADDS[ch] ?? "").includes(b[k] ?? ""));
 }
 
+/** "Abdul" on its own: DİA never writes it apart, so it is not rewritten alone. */
+const ABD_ALONE = new Set(["abd", "abdul", "abdel", "abdal", "abdur", "abdus"]);
+
 function standardWord(word: string, standard: SpellingStandard, arabic = "", long = false): string {
-  if (!/^\p{Lu}/u.test(word) || NOT_ARABIC.has(spellingKey(word))) return word;
+  if (!/^\p{Lu}/u.test(word) || NOT_ARABIC.has(spellingKey(word)) || ABD_ALONE.has(spellingKey(word))) return word;
   const key = spellingKey(word);
   const paired = arabic ? standard.arabic.get(`${key}|${arabicSkeleton(arabic)}`) : undefined;
   // Without the Arabic word, a key DİA uses for two different names is not guessed.
@@ -231,6 +234,8 @@ export function longVowels(word: string, arabicWord: string): string | null {
   for (let i = 0; i < letters.length; i++) {
     const ch = lower[i] as string;
     const written = letters[i] as string;
+    // An ayn between a vowel and what follows is silent in the Latin word: "Said", سعيد.
+    if (VOWELS.includes(ch) && i > 0 && a[j] === "ع") j++;
     const next = a[j] ?? "";
     if (VOWELS.includes(ch)) {
       const upper = written !== ch;
@@ -243,10 +248,10 @@ export function longVowels(word: string, arabicWord: string): string | null {
       } else if (next === "ا" && (ch === "a" || ch === "e")) {
         out.push(upper ? "Â" : "â");
         j++;
-      } else if (next === "ي" && (ch === "i" || ch === "ı") && lower[i + 1] !== "y") {
+      } else if (next === "ي" && (ch === "i" || ch === "ı") && lower[i + 1] !== "y" && !(lower[i + 1] && VOWELS.includes(lower[i + 1] as string))) {
         out.push(upper ? "Î" : "î");
         j++;
-      } else if (next === "و" && "uüoö".includes(ch) && lower[i + 1] !== "v") {
+      } else if (next === "و" && "uüoö".includes(ch) && lower[i + 1] !== "v" && !(lower[i + 1] && VOWELS.includes(lower[i + 1] as string))) {
         out.push(upper ? "Û" : "û");
         j++;
       } else {
@@ -291,9 +296,12 @@ function joinAbd(words: string[], standard: SpellingStandard): string[] {
       const rest = next.replace(ARTICLE, "$1");
       const first = spellingKey(rest).charAt(0);
       const link = SUN.has(first) ? `u${first}` : "ul";
-      const form = standard.forms.get(`abd${link}${spellingKey(rest)}`) || standard.forms.get(`abdul${spellingKey(rest)}`);
-      if (form) {
-        out.push(form);
+      const keys = [`abd${link}${spellingKey(rest)}`, `abdul${spellingKey(rest)}`];
+      const key = keys.find((k) => standard.forms.has(k));
+      if (key) {
+        // DİA's joined form; one it writes two ways is joined and left to the Arabic ("Abdülhalim").
+        const sound = link === "ul" ? "ül" : link.replace("u", "ü");
+        out.push(standard.forms.get(key) || `Abd${sound}${rest.toLocaleLowerCase("tr")}`);
         k++;
         continue;
       }

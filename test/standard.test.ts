@@ -133,4 +133,12 @@ describe("standart yazım (DİA esas)", () => {
     expect(standardName("Hassan Nasrallah", real, 0.5, "حسن نصر الله", true)).not.toContain("Hassân");
     expect(standardName("Selim Hassan", real, 0.5, "سليم حسن", true)).toBe("Selîm Hassan");
   });
+
+  it("leaves Abdul alone when it cannot be joined, and a yâ between vowels short", () => {
+    const real = buildSpellingStandard(parseCatalogCsv(readFileSync(new URL("../data/catalog.csv", import.meta.url), "utf8")));
+    expect(standardName("Abdul Qadir al-Badri", real, 0.5, "عبد القادر البدري", true)).toMatch(/^Abdul Qadir /);
+    expect(standardName("Abdul Halim", real, 0.5, "عبد الحليم", true)).toBe("Abdülhalîm");
+    expect(longVowels("Eslaiah", "اصليح") ?? "").not.toContain("î");
+    expect(longVowels("Said", "سعيد")).toBe("Saîd");
+  });
 });
