@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { Catalog, buildSpellingStandard, onlyAdds, parseCatalogCsv, spellingKey, standardName, standardPerson, wantsStandard } from "../src/core/index.js";
+import { Catalog, arabicSkeleton, buildSpellingStandard, onlyAdds, parseCatalogCsv, spellingKey, standardName, standardPerson, wantsStandard } from "../src/core/index.js";
 
 const dia = (short: string, full = "---") => ({ shortName: short, fullName: full, originalName: "", deathDate: "(ö. 1900)", description: "", source: `https://islamansiklopedisi.org.tr/${spellingKey(short)}` });
 const small = buildSpellingStandard([
@@ -73,5 +73,20 @@ describe("standart yazım (DİA esas)", () => {
     expect(standardName("Ali Şeriati", real)).toBe("Ali Şerîatî");
     expect(standardName("Abdulaziz bin Baz", real)).toBe("Abdülazîz b. Bâz");
     expect(standardName("Hasan el-Turabi", real)).toBe("Hasan et-Turabi");
+  });
+
+  it("tells apart names written alike in Latin letters by their Arabic", () => {
+    const withArabic = (short: string, arabic: string) => ({ ...dia(short), originalName: arabic });
+    const table = buildSpellingStandard([
+      withArabic("Hâmid b. Abbas", "حامد بن عباس"),
+      withArabic("Hâmid el-Âmidî", "حامد الآمدي"),
+      withArabic("Hâmid Efendi", "حامد افندي"),
+      withArabic("Hamîd ed-Dîn", "حميد الدين"),
+    ]);
+    expect(arabicSkeleton("الحَمِيد")).toBe("حميد");
+    expect(standardName("Hamid Abbas", table, 0.5, "حميد عباس")).toBe("Hamîd Abbas");
+    expect(standardName("Hamid Abbas", table, 0.5, "حامد عباس")).toBe("Hâmid Abbas");
+    // Without the Arabic word, the two names are not guessed between.
+    expect(standardName("Hamid Abbas", table)).toBe("Hamid Abbas");
   });
 });

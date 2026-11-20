@@ -15,6 +15,8 @@ export interface WikidataHit {
   /** Citizenships (P27), and the death year: whose name takes DİA's spelling. */
   readonly countries: string[];
   readonly deathYear: number | null;
+  /** The Arabic (or Persian) name: it tells apart names Latin letters write alike. */
+  readonly arabic: string;
 }
 
 type Fetch = (url: string, init?: RequestInit) => Promise<Pick<Response, "ok" | "json">>;
@@ -120,7 +122,7 @@ export async function searchWikidata(name: string, fetcher: Fetch = fetch): Prom
   const ids = [...order.keys()].sort((x, y) => (order.get(x) ?? 0) - (order.get(y) ?? 0)).slice(0, 40);
   if (ids.length === 0) return [];
   const rows = await sparql(
-    `SELECT ?p ?links ?death ?dprec ?birth ?bprec ?tr ?en ?trDesc ?enDesc ?c WHERE {
+    `SELECT ?p ?links ?death ?dprec ?birth ?bprec ?tr ?en ?trDesc ?enDesc ?c ?ar ?fa WHERE {
   VALUES ?p { ${ids.map((id) => `wd:${id}`).join(" ")} }
   ?p wdt:P31 wd:Q5 ; wikibase:sitelinks ?links .
   ?p p:P570/psv:P570 [ wikibase:timeValue ?death ; wikibase:timePrecision ?dprec ] .
@@ -130,6 +132,8 @@ export async function searchWikidata(name: string, fetcher: Fetch = fetch): Prom
   OPTIONAL { ?p schema:description ?trDesc FILTER(LANG(?trDesc) = "tr") }
   OPTIONAL { ?p schema:description ?enDesc FILTER(LANG(?enDesc) = "en") }
   OPTIONAL { ?p wdt:P27 ?c }
+  OPTIONAL { ?p rdfs:label ?ar FILTER(LANG(?ar) = "ar") }
+  OPTIONAL { ?p rdfs:label ?fa FILTER(LANG(?fa) = "fa") }
 }`,
     fetcher,
   );
@@ -156,6 +160,7 @@ export async function searchWikidata(name: string, fetcher: Fetch = fetch): Prom
       links: Number(r.links?.value ?? 0),
       countries: country ? [country] : [],
       deathYear: year(r.death?.value),
+      arabic: r.ar?.value ?? r.fa?.value ?? "",
     });
   }
   // The order of the search, then the best known: the one the user means is usually among the first.

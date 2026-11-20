@@ -8,10 +8,45 @@
  * does not have is left as it is. The Arabic article is assimilated as in DİA
  * ("el-Turabi" → "et-Turabi", "al-Nur" → "en-Nur") and "bin" / "ibn" between
  * names becomes "b.".
+ *
+ * The Arabic spelling tells apart names Latin letters write alike: DİA's short
+ * names are paired word by word with their Arabic original ("Hâmid" حامد,
+ * "Hamîd" حميد). Given the Arabic name of the person, the form DİA uses for
+ * that Arabic word is taken; without it, a key that stands for two different
+ * Arabic words is left alone.
  */
 import type { Person } from "./catalog.js";
 
-export type SpellingStandard = ReadonlyMap<string, string>;
+export interface SpellingStandard {
+  /** Word key → DİA's form ("" when DİA writes it more than one way). */
+  readonly forms: ReadonlyMap<string, string>;
+  /** Word key + Arabic skeleton → DİA's form for that Arabic word. */
+  readonly arabic: ReadonlyMap<string, string>;
+  /** Word keys that stand for more than one Arabic word in DİA (Hâmid / Hamîd). */
+  readonly split: ReadonlySet<string>;
+}
+
+/** An Arabic (or Persian) word without vowel marks, the article and letter variants: "الحميد" → "حميد". */
+export function arabicSkeleton(word: string): string {
+  const plain = word
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/[ىی]/g, "ي")
+    .replace(/ک/g, "ك");
+  return plain.length > 3 && plain.startsWith("ال") ? plain.slice(2) : plain;
+}
+
+const isArabicLink = (w: string): boolean => w === "بن" || w === "ابن" || w === "بنت";
+const isLatinLink = (w: string): boolean => /^(b\.|bin|ibn|ibni|bint)$/i.test(w);
+
+/** The Latin words of a name paired with its Arabic words, when both have as many (links left out). */
+export function pairWords(latin: string, arabic: string): Array<[string, string]> | null {
+  const l = latin.split(/\s+/).filter((w) => w && !isLatinLink(w));
+  const a = arabic.split(/\s+/).filter((w) => w && !isArabicLink(w));
+  if (l.length === 0 || l.length !== a.length || !/[\u0600-\u06FF]/.test(arabic)) return null;
+  return l.map((w, k) => [w, a[k] ?? ""]);
+}
 
 /** "Türâbî", "Turabi", "Tûrâbî" → "turabi". */
 export function spellingKey(word: string): string {
@@ -62,7 +97,37 @@ export function buildSpellingStandard(people: readonly Person[], dominance = 0.7
     // A word DİA writes more than one way is known ("") but not rewritten.
     out.set(key, top / total >= dominance ? best : "");
   }
-  return out;
+  // DİA's short names with their Arabic originals, word by word.
+  const pairs = new Map<string, Map<string, number>>();
+  const skeletons = new Map<string, Set<string>>();
+  for (const person of people) {
+    if (!person.source.startsWith("https://islamansiklopedisi.org.tr/") || person.shortName.includes(",")) continue;
+    for (const [latin, arabic] of pairWords(person.shortName, person.originalName) ?? []) {
+      const word = latin.replace(ARTICLE, "$1");
+      if (word.length < 2 || !/^\p{Lu}/u.test(word)) continue;
+      const key = spellingKey(word);
+      const skeleton = arabicSkeleton(arabic);
+      const id = `${key}|${skeleton}`;
+      const forms = pairs.get(id) ?? new Map<string, number>();
+      forms.set(word, (forms.get(word) ?? 0) + 1);
+      pairs.set(id, forms);
+      const seen = skeletons.get(key) ?? new Set<string>();
+      seen.add(skeleton);
+      skeletons.set(key, seen);
+    }
+  }
+  const arabic = new Map<string, string>();
+  for (const [id, forms] of pairs) {
+    const [best] = [...forms.entries()].sort((x, y) => y[1] - x[1]);
+    if (best) arabic.set(id, best[0]);
+  }
+  // Two Arabic words under one key, written differently in DİA: a real difference of names.
+  const split = new Set<string>();
+  for (const [key, seen] of skeletons) {
+    const written = new Set([...seen].map((sk) => arabic.get(`${key}|${sk}`)));
+    if (seen.size > 1 && written.size > 1) split.add(key);
+  }
+  return { forms: out, arabic, split };
 }
 
 /** The article as DİA writes it before the word: "et-Türâbî", "el-Cezerî". */
@@ -91,9 +156,12 @@ export function onlyAdds(written: string, form: string): boolean {
   return a.every((ch, k) => ch === b[k] || (ADDS[ch] ?? "").includes(b[k] ?? ""));
 }
 
-function standardWord(word: string, standard: SpellingStandard): string {
+function standardWord(word: string, standard: SpellingStandard, arabic = ""): string {
   if (!/^\p{Lu}/u.test(word) || NOT_ARABIC.has(spellingKey(word))) return word;
-  const form = standard.get(spellingKey(word));
+  const key = spellingKey(word);
+  const paired = arabic ? standard.arabic.get(`${key}|${arabicSkeleton(arabic)}`) : undefined;
+  // Without the Arabic word, a key DİA uses for two different names is not guessed.
+  const form = paired ?? (standard.split.has(key) ? "" : standard.forms.get(key));
   return form && onlyAdds(word, form) ? form : word;
 }
 
@@ -104,22 +172,33 @@ const NOT_ARABIC = new Set(["mihail"]);
  * The name in DİA's spelling. Only a name at least `share` of whose words DİA
  * has (an article or "bin" counts) is rewritten: "Mihail Attaleiates" stays.
  */
-export function standardName(name: string, standard: SpellingStandard, share = 0.5): string {
+export function standardName(name: string, standard: SpellingStandard, share = 0.5, arabicName = ""): string {
   const words = name.split(" ");
   const names = words.filter((w) => /^\p{Lu}/u.test(w) || ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w));
-  const known = names.filter((w) => ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w) || (standard.has(spellingKey(w)) && !NOT_ARABIC.has(spellingKey(w))));
+  const known = names.filter((w) => ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w) || (standard.forms.has(spellingKey(w)) && !NOT_ARABIC.has(spellingKey(w))));
   if (names.length === 0 || known.length < names.length * share) return name;
+  // The Arabic word of each Latin word, when the two names pair up.
+  const arabicOf = new Map<number, string>();
+  const pairs = arabicName ? pairWords(name, arabicName) : null;
+  if (pairs) {
+    let k = 0;
+    words.forEach((word, index) => {
+      if (!word || isLatinLink(word)) return;
+      arabicOf.set(index, pairs[k]?.[1] ?? "");
+      k += 1;
+    });
+  }
   const out: string[] = [];
   words.forEach((word, index) => {
     const lower = word.toLocaleLowerCase("tr");
     const withArticle = ARTICLE.exec(word);
     if (withArticle && withArticle[1]) {
-      const core = standardWord(withArticle[1].charAt(0).toLocaleUpperCase("tr") + withArticle[1].slice(1), standard);
+      const core = standardWord(withArticle[1].charAt(0).toLocaleUpperCase("tr") + withArticle[1].slice(1), standard, arabicOf.get(index));
       out.push(article(core) + core);
     } else if (index > 0 && index < words.length - 1 && (lower === "bin" || lower === "ibn" || lower === "ibni")) {
       out.push("b.");
     } else {
-      out.push(standardWord(word, standard));
+      out.push(standardWord(word, standard, arabicOf.get(index)));
     }
   });
   return out.join(" ");
@@ -162,7 +241,7 @@ export function diaStandard(people: readonly Person[]): SpellingStandard {
  * names (" | "), so a text written that way still finds it.
  */
 export function standardPerson(person: Person, standard: SpellingStandard, share = 0.5): Person {
-  const shortName = standardName(person.shortName, standard, share);
+  const shortName = standardName(person.shortName, standard, share, person.originalName);
   if (shortName === person.shortName) return person;
   const others = person.fullName && person.fullName !== "---" ? person.fullName.split(" | ") : [];
   const fullName = [person.shortName, ...others.filter((n) => n !== person.shortName && n !== shortName)].join(" | ");

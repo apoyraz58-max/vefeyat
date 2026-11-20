@@ -265,7 +265,7 @@ function showWikidataHits(results: HTMLElement, alias: string, hits: WikidataHit
 function standardLabel(hit: WikidataHit): string {
   const base = state.baseCatalog;
   if (!base || !wantsStandard(hit.countries, hit.deathYear)) return hit.label;
-  return standardName(hit.label, diaStandard(base.people));
+  return standardName(hit.label, diaStandard(base.people), 0.5, hit.arabic);
 }
 
 async function addWikidataHit(alias: string, hit: WikidataHit): Promise<void> {
