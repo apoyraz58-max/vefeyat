@@ -146,6 +146,8 @@ describe("standart yazım (DİA esas)", () => {
     const labels = ["Friedrich Schleiermacher", "Friedrich Schleiermacher", "Friedrich Schleiermacher", "Friedrich Daniel Ernst Schleiermacher"];
     expect(westernSpelling("Friedrich Scleirmacher", labels, ["Q27306"])).toBe("Friedrich Schleiermacher");
     expect(westernSpelling("Friedrich Scleirmacher", labels, ["Q159"])).toBeNull(); // not a Latin-alphabet country
+    expect(westernSpelling("Sogomon Tehliryan", ["Soghomon Tehlirian", "Soghomon Tehlirian"], ["Q12560", "Q142"])).toBeNull(); // also Ottoman
+    expect(westernSpelling("Mihail Bakunin", ["Mikhail Bakunin", "Mikhail Bakunin"], ["Q34266", "Q39"])).toBeNull(); // also Russian
     expect(westernSpelling("Emanuel Swedenborg", ["Emanuel Swedenborg", "Emmanuel Swedenborg", "Emmanuel Swedenborg"], ["Q34"])).toBeNull(); // Swedish writes it so
     expect(westernSpelling("Jerome Kağan", ["Jerome Kagan", "Jerome Kagan"], ["Q30"])).toBeNull(); // a Turkish letter: a rendering
     expect(westernSpelling("Platon", ["Plato", "Platon", "Platone"], ["Q30"])).toBeNull();

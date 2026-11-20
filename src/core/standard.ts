@@ -419,7 +419,7 @@ const TURKISH_LETTERS = /[çşğıöüİÇŞĞÖÜ]/;
 
 /**
  * A slip in a Western name's Turkish label ("Friedrich Scleirmacher"): for a
- * person of a Latin-alphabet country, a label written with no Turkish letter,
+ * person all of whose citizenships are of Latin-alphabet countries, a label written with no Turkish letter,
  * the same as no other language's, one or two letters from a spelling that at
  * least two languages share ("Friedrich Schleiermacher" in German, English,
  * French …) is that spelling. Turkish renderings ("Mihail Lomonosov", "Platon")
@@ -427,7 +427,8 @@ const TURKISH_LETTERS = /[çşğıöüİÇŞĞÖÜ]/;
  * writes them so. Null when nothing is to change.
  */
 export function westernSpelling(written: string, labels: readonly string[], countries: readonly string[]): string | null {
-  if (!countries.some((c) => LATIN_WEST.has(c)) || TURKISH_LETTERS.test(written)) return null;
+  // Every citizenship Western: an Ottoman Armenian who died in Paris ("Sogomon Tehliryan") keeps his Turkish rendering.
+  if (countries.length === 0 || !countries.every((c) => LATIN_WEST.has(c)) || TURKISH_LETTERS.test(written)) return null;
   if (labels.includes(written)) return null;
   const words = written.split(" ").length;
   const key = spellingKey(written);
