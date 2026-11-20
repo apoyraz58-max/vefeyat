@@ -1,0 +1,66 @@
+name: wikidata
+# Refreshes the field catalogs (data/wikidata/) from Wikidata once a month:
+# new people, new deaths, better labels. A field that comes out more than a
+# tenth smaller than before (Wikidata timing out, a query left out) is not
+# committed; the run fails and the published catalogs stay as they were.
+# The tests and the build must pass too. Then the change goes to main and the
+# site is published again (pages.yml). By hand: Actions -> wikidata -> Run.
+on:
+  schedule:
+    - cron: "17 2 3 * *" # the 3rd of each month, 02:17 UTC
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: wikidata
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Answers already fetched today (a run that was cut off and started again) are reused.
+      - uses: actions/cache/restore@v4
+        with:
+          path: data/wikidata/.cache
+          key: wikidata-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: wikidata-
+      - name: Keep the catalog sizes before the refresh
+        run: cp data/wikidata/index.json "$RUNNER_TEMP/index-before.json"
+      - name: Build the field catalogs from Wikidata
+        timeout-minutes: 300
+        run: node scripts/wikidata.mjs
+      # Kept even when the run fails or is cut off, so that running it again goes on where it stopped.
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data/wikidata/.cache
+          key: wikidata-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Refuse a field that shrank
+        run: node scripts/wikidata.mjs --compare "$RUNNER_TEMP/index-before.json"
+      - run: npm test
+      - run: npm run build
+      - name: Commit and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- data/wikidata; then
+            echo "Wikidata'da değişiklik yok."
+            exit 0
+          fi
+          git config user.name "vefeyat-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/wikidata
+          git commit -m "Kataloglar: aylık Wikidata yenilemesi ($(date -u +%Y-%m-%d))"
+          git push origin HEAD:main
+          # A push by this workflow does not start pages.yml by itself: start it.
+          gh workflow run pages.yml --ref main

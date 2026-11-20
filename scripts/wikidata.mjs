@@ -425,6 +425,22 @@ if (process.argv[2] === "--links") {
     await writeFile(url, "\ufeff" + out.join("\r\n") + "\r\n");
     console.log(`${name}: ${links.size} / ${ids.length} kişiye tanınırlık eklendi`);
   }
+} else if (process.argv[2] === "--compare") {
+  // node scripts/wikidata.mjs --compare old-index.json: fails when a field lost more than a tenth of its people.
+  const before = JSON.parse(await readFile(process.argv[3], "utf8"));
+  const after = JSON.parse(await readFile(new URL("../data/wikidata/index.json", import.meta.url), "utf8"));
+  let shrunk = false;
+  for (const old of before) {
+    const now = after.find((e) => e.id === old.id);
+    const count = now?.count ?? 0;
+    const ok = count >= old.count * 0.9;
+    console.log(`${old.id}: ${old.count} → ${count}${ok ? "" : "  (çok azaldı)"}`);
+    if (!ok) shrunk = true;
+  }
+  if (shrunk) {
+    console.log("Bir alan onda birden fazla küçüldü: Wikidata sorgularından biri yarım kalmış olabilir. Kataloglar değiştirilmedi.");
+    process.exit(1);
+  }
 } else if (process.argv[2] === "--index") {
   const index = [];
   for (const [name, field] of Object.entries(FIELDS)) {

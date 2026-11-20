@@ -74,3 +74,8 @@ eklentiyle `catalogs/` altında yayımlanır; ilk açılıştan itibaren hepsi k
 olan kişiler (Wikidata P7314 ya da aynı ad ve ölüm yılı) alınmaz; çakışmada DİA esas alınır. İslâm dünyası ve 1928 öncesi Osmanlı şahıslarının adları `src/core/standard.ts` ile DİA yazımına çevrilir (kelime yazımları DİA kataloğundan; Wikidata yazımı ad olarak kalır).
 Yeniden üretmek (vekil sunucu arkasında `NODE_USE_ENV_PROXY=1` gerekir):
 `node scripts/wikidata.mjs` ya da tek alan için `node scripts/wikidata.mjs edebiyat`.
+Kataloglar her ayın 3'ünde `.github/workflows/wikidata.yml` ile kendiliğinden yenilenir
+(elle: Actions → wikidata → Run workflow). Bir alan öncekinden onda birden fazla
+küçülürse (`--compare`), testler ya da derleme geçmezse hiçbir şey değiştirilmez; geçerse
+değişiklik main'e işlenir ve site yeniden yayımlanır. Sorgu cevapları önbellekte bir gün
+tutulur; yarım kalan çalışma yeniden başlatılınca kaldığı yerden sürer.
