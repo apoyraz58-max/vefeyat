@@ -17,8 +17,9 @@
     "id": "edebiyat",
     "title": "Edebiyat",
     "file": "catalogs/edebiyat.csv",
-    "count": 4635,
-    "source": "Wikidata"
+    "count": 4636,
+    "source": "Wikidata",
+    "built": "2026-11-20"
   },
   {
     "id": "iktisat-siyaset",
