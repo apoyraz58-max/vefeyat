@@ -254,6 +254,26 @@ function turkishDescription(fact) {
   return fact.countries.length ? `${what} (${fact.countries[0]})` : what;
 }
 
+/**
+ * A query's answer, kept for a day in data/wikidata/.cache/ (not committed): a run
+ * that is cut off picks up where it stopped instead of asking Wikidata again.
+ */
+async function cached(query) {
+  const { createHash } = await import("node:crypto");
+  const dir = new URL("../data/wikidata/.cache/", import.meta.url);
+  const file = new URL(`${createHash("sha1").update(query.raw ?? sparql(query)).digest("hex")}.json`, dir);
+  try {
+    const { stat } = await import("node:fs/promises");
+    if (Date.now() - (await stat(file)).mtimeMs < 86400000) return JSON.parse(await readFile(file, "utf8"));
+  } catch {
+    // not cached yet
+  }
+  const rows = await run(query);
+  await mkdir(dir, { recursive: true });
+  await writeFile(file, JSON.stringify(rows));
+  return rows;
+}
+
 async function buildField(name, field, dia) {
   const people = new Map();
   const skipped = [];
@@ -261,7 +281,7 @@ async function buildField(name, field, dia) {
     const started = Date.now();
     let rows;
     try {
-      rows = await run(query);
+      rows = await cached(query);
     } catch (error) {
       // One query past Wikidata's limits does not sink the field: it is reported and left out.
       console.log(`  ATLANDI: ${query.where.slice(0, 70)} (en az ${query.min} madde): ${error.message}`);
