@@ -167,3 +167,5 @@ select.wide { display: block; width: 100%; max-width: 100%; box-sizing: border-b
 a.button { display: inline-flex; align-items: center; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 5px 10px; min-height: 32px; box-sizing: border-box; text-decoration: none; }
 /* Ek kataloglar */
 .checks label.check { display: flex; gap: 6px; align-items: baseline; margin: 4px 0; }
+/* Aday listesi: Diğer adayları göster */
+.more-candidates { display: block; margin: 6px 0 2px; }

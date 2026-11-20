@@ -298,6 +298,10 @@ try {
   check("homonyms listed, well-known first", candidates[0]?.startsWith("Fahreddin er-Râzî") && candidates.length === 2, candidates.join(" | "));
   check("choice required for homonyms", !(await page.isEnabled("#insert")));
   await page.check("#candidate-0");
+  check("chosen candidate shown alone, others behind a link", (await page.$$("#candidates .candidate")).length === 1 && (await page.textContent("#candidates .more-candidates")).includes("Diğer adayları göster (1)"));
+  await page.click("#candidates .more-candidates");
+  check("other candidates open on request", (await page.$$("#candidates .candidate")).length === 2);
+  await page.click("#candidates .more-candidates");
   check("Ad biçimi puts the full name first", (await page.$$eval("#spelling option", (o) => o[1]?.textContent ?? "")).includes("Tam / uzun ad"));
   if (shotPath) await page.screenshot({ path: shotPath, fullPage: true });
   await page.click("#insert");

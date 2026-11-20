@@ -58,7 +58,18 @@ export function renderCandidates(): void {
     list.append(add);
     return;
   }
-  found.candidates.forEach((person, index) => {
+  // A long list is shortened: with a chosen person only that one, otherwise the first five;
+  // the rest opens on request. Ölüm tarihi ekle then stays close below.
+  if (expandedFor !== state.alias) {
+    expandedFor = state.alias;
+    expanded = false;
+  }
+  const chosenKey = state.chosen ? personKey(state.chosen) : null;
+  const shownIndexes = found.candidates
+    .map((person, index) => ({ person, index }))
+    .filter(({ person, index }) => expanded || (chosenKey ? personKey(person) === chosenKey : index < CANDIDATE_PREVIEW));
+  const hidden = found.candidates.length - shownIndexes.length;
+  shownIndexes.forEach(({ person, index }) => {
     const id = `candidate-${index}`;
     const row = document.createElement("label");
     row.className = "candidate";
@@ -71,6 +82,7 @@ export function renderCandidates(): void {
     row.classList.toggle("chosen", radio.checked);
     radio.addEventListener("change", () => {
       state.chosen = person;
+      expanded = false;
       hideEarlier();
       renderCandidates();
       renderDetails();
@@ -107,7 +119,22 @@ export function renderCandidates(): void {
     row.append(radio, text);
     list.append(row);
   });
+  if (hidden > 0 || (expanded && (chosenKey !== null || found.candidates.length > CANDIDATE_PREVIEW))) {
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "link more-candidates";
+    more.textContent = expanded ? "Adayları kısalt" : chosenKey ? `Diğer adayları göster (${hidden})` : `Daha fazla göster (${hidden})`;
+    more.addEventListener("click", () => {
+      expanded = !expanded;
+      renderCandidates();
+    });
+    list.append(more);
+  }
 }
+
+const CANDIDATE_PREVIEW = 5;
+let expanded = false;
+let expandedFor: string | null = null;
 
 export let spellingOwner = "";
 
