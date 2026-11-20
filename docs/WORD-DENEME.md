@@ -221,8 +221,7 @@ işaretle**; o belgede bir daha listelenmez (Diğer araçlar → Belge istisnala
 
 ## 9. Ek kataloglar (sosyal bilimler)
 
-DİA'nın yanına alanınızın kataloğunu ekleyebilirsiniz: **Veri ve yardım → Veri bilgisi →
-Ek kataloglar**. Şu an dört alan var, hepsi Wikidata'dan (CC0) üretildi:
+DİA'nın yanında dört alan kataloğu da **ilk açılıştan itibaren kendiliğinden** kullanılır; bir şey işaretlemeniz gerekmez. İstemediğiniz alanı **Veri ve yardım → Veri bilgisi → Ek kataloglar**'dan kapatabilirsiniz. Şu an dört alan var, hepsi Wikidata'dan (CC0) üretildi:
 
 | Katalog | Kişi |
 |---|---|
@@ -231,7 +230,7 @@ Ek kataloglar**. Şu an dört alan var, hepsi Wikidata'dan (CC0) üretildi:
 | Edebiyat | 4.636 |
 | İktisat ve siyaset | 5.047 |
 
-İşaretlediğiniz kataloglar bu bilgisayarda hatırlanır. Bir kişi DİA'da da varsa **DİA kaydı
+Seçiminiz bu bilgisayarda hatırlanır. Bir kişi DİA'da da varsa **DİA kaydı
 esas alınır**; Wikidata kaydı hiç kullanılmaz. Adaylarda Wikidata kayıtları "Wikidata"
 notuyla görünür, kişi ayrıntısında **Wikidata kaydını aç** bağlantısı çıkar. Batılı adlar
 soyadıyla da tanınır (Durkheim, de Saussure); aynı soyadını taşıyanlardan biri ötekilerden

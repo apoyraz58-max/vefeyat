@@ -19,13 +19,20 @@ const CHOICE_KEY = "vefeyat.extraCatalogs";
 let available: ExtraCatalog[] | null = null;
 const loaded = new Map<string, readonly Person[]>();
 
-export function chosenExtras(): string[] {
+/**
+ * The chosen extra catalogs. Until the user changes the choice every catalog is
+ * on: the field catalogs work from the first run, with nothing to tick.
+ */
+export async function chosenExtras(): Promise<string[]> {
+  let stored: unknown = null;
   try {
-    const value = JSON.parse(window.localStorage.getItem(CHOICE_KEY) ?? "[]") as unknown;
-    return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+    const raw = window.localStorage.getItem(CHOICE_KEY);
+    stored = raw === null ? null : (JSON.parse(raw) as unknown);
   } catch {
-    return [];
+    stored = null;
   }
+  if (Array.isArray(stored)) return stored.filter((v): v is string => typeof v === "string");
+  return (await availableExtras()).map((e) => e.id);
 }
 
 function saveChoice(ids: string[]): void {
@@ -62,7 +69,7 @@ const key = (name: string, date: string): string => `${normalize(name.includes("
 
 /** The chosen extra catalogs' people, without those the base catalog (DİA) already has. */
 export async function extraPeople(base: Catalog): Promise<Person[]> {
-  const ids = new Set(chosenExtras());
+  const ids = new Set(await chosenExtras());
   const list = (await availableExtras()).filter((e) => ids.has(e.id));
   if (list.length === 0) return [];
   const taken = new Set(base.people.map((p) => key(p.shortName, p.deathDate)));
@@ -85,15 +92,15 @@ export async function renderExtras(onChange: () => Promise<void>): Promise<void>
   section.hidden = list.length === 0;
   const box = $("extras-list");
   box.replaceChildren();
-  const chosen = new Set(chosenExtras());
+  const chosen = new Set(await chosenExtras());
   for (const extra of list) {
     const label = document.createElement("label");
     label.className = "check";
     const input = document.createElement("input");
     input.type = "checkbox";
     input.checked = chosen.has(extra.id);
-    input.addEventListener("change", () => {
-      const ids = new Set(chosenExtras());
+    input.addEventListener("change", async () => {
+      const ids = new Set(await chosenExtras());
       if (input.checked) ids.add(extra.id);
       else ids.delete(extra.id);
       saveChoice([...ids]);

@@ -476,18 +476,18 @@ try {
   // Ek kataloglar: Durkheim comes from the field catalog; Gazzâlî stays DİA's.
   tab = await open("?view=katalog", "Durkheim ve Gazzâlî der.", "");
   await tab.waitForSelector("#extras:not([hidden])", { timeout: 3000 }).catch(() => {});
+  check("extra catalogs are on from the first run", (await tab.isChecked("#extras-list input")) && (await tab.textContent("#catalog-status")).includes("+ 1 kişi ek kataloglardan"), await tab.textContent("#catalog-status"));
+  await tab.uncheck("#extras-list input");
+  await tab.waitForTimeout(600);
+  const off = (await tab.textContent("#message")).includes("kataloğu çıkarıldı") && !(await tab.textContent("#catalog-status")).includes("ek kataloglardan");
   await tab.check("#extras-list input");
   await tab.waitForTimeout(600);
-  check("an extra catalog can be added", (await tab.textContent("#message")).includes("Deneme alanı kataloğu eklendi") && (await tab.textContent("#catalog-status")).includes("+ 1 kişi ek kataloglardan"), `${await tab.textContent("#message")} | ${await tab.textContent("#catalog-status")}`);
+  check("an extra catalog can be turned off and on again", off && (await tab.textContent("#message")).includes("Deneme alanı kataloğu eklendi") && (await tab.textContent("#catalog-status")).includes("+ 1 kişi ek kataloglardan"), `${await tab.textContent("#message")} | ${await tab.textContent("#catalog-status")}`);
   await select(tab, "Durkheim");
   const durkheim = (await tab.textContent("#view-secili")).replace(/\s+/g, " ");
   check("a Wikidata person is found, with its source and link", durkheim.includes("Émile Durkheim") && durkheim.includes("Wikidata") && (await tab.textContent("#detail-link")) === "Wikidata kaydını aç", durkheim.slice(0, 200));
   await select(tab, "Gazzâlî");
   check("DİA is authoritative where the catalogs meet", (await tab.getAttribute("#detail-link", "href")).startsWith("https://islamansiklopedisi.org.tr/") && (await tab.$$("#candidates .candidate")).length === 1);
-  await tab.evaluate(() => window.go_view_katalog(undefined));
-  await tab.waitForTimeout(300);
-  await tab.uncheck("#extras-list input");
-  await tab.waitForTimeout(300);
   await tab.close();
   // A double click selects the space after the name: the date still goes right after the name.
   tab = await open("", "Gazzâlî'nin farklı eserleri.", "Gazzâlî'nin ");
