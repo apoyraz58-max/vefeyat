@@ -12,5 +12,13 @@
     "file": "catalogs/osmanli-turk-tarihi.csv",
     "count": 6839,
     "source": "Wikidata"
+  },
+  {
+    "id": "iktisat-siyaset",
+    "title": "İktisat ve siyaset",
+    "file": "catalogs/iktisat-siyaset.csv",
+    "count": 3327,
+    "source": "Wikidata",
+    "built": "2026-11-20"
   }
 ]

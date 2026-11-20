@@ -15,7 +15,8 @@ const Q = {
   sociologist: "Q2306091", philosopher: "Q4964182", anthropologist: "Q4773904", psychologist: "Q212980",
   historian: "Q201788", politician: "Q82955", militaryOfficer: "Q189290", diplomat: "Q193391", universityTeacher: "Q1622272",
   monarch: "Q116", writer: "Q36180", poet: "Q49757", novelist: "Q6625963", journalist: "Q1930187",
-  economist: "Q188094", politicalScientist: "Q1238570", jurist: "Q185351",
+  economist: "Q188094", politicalScientist: "Q1238570", jurist: "Q185351", statesman: "Q372436",
+  playwright: "Q214917", essayist: "Q11774202", literaryCritic: "Q4263842",
   ottoman: "Q12560", turkey: "Q43",
 };
 
@@ -38,25 +39,23 @@ export const FIELDS = {
   },
   edebiyat: {
     title: "Edebiyat",
-    queries: [occupation(Q.writer, 30), occupation(Q.poet, 25), occupation(Q.novelist, 30), citizen(Q.turkey, 2, [Q.writer, Q.poet, Q.novelist, Q.journalist]), citizen(Q.ottoman, 2, [Q.writer, Q.poet])],
+    // "writer" holds hundreds of thousands of people, past Wikidata's time limit: its narrower occupations instead.
+    queries: [occupation(Q.novelist, 30), occupation(Q.poet, 30), occupation(Q.playwright, 30), occupation(Q.essayist, 25), occupation(Q.literaryCritic, 20),
+      citizen(Q.turkey, 2, [Q.writer, Q.poet, Q.novelist, Q.journalist]), citizen(Q.ottoman, 2, [Q.writer, Q.poet])],
   },
   "iktisat-siyaset": {
     title: "İktisat ve siyaset",
-    queries: [occupation(Q.economist, 8), occupation(Q.politicalScientist, 8), occupation(Q.monarch, 40), occupation(Q.politician, 70),
+    // "politician" is too large for one query: statesmen and monarchs; Turkish politicians are in Osmanlı-Türk tarihi.
+    queries: [occupation(Q.economist, 8), occupation(Q.politicalScientist, 8), occupation(Q.statesman, 20), occupation(Q.monarch, 40),
       citizen(Q.turkey, 2, [Q.economist, Q.politicalScientist, Q.jurist])],
   },
 };
 
 function sparql({ where, min }) {
-  // The people first (occupation or citizenship, notability, death date), the details after:
-  // Wikidata answers a large occupation ("writer") within its time limit this way.
   return `SELECT ?p ?links ?death ?dprec ?birth ?bprec ?dia ?trLabel ?enLabel ?trDesc ?enDesc ?alt WHERE {
-  { SELECT DISTINCT ?p ?links WHERE {
-      ${where}
-      ?p wikibase:sitelinks ?links .
-      FILTER(?links >= ${min})
-      ?p wdt:P31 wd:Q5 ; wdt:P570 [] .
-  } }
+  ${where}
+  ?p wdt:P31 wd:Q5 ; wikibase:sitelinks ?links .
+  FILTER(?links >= ${min})
   ?p p:P570/psv:P570 [ wikibase:timeValue ?death ; wikibase:timePrecision ?dprec ] .
   OPTIONAL { ?p p:P569/psv:P569 [ wikibase:timeValue ?birth ; wikibase:timePrecision ?bprec ] }
   OPTIONAL { ?p wdt:P7314 ?dia }
@@ -74,7 +73,7 @@ async function run(query, attempt = 1) {
   });
   if (response.status === 429 || response.status >= 500) {
     if (attempt > 3) throw new Error(`Wikidata ${response.status}`);
-    await new Promise((r) => setTimeout(r, 5000 * attempt));
+    await new Promise((r) => setTimeout(r, 15000 * attempt));
     return run(query, attempt + 1);
   }
   if (!response.ok) throw new Error(`Wikidata ${response.status}: ${(await response.text()).slice(0, 200)}`);
@@ -137,9 +136,18 @@ const cell = (s) => {
 
 async function buildField(name, field, dia) {
   const people = new Map();
+  const skipped = [];
   for (const query of field.queries) {
     const started = Date.now();
-    const rows = await run(query);
+    let rows;
+    try {
+      rows = await run(query);
+    } catch (error) {
+      // One query past Wikidata's limits does not sink the field: it is reported and left out.
+      console.log(`  ATLANDI: ${query.where.slice(0, 70)} (en az ${query.min} madde): ${error.message}`);
+      skipped.push(query.where.slice(0, 70));
+      continue;
+    }
     console.log(`  ${query.where.slice(0, 70)} (en az ${query.min} madde): ${rows.length} satır, ${Math.round((Date.now() - started) / 1000)} sn`);
     for (const r of rows) {
       const id = r.p.value.split("/").pop();
@@ -184,7 +192,7 @@ async function buildField(name, field, dia) {
   }
   await mkdir(new URL("../data/wikidata/", import.meta.url), { recursive: true });
   await writeFile(new URL(`../data/wikidata/${name}.csv`, import.meta.url), "﻿" + out.join("\r\n") + "\r\n");
-  console.log(`${name}: ${out.length - 1} kişi (${skippedDia} kişi DİA'da olduğu için alınmadı)`);
+  console.log(`${name}: ${out.length - 1} kişi (${skippedDia} kişi DİA'da olduğu için alınmadı)${skipped.length ? `; atlanan sorgu: ${skipped.length}` : ""}`);
   // data/wikidata/index.json: the fields the add-in offers (title, file, count).
   const indexUrl = new URL("../data/wikidata/index.json", import.meta.url);
   let index = [];
