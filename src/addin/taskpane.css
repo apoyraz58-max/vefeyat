@@ -179,3 +179,5 @@ a.button { display: inline-flex; align-items: center; font: inherit; color: var(
   padding: 6px 0;
   margin-top: 4px;
 }
+.wikidata-search { margin-top: 8px; }
+.wikidata-hit { padding: 6px 0; border-top: 1px solid var(--border); }

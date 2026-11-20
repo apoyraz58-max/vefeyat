@@ -249,6 +249,27 @@ try {
   await manyTab.fill("#candidate-filter", "yokböyle");
   check("candidate search says when nothing fits", await manyTab.isVisible("#candidates .filter-empty"));
   await manyTab.close();
+  // Wikidata'da ara: a name no catalog has is looked up on Wikidata and added as a record of one's own.
+  const wdTab = await open("", "Hasan et-Türâbî bunu savundu.", "Hasan et-Türâbî");
+  await wdTab.route("https://www.wikidata.org/**", (route) => route.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify({ search: [{ id: "Q469299" }] }) }));
+  await wdTab.route("https://query.wikidata.org/**", (route) =>
+    route.fulfill({
+      contentType: "application/sparql-results+json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify({ results: { bindings: [{ p: { value: "http://www.wikidata.org/entity/Q469299" }, links: { value: "34" }, death: { value: "2016-03-05T00:00:00Z" }, dprec: { value: "11" }, birth: { value: "1932-02-01T00:00:00Z" }, bprec: { value: "11" }, tr: { value: "Hasan el-Turabi" }, en: { value: "Hasan al-Turabi" }, enDesc: { value: "Sudanese politician" } }] } }),
+    }),
+  );
+  check("a name no catalog has offers Wikidata'da ara", (await wdTab.textContent("#candidates")).includes("Katalogda bu adla eşleşen şahıs yok") && (await wdTab.isVisible("#wikidata-search")));
+  await wdTab.click("#wikidata-search");
+  await wdTab.waitForSelector("#wikidata-results .wikidata-hit");
+  check("Wikidata hits listed with their dates", (await wdTab.textContent("#wikidata-results")).includes("Hasan el-Turabi (1932-2016)"), await wdTab.textContent("#wikidata-results"));
+  await wdTab.click("#wikidata-results .wikidata-hit button");
+  await wdTab.waitForTimeout(300);
+  check("the added Wikidata person is chosen for the selection", (await wdTab.textContent("#candidates")).includes("Hasan el-Turabi") && (await wdTab.textContent("#candidates")).includes("kendi kaydınız") && !(await wdTab.isDisabled("#insert")), await wdTab.textContent("#candidates"));
+  await wdTab.click("#insert");
+  await wdTab.waitForTimeout(200);
+  check("its date goes into the text", (await docText(wdTab)).includes("Hasan et-Türâbî (1932-2016)"), await docText(wdTab));
+  await wdTab.close();
   const keyTab = await open("", "Ahmed Kemal bu yazıyı yazdı.", "Ahmed Kemal");
   await keyTab.focus("#candidate-0");
   await keyTab.keyboard.press("ArrowDown");

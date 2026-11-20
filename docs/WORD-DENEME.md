@@ -254,6 +254,14 @@ olmayanlar). **Veri bilgisi** penceresindeki bölümden ya da seçili ad katalog
 "ö. 505/1111", "1913-1998"), isteğe bağlı tam ad ve açıklama. Katalog kaydı gibi
 kullanılır ("kendi kaydınız" notuyla).
 
+**Wikidata'da ara:** seçili ad hiçbir katalogda yoksa (ya da adaylar arasında aradığınız
+kişi yoksa) **Wikidata'da ara**'ya basın. Vefeyât adı yazıldığı gibi, şapkasız ve
+Arapça harfi tarifi "al-" ile ("et-Türâbî" → "al-Turabi") arar; ölüm tarihi bilinen
+kişileri tarihleriyle listeler. Doğru kişide **Ekle ve seç** deyin: kişi kendi
+şahıslarınıza eklenir, metindeki yazım da onun bir adı olarak kaydedilir ve hemen
+seçilir. Wikidata'ya yalnız seçili ad gönderilir; belge metni gönderilmez. İnternet
+bağlantısı gerekir.
+
 **Tercihleri dışa aktar / al:** ayarlar, yazım tercihleri, istisnalar, kimlik
 onayları ve kendi şahıslarınız bir dosyada; başka bir tezde aynen kullanılabilir.
 

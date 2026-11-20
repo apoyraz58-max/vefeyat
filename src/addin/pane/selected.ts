@@ -1,12 +1,14 @@
 /** Vefeyât pane — the selected-name window: candidates, dates, spellings, earlier mentions, Şahıs değil. */
 import { isLocal } from "../persons.js";
-import { fillLocalForm, renderLocals } from "./catalog.js";
+import { applyLocalPersons, fillLocalForm, renderLocals } from "./catalog.js";
+import { type WikidataHit, searchWikidata } from "../wikidata-live.js";
+import { upsertLocal, validateLocal } from "../persons.js";
 import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, normalize, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { sourceLabel, addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
 import { type InventoryRow, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
-import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, replaceNameInSelection, writeConfirmations, selectionInNote, updateDateAfterSelection, removeDateAfter, selectMention, replaceMentions } from "../word.js";
+import { readLocalPersons, writeLocalPersons, readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, replaceNameInSelection, writeConfirmations, selectionInNote, updateDateAfterSelection, removeDateAfter, selectMention, replaceMentions } from "../word.js";
 
 import { $, documentRows, loadSettings, logHistory, setMessage, state, versions, showView } from "./core.js";
 
@@ -56,6 +58,7 @@ export function renderCandidates(): void {
       fillLocalForm({ shortName: nameQuery(state.alias ?? "") });
     });
     list.append(add);
+    list.append(wikidataSearch(true));
     return;
   }
   // A long list is shortened: with a chosen person only that one, otherwise the first five;
@@ -181,7 +184,100 @@ export function renderCandidates(): void {
       if (expanded) document.getElementById("candidate-filter")?.focus();
     });
     list.append(more);
+  }  if (expanded || found.candidates.length <= CANDIDATE_PREVIEW) list.append(wikidataSearch(false));
+}
+
+/**
+ * Wikidata'da ara: the selected name is looked up on Wikidata; the person picked
+ * becomes a record of the user's own and is chosen at once.
+ */
+function wikidataSearch(prominent: boolean): HTMLElement {
+  const box = document.createElement("div");
+  box.className = "wikidata-search";
+  const go = document.createElement("button");
+  go.type = "button";
+  go.id = "wikidata-search";
+  go.className = prominent ? "" : "link";
+  go.textContent = prominent ? "Wikidata'da ara" : "Aradığınız kişi yok mu? Wikidata'da ara";
+  const results = document.createElement("div");
+  results.id = "wikidata-results";
+  go.addEventListener("click", () => {
+    const alias = state.alias;
+    if (!alias) return;
+    go.disabled = true;
+    results.replaceChildren(muted("Wikidata'da aranıyor…"));
+    searchWikidata(nameQuery(alias))
+      .then((hits) => showWikidataHits(results, alias, hits))
+      .catch(() => results.replaceChildren(muted("Wikidata şu an yanıt vermiyor ya da internete ulaşılamıyor. Biraz sonra yeniden deneyin.")))
+      .finally(() => {
+        go.disabled = false;
+      });
+  });
+  box.append(go, results);
+  return box;
+}
+
+function muted(text: string): HTMLElement {
+  const p = document.createElement("p");
+  p.className = "muted";
+  p.textContent = text;
+  return p;
+}
+
+function showWikidataHits(results: HTMLElement, alias: string, hits: WikidataHit[]): void {
+  results.replaceChildren();
+  if (hits.length === 0) {
+    results.append(muted("Wikidata'da bu adla ölüm tarihi bilinen bir kişi bulunamadı. Kendi şahıslarınıza elle ekleyebilirsiniz."));
+    return;
   }
+  results.append(muted("Wikidata'da bulunanlar (ölüm tarihi bilinenler). Doğru kişiyi ekleyin:"));
+  for (const hit of hits) {
+    const row = document.createElement("div");
+    row.className = "wikidata-hit";
+    const text = document.createElement("span");
+    const title = document.createElement("strong");
+    title.textContent = `${hit.label} ${hit.deathDate}`;
+    text.append(title);
+    if (hit.english) text.append(` · ${hit.english}`);
+    if (hit.description) {
+      const description = document.createElement("small");
+      description.textContent = hit.description.length > 140 ? `${hit.description.slice(0, 140)}…` : hit.description;
+      text.append(document.createElement("br"), description);
+    }
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "link";
+    add.textContent = "Ekle ve seç";
+    add.addEventListener("click", () => void addWikidataHit(alias, hit));
+    const link = document.createElement("a");
+    link.href = `https://www.wikidata.org/wiki/${hit.id}`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Wikidata";
+    row.append(text, " ", add, " · ", link);
+    results.append(row);
+  }
+}
+
+async function addWikidataHit(alias: string, hit: WikidataHit): Promise<void> {
+  // The name as written in the text is kept as a spelling of its own, so this mention finds the record.
+  const written = nameQuery(alias);
+  const spellings = [hit.english, written].filter((v, i, all) => v && v !== hit.label && all.indexOf(v) === i);
+  const checked = validateLocal({
+    shortName: hit.label,
+    fullName: spellings.join(" | "),
+    deathDate: hit.deathDate,
+    description: [hit.description, `Wikidata ${hit.id}`].filter(Boolean).join(" · "),
+  });
+  if (!checked.ok) {
+    setMessage(checked.reason, "warning");
+    return;
+  }
+  await writeLocalPersons(upsertLocal(readLocalPersons(), checked.person));
+  applyLocalPersons();
+  state.alias = null;
+  await refresh(true);
+  setMessage(`${hit.label} ${hit.deathDate} kendi şahıslarınıza eklendi.`, "success");
 }
 
 /** Shows the candidate rows holding every word of the query; the last row is the "nothing found" note. */
