@@ -70,15 +70,23 @@ export function sharesBigram(name: string, term: string): boolean {
 }
 
 /** `VfNearWord`: Levenshtein distance of `word` and `term` is at most `limit`. */
-export function nearWord(word: string, term: string, limit: number): boolean {
-  if (Math.abs(word.length - term.length) > limit || word.length === 0) return false;
-  let previous = Array.from({ length: term.length + 1 }, (_, j) => j);
-  let current = new Array<number>(term.length + 1).fill(0);
-  for (let i = 1; i <= word.length; i++) {
+export function nearWord(word: string, term: string, limit: number, from = 0, to = word.length): boolean {
+  const length = to - from;
+  if (Math.abs(length - term.length) > limit || length === 0) return false;
+  // Two rows reused across calls: the lookup runs this for every catalog row.
+  if (rowA.length <= term.length) {
+    rowA = new Int32Array(term.length + 16);
+    rowB = new Int32Array(term.length + 16);
+  }
+  let previous = rowA;
+  let current = rowB;
+  for (let j = 0; j <= term.length; j++) previous[j] = j;
+  for (let i = 1; i <= length; i++) {
     current[0] = i;
     let best = i;
+    const ch = word.charCodeAt(from + i - 1);
     for (let j = 1; j <= term.length; j++) {
-      const cost = word[i - 1] === term[j - 1] ? 0 : 1;
+      const cost = ch === term.charCodeAt(j - 1) ? 0 : 1;
       let value = (previous[j] as number) + 1;
       if ((current[j - 1] as number) + 1 < value) value = (current[j - 1] as number) + 1;
       if ((previous[j - 1] as number) + cost < value) value = (previous[j - 1] as number) + cost;
@@ -86,10 +94,14 @@ export function nearWord(word: string, term: string, limit: number): boolean {
       if (value < best) best = value;
     }
     if (best > limit) return false;
-    [previous, current] = [current, previous];
+    const swap = previous;
+    previous = current;
+    current = swap;
   }
   return (previous[term.length] as number) <= limit;
 }
+let rowA = new Int32Array(64);
+let rowB = new Int32Array(64);
 
 /** `VfSpellingMatch`. `term` is the compact (space-free) query. */
 export function spellingMatch(
@@ -108,7 +120,15 @@ export function spellingMatch(
   if (!sharesBigram(compactName, term)) return false;
   const limit = term.length >= 9 ? 2 : 1;
   if (nearWord(compactName, term, limit)) return true;
-  return name.split(" ").some((token) => nearWord(token, term, limit));
+  // Each word of the name, without splitting it into new strings.
+  let start = 0;
+  for (let k = 0; k <= name.length; k++) {
+    if (k === name.length || name.charCodeAt(k) === 32) {
+      if (k > start && nearWord(name, term, limit, start, k)) return true;
+      start = k + 1;
+    }
+  }
+  return false;
 }
 
 /** `VfNameMatch` on already normalized values. */
@@ -119,11 +139,12 @@ export function nameMatch(
   compactTerm: string,
   foldedName = "",
   foldedTerm = "",
+  termTokens: readonly string[] = term.split(" "),
 ): number {
   if (term.length === 0 || name.length === 0 || compactTerm.length === 0) return 0;
   if (name === term) return 4;
   if (compactName === compactTerm) return 3;
-  if (containsTokens(name, term)) return 2;
+  if (termTokens.every((token) => name.includes(token))) return 2;
   if (compactName.includes(compactTerm)) return 1;
   if (spellingMatch(name, compactName, compactTerm, foldedName, foldedTerm)) return 1;
   return 0;

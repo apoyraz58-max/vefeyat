@@ -227,6 +227,17 @@ interface IndexedPerson {
   readonly search: string;
 }
 
+/** The keys of a person's short forms (extraNames), computed once: every lookup compares them. */
+const extraKeyCache = new WeakMap<Person, ReadonlySet<string>>();
+function extraKeys(person: Person): ReadonlySet<string> {
+  let keys = extraKeyCache.get(person);
+  if (!keys) {
+    keys = new Set(extraNames(person).map((alias) => collapseLetters(dropArticles(normalize(nameQuery(alias))).split(" ").join(""))).filter(Boolean));
+    extraKeyCache.set(person, keys);
+  }
+  return keys;
+}
+
 /** In-memory catalog with the VBA lookup order (`VefeyatFind`). */
 export class Catalog {
   private readonly index: readonly IndexedPerson[];
@@ -279,6 +290,8 @@ export class Catalog {
     if (term.length === 0 || this.index.length === 0) return [];
     const compact = term.split(" ").join("");
     const folded = collapseLetters(compact);
+    const bare = collapseLetters(dropArticles(term).split(" ").join(""));
+    const termTokens = term.split(" ");
     const ranked: Array<{ rank: number; person: Person }> = [];
     const insert = (rank: number, person: Person): void => {
       // Stable descending insertion, as in the VBA loop.
@@ -289,18 +302,12 @@ export class Catalog {
     for (const row of this.index) {
       let best = 0;
       for (let j = 0; j < 3; j++) {
-        const score = nameMatch(row.text[j] as string, row.keys[j] as string, term, compact, row.folded[j] as string, folded);
+        const score = nameMatch(row.text[j] as string, row.keys[j] as string, term, compact, row.folded[j] as string, folded, termTokens);
         if (score > best) best = score;
       }
       // Short forms built from the names (epithets, lakap + nisba, short name + nisba):
       // "Resûlullah", "Fahrülislâm el-Pezdevî", "Ahund el-Horasânî".
-      if (best < 3) {
-        const bare = collapseLetters(dropArticles(term).split(" ").join(""));
-        for (const alias of extraNames(row.person)) {
-          const key = collapseLetters(dropArticles(normalize(nameQuery(alias))).split(" ").join(""));
-          if (key && key === bare) best = 4;
-        }
-      }
+      if (best < 3 && extraKeys(row.person).has(bare)) best = 4;
       if (best > 0) insert(best * 1000 + prominence(row.person.shortName, compact), row.person);
       else if (includeDescriptions && containsTokens(row.search, term)) insert(1, row.person);
     }
