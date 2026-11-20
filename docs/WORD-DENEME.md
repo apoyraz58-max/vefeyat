@@ -228,13 +228,16 @@ Ek kataloglar**. Şu an dört alan var, hepsi Wikidata'dan (CC0) üretildi:
 |---|---|
 | Sosyoloji ve felsefe | 6.556 |
 | Osmanlı-Türk tarihi | 6.839 |
-| Edebiyat | 4.635 |
-| İktisat ve siyaset | 3.327 |
+| Edebiyat | 4.636 |
+| İktisat ve siyaset | 5.047 |
 
 İşaretlediğiniz kataloglar bu bilgisayarda hatırlanır. Bir kişi DİA'da da varsa **DİA kaydı
 esas alınır**; Wikidata kaydı hiç kullanılmaz. Adaylarda Wikidata kayıtları "Wikidata"
 notuyla görünür, kişi ayrıntısında **Wikidata kaydını aç** bağlantısı çıkar. Batılı adlar
-soyadıyla da tanınır (Durkheim, Weber, de Saussure). Tarihler "(1858-1917)" gibi yaşam
+soyadıyla da tanınır (Durkheim, de Saussure); aynı soyadını taşıyanlardan biri ötekilerden
+çok daha tanınmışsa (Vikipedi madde sayısına göre) o seçilir: "Kant" Immanuel Kant'tır.
+Baş harfli yazım da tanınır ("É. Durkheim", "J. M. Keynes"). Tanıtımların çoğu Türkçedir;
+Wikidata'da Türkçe tanıtımı olmayanlara meslek ve ülkenin Türkçe adından üretilir. Tarihler "(1858-1917)" gibi yaşam
 aralığıyla gelir; yalnız yüzyılı bilinenler "(ö. 4. yy)" olarak yazılır.
 
 **Tarih biçimi** (Tercihler): *Kaynaktaki gibi* (DİA "(ö. 505/1111)", Wikidata
