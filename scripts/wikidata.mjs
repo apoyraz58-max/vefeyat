@@ -129,7 +129,11 @@ async function diaKeys() {
   return keys;
 }
 
-const cell = (s) => (s ?? "").replace(/[;\r\n]+/g, ",").trim();
+// No ; or line breaks inside a field; a field with a quote is quoted (CSV).
+const cell = (s) => {
+  const value = (s ?? "").replace(/[;\r\n]+/g, ",").trim();
+  return value.includes('"') ? `"${value.replace(/"/g, '""')}"` : value;
+};
 
 async function buildField(name, field, dia) {
   const people = new Map();

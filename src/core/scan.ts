@@ -320,6 +320,18 @@ function gapBetween(text: string, previous: Token, token: Token): string {
 }
 
 /** `VfbNameSpanEnd`: last token index of the capitalised name run starting at `first`. */
+/**
+ * Capitalised words of peoples, faiths and regions that follow a name without
+ * being part of it: "Ziya Gökalp Türk sosyolojisini", "Gazzâlî İslâm
+ * düşüncesinde", "Fârâbî Yunan felsefesini". They end a run of capitalised words.
+ */
+const SPAN_STOP = new Set(
+  ("turk|turkiye|turkce|turkcu|islam|islami|arap|arapca|fars|farsca|osmanli|osmanlica|selcuklu|bati|batili|dogu|dogulu|avrupa|avrupali|yunan|yunanca|roma|latin|latince|" +
+    "hint|cin|alman|almanca|ingiliz|ingilizce|fransiz|fransizca|rus|rusca|amerikan|amerika|hiristiyan|hiristiyanlik|yahudi|yahudilik|sunni|sii|emevi|abbasi|endulus|iran|misir|anadolu|kuran|cumhuriyet|tanzimat|mesrutiyet")
+    .split("|")
+    .map(collapseLetters),
+);
+
 function nameSpanEnd(text: string, tokens: readonly Token[], first: number, index: NameIndex): number {
   let end = first;
   for (let i = first; i < tokens.length; i++) {
@@ -332,6 +344,7 @@ function nameSpanEnd(text: string, tokens: readonly Token[], first: number, inde
     // A lower-case word ("devlet", "medrese") never continues a name, catalog key or not.
     if (!isNameLink(key) && !initialUpper(raw)) break;
     if (i > first && !joinable(gapBetween(text, tokens[i - 1] as Token, token), (tokens[i - 1] as Token).key)) break;
+    if (i > first && SPAN_STOP.has(collapseLetters(key))) break;
     // A title with an article after the name, inflected or called a work: "Şâfiî er-Risâle'yi",
     // "Gazzâlî el-Mustasfâ'da", "Gazzâlî el-Mustasfâ adlı eserinde". The name stops before it.
     if (i > first && /^(el|er|es|et|ez|en|ed|eş)[-‐]/i.test(raw) && (hasSuffix(raw) || isWorkUsage(text.slice(token.start + token.length, token.start + token.length + 40)))) break;
