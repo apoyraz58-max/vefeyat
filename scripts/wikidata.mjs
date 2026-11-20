@@ -268,6 +268,7 @@ async function buildField(name, field, dia) {
 // node scripts/wikidata.mjs --links: add the notability (#sitelinks) to the links of existing files.
 if (process.argv[2] === "--links") {
   for (const name of Object.keys(FIELDS)) {
+    if (process.argv[3] && process.argv[3] !== name) continue;
     const url = new URL(`../data/wikidata/${name}.csv`, import.meta.url);
     let text;
     try {
