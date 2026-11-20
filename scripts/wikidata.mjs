@@ -242,7 +242,7 @@ async function buildField(name, field, dia) {
     }
     const original = p.en && p.en !== short ? p.en : "---";
     // Turkish aliases ("Aristoteles" for "Aristo") go into the full-name column, which the add-in also searches.
-    const alts = [...p.alts].filter((a) => a !== short && a !== original && a.length <= 60).slice(0, 3);
+    const alts = [...p.alts].filter((a) => a !== short && a !== original && a.length <= 60 && !a.includes(",") && !/\.$/.test(a) && (a.match(/\p{L}/gu) ?? []).length >= 3).slice(0, 3);
     // Other Turkish spellings, separated by " | ": the add-in takes each as a name of its own.
     const full = alts.length ? alts.join(" | ") : "---";
     const description = p.trDesc ?? (turkishDescription(facts.get(p.id)) || p.enDesc || "");

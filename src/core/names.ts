@@ -288,5 +288,10 @@ export function surnameAliases(shortName: string, source: string): string[] {
 
 /** Other spellings kept in the full-name column, separated by " | " (Wikidata catalogs): each is a name. */
 export function spellingVariants(fullName: string): string[] {
-  return fullName.includes(" | ") ? fullName.split(" | ").map((v) => v.trim()).filter((v) => v.length >= 2) : [];
+  if (!fullName.includes(" | ")) return [];
+  // Not abbreviations ("Tert.") or inverted forms ("Addams,Jane"); at least three letters.
+  return fullName
+    .split(" | ")
+    .map((v) => v.trim())
+    .filter((v) => (v.match(/\p{L}/gu) ?? []).length >= 3 && !v.includes(",") && !/\.$/.test(v));
 }
