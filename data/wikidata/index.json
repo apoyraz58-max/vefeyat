@@ -25,8 +25,9 @@
     "id": "iktisat-siyaset",
     "title": "İktisat ve siyaset",
     "file": "catalogs/iktisat-siyaset.csv",
-    "count": 5425,
-    "source": "Wikidata"
+    "count": 5876,
+    "source": "Wikidata",
+    "built": "2026-11-20"
   },
   {
     "id": "islam-dunyasi",
