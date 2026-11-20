@@ -20,6 +20,18 @@ const Q = {
   ottoman: "Q12560", turkey: "Q43",
 };
 
+/**
+ * Countries and states whose politicians a social-science text names most:
+ * Germany, France, United Kingdom (and Great Britain), USA, Russia (Empire, USSR),
+ * Italy, Spain, Austria (Austria-Hungary), Prussia, Netherlands, Greece, Poland,
+ * Hungary, Iran, Egypt, India, China, Japan, Israel, Iraq, Syria, Saudi Arabia,
+ * Pakistan, Afghanistan, Bulgaria, Serbia, Romania, Roman and Byzantine Empires.
+ */
+const POLITICAL_COUNTRIES = [
+  "Q183", "Q142", "Q145", "Q174193", "Q30", "Q159", "Q34266", "Q15180", "Q38", "Q29", "Q40", "Q28513", "Q27306", "Q55", "Q41", "Q36", "Q28",
+  "Q794", "Q79", "Q668", "Q148", "Q17", "Q801", "Q796", "Q858", "Q851", "Q843", "Q889", "Q219", "Q403", "Q218", "Q2277", "Q12544",
+];
+
 /** One query: people with the occupation (or citizenship) and at least `min` sitelinks. */
 const occupation = (item, min) => ({ where: `?p wdt:P106 wd:${item} .`, min });
 const citizen = (country, min, occupations = []) => ({
@@ -45,9 +57,10 @@ export const FIELDS = {
   },
   "iktisat-siyaset": {
     title: "İktisat ve siyaset",
-    // "politician" is too large for one query: statesmen and monarchs; Turkish politicians are in Osmanlı-Türk tarihi.
+    // "politician" is too large for one query: country by country (Turkish ones are in Osmanlı-Türk tarihi).
     queries: [occupation(Q.economist, 8), occupation(Q.politicalScientist, 8), occupation(Q.statesman, 20), occupation(Q.monarch, 40),
-      citizen(Q.turkey, 2, [Q.economist, Q.politicalScientist, Q.jurist])],
+      citizen(Q.turkey, 2, [Q.economist, Q.politicalScientist, Q.jurist]),
+      ...POLITICAL_COUNTRIES.map((country) => citizen(country, 30, [Q.politician]))],
   },
 };
 
@@ -68,7 +81,7 @@ function sparql({ where, min }) {
 }
 
 async function run(query, attempt = 1) {
-  const response = await fetch(`${ENDPOINT}?${new URLSearchParams({ query: sparql(query), format: "json" })}`, {
+  const response = await fetch(`${ENDPOINT}?${new URLSearchParams({ query: query.raw ?? sparql(query), format: "json" })}`, {
     headers: { Accept: "application/sparql-results+json", "User-Agent": AGENT },
   });
   if (response.status === 429 || response.status >= 500) {
@@ -134,6 +147,48 @@ const cell = (s) => {
   return value.includes('"') ? `"${value.replace(/"/g, '""')}"` : value;
 };
 
+/**
+ * Turkish occupation and country labels of the given people, in batches:
+ * the material of a Turkish description where Wikidata has none
+ * ("filozof, sosyolog (Almanya)").
+ */
+async function turkishFacts(ids) {
+  const facts = new Map();
+  for (let k = 0; k < ids.length; k += 250) {
+    const batch = ids.slice(k, k + 250);
+    const query = {
+      raw: `SELECT ?p ?occ ?country WHERE {
+  VALUES ?p { ${batch.map((id) => `wd:${id}`).join(" ")} }
+  OPTIONAL { ?p wdt:P106 ?o . ?o rdfs:label ?occ FILTER(LANG(?occ) = "tr") }
+  OPTIONAL { ?p wdt:P27 ?c . ?c rdfs:label ?country FILTER(LANG(?country) = "tr") }
+}`,
+    };
+    let rows = [];
+    try {
+      rows = await run(query);
+    } catch (error) {
+      console.log(`  Türkçe tanıtım bilgisi alınamadı (${k}-${k + batch.length}): ${error.message}`);
+      continue;
+    }
+    for (const r of rows) {
+      const id = r.p.value.split("/").pop();
+      const fact = facts.get(id) ?? { occupations: [], countries: [] };
+      if (r.occ?.value && !fact.occupations.includes(r.occ.value)) fact.occupations.push(r.occ.value);
+      if (r.country?.value && !fact.countries.includes(r.country.value)) fact.countries.push(r.country.value);
+      facts.set(id, fact);
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return facts;
+}
+
+/** "filozof, sosyolog (Almanya)", or "" when Wikidata has no Turkish labels for either. */
+function turkishDescription(fact) {
+  if (!fact || fact.occupations.length === 0) return "";
+  const what = fact.occupations.slice(0, 3).join(", ");
+  return fact.countries.length ? `${what} (${fact.countries[0]})` : what;
+}
+
 async function buildField(name, field, dia) {
   const people = new Map();
   const skipped = [];
@@ -175,6 +230,8 @@ async function buildField(name, field, dia) {
   }
   const out = ["Kısa Ad;Tam Ad;Orijinal Ad;Vefat Tarihi;Tanıtım;Kaynak Link"];
   let skippedDia = 0;
+  const missing = [...people.values()].filter((p) => !p.trDesc).map((p) => p.id);
+  const facts = missing.length ? await turkishFacts(missing) : new Map();
   const list = [...people.values()].filter((p) => (p.tr || p.en) && p.death !== undefined && lifespan(p.birth ?? null, p.death, p.dprec) && !/^Q\d+$/.test(p.tr ?? p.en));
   list.sort((a, b) => b.links - a.links);
   for (const p of list) {
@@ -186,8 +243,9 @@ async function buildField(name, field, dia) {
     const original = p.en && p.en !== short ? p.en : "---";
     // Turkish aliases ("Aristoteles" for "Aristo") go into the full-name column, which the add-in also searches.
     const alts = [...p.alts].filter((a) => a !== short && a !== original && a.length <= 60).slice(0, 3);
-    const full = alts.length ? alts.join(" / ") : "---";
-    const description = p.trDesc ?? p.enDesc ?? "";
+    // Other Turkish spellings, separated by " | ": the add-in takes each as a name of its own.
+    const full = alts.length ? alts.join(" | ") : "---";
+    const description = p.trDesc ?? (turkishDescription(facts.get(p.id)) || p.enDesc || "");
     out.push([short, full, original, lifespan(p.birth ?? null, p.death, p.dprec ?? 0), description, `https://www.wikidata.org/wiki/${p.id}`].map(cell).join(";"));
   }
   await mkdir(new URL("../data/wikidata/", import.meta.url), { recursive: true });

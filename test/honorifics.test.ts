@@ -122,3 +122,25 @@ describe("epithets and short name + nisba", () => {
     expect(who("Gazzâlî et-Tûsî bunu savunur.")).toEqual([["Gazzâlî et-Tûsî", "Gazzâlî"]]);
   });
 });
+
+describe("Wikidata entries: initials and other spellings", () => {
+  const w = (shortName: string, fullName: string, deathDate: string, id: string): Person => ({ shortName, fullName, originalName: "---", deathDate, description: "", source: `https://www.wikidata.org/wiki/${id}` });
+  const cat = new Catalog([
+    w("Émile Durkheim", "---", "(1858-1917)", "Q15948"),
+    w("Max Weber", "---", "(1864-1920)", "Q9387"),
+    w("Wilhelm Eduard Weber", "---", "(1804-1891)", "Q76780"),
+    w("Aristo", "Aristoteles | Aristotales", "(m.ö. 384-322)", "Q868"),
+  ]);
+  const index = new NameIndex(cat.people);
+  const who = (text: string) => buildInventory([{ part: "main", anchor: 0, order: 0, text }], cat, index).map((r) => [r.text, r.person?.shortName ?? null]);
+  it("initials before a surname", () => {
+    expect(lookup(cat, "É. Durkheim").automatic?.shortName).toBe("Émile Durkheim");
+    expect(lookup(cat, "M. Weber").automatic?.shortName).toBe("Max Weber");
+    expect(lookup(cat, "Weber").candidates.length).toBe(2);
+  });
+  it("each other spelling is a name of its own", () => {
+    expect(lookup(cat, "Aristoteles").automatic?.shortName).toBe("Aristo");
+    expect(who("Bu konuda Aristoteles şöyle der.")).toEqual([["Aristoteles", "Aristo"]]);
+    expect(who("Durkheim de katılır.")).toEqual([["Durkheim", "Émile Durkheim"]]);
+  });
+});

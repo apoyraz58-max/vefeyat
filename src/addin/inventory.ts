@@ -30,6 +30,8 @@ import {
   findUnknownPeople,
   isValidDate,
   isSentenceInitial,
+  spellingVariants,
+  surnameAliases,
   EPITHET_KEYS,
   nameKey,
   nameQuery,
@@ -205,7 +207,10 @@ export function doubtfulWord(text: string, start: number, written: string, perso
   if (/\s/.test(query)) return false;
   // "Peygamber", "Mevlânâ": an epithet of one person, not an ordinary word.
   if (EPITHET_KEYS.has(nameKey(query))) return false;
-  const own = [person.shortName, naturalOrder(person.shortName)].filter((n) => n && !/\s/.test(textName(n).trim()));
+  // The person's one-word names: short name, other spellings ("Aristoteles"), a Western surname ("Durkheim").
+  const own = [person.shortName, naturalOrder(person.shortName), ...spellingVariants(person.fullName), ...surnameAliases(person.shortName, person.source)].filter(
+    (n) => n && !/\s/.test(textName(n).trim()),
+  );
   if (own.length > 0 && !own.some((n) => letters(textName(n)) === letters(query))) return true;
   // A word written with circumflexes ("Şâfiî", "Bâkî") is a transcribed name, not the ordinary word.
   if (/[âîûÂÎÛāīūĀĪŪ]/u.test(query)) return false;

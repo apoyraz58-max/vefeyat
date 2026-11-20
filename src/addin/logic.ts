@@ -55,6 +55,8 @@ export function splitTitle(alias: string): [string, string] {
  */
 export function lookup(catalog: Catalog, alias: string): Lookup {
   const first = lookupName(catalog, alias);
+  const initials = withoutInitials(catalog, alias, first);
+  if (initials) return initials;
   const [title, rest] = splitTitle(alias);
   if (!title) return first;
   // A title written before the name ("Hz. Hatice", "İmam Şâfiî"); when it is part of
@@ -62,6 +64,28 @@ export function lookup(catalog: Catalog, alias: string): Lookup {
   if (first.strong.size > 0) return first;
   const bare = lookupName(catalog, rest);
   return bare.candidates.length > 0 ? { ...bare, title } : first;
+}
+
+/**
+ * "É. Durkheim", "M. Weber", "J. M. Keynes": initials before a surname. When the
+ * name as written has no exact match, the surname is looked up and the bearers
+ * whose names have a word starting with the initial come first; a single such
+ * bearer is chosen. "F. er-Râzî" keeps its own handling (the article).
+ */
+function withoutInitials(catalog: Catalog, alias: string, first: Lookup): Lookup | null {
+  const match = /^((?:\p{Lu}\.\s*){1,3})(\p{Lu}[\p{L}’'-]+.*)$/u.exec(alias.trim());
+  if (!match || first.strong.size > 0 || /^(el|er|es|et|ez|en|ed|eş)-/i.test(match[2] as string)) return null;
+  const letters = (match[1] as string).replace(/[.\s]/g, "").split("");
+  const bare = lookupName(catalog, match[2] as string);
+  if (bare.candidates.length === 0) return null;
+  const fits = (p: Person): boolean => {
+    const words = `${p.shortName} ${p.fullName} ${p.originalName}`.split(/[\s,|]+/);
+    return letters.every((l) => words.some((w) => w.normalize("NFD").replace(/\p{M}/gu, "").startsWith(l.normalize("NFD").replace(/\p{M}/gu, ""))));
+  };
+  const fitting = bare.candidates.filter(fits);
+  if (fitting.length === 0) return bare;
+  const candidates = [...fitting, ...bare.candidates.filter((c) => !fitting.includes(c))];
+  return { ...bare, candidates, automatic: fitting.length === 1 ? (fitting[0] as Person) : bare.automatic, title: match[1] };
 }
 
 function lookupName(catalog: Catalog, alias: string): Lookup {

@@ -285,3 +285,8 @@ export function surnameAliases(shortName: string, source: string): string[] {
   if (/^(de|da|di|du|van|von|der|den|le|la|del|della|ibn|bin)$/i.test(particle)) out.push(`${particle} ${last}`);
   return out;
 }
+
+/** Other spellings kept in the full-name column, separated by " | " (Wikidata catalogs): each is a name. */
+export function spellingVariants(fullName: string): string[] {
+  return fullName.includes(" | ") ? fullName.split(" | ").map((v) => v.trim()).filter((v) => v.length >= 2) : [];
+}
