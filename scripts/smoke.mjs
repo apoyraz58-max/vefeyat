@@ -794,6 +794,26 @@ try {
   await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length > 0);
   check("a wrong written date is reported", (await tab.textContent("#inventory-summary")).includes("1 tarih uyarısı") && (await tab.textContent("#inventory-list")).includes("katalogdan farklı"), await tab.textContent("#inventory-summary"));
   await tab.close();
+  // Katalogda yok → Wikidata'da toplu ara: the names no catalog has, looked up and added in one go.
+  tab = await open("?view=dokum", "Gazzâlî der.\rDüşünür Hasan et-Türâbî bunu savundu.\rSonra düşünür Hasan et-Türâbî yine yazdı.");
+  await tab.route("https://www.wikidata.org/**", (route) => route.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify({ search: [{ id: "Q469299" }] }) }));
+  await tab.route("https://query.wikidata.org/**", (route) =>
+    route.fulfill({
+      contentType: "application/sparql-results+json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify({ results: { bindings: [{ p: { value: "http://www.wikidata.org/entity/Q469299" }, links: { value: "34" }, death: { value: "2016-03-05T00:00:00Z" }, dprec: { value: "11" }, birth: { value: "1932-02-01T00:00:00Z" }, bprec: { value: "11" }, tr: { value: "Hasan el-Turabi" }, en: { value: "Hasan al-Turabi" }, c: { value: "http://www.wikidata.org/entity/Q1049" }, ar: { value: "حسن الترابي" } }] } }),
+    }),
+  );
+  await tab.waitForFunction(() => /geçiş/.test(document.getElementById("inventory-summary")?.textContent ?? ""));
+  check("Şahıs dökümü offers Wikidata for names no catalog has", (await tab.isVisible("#wikidata-bulk")) && (await tab.textContent("#wikidata-bulk-summary")).includes("1 ad"), await tab.textContent("#wikidata-bulk-summary"));
+  await tab.click("#wikidata-bulk-search");
+  await tab.waitForSelector("#wikidata-bulk-0");
+  const proposal = await tab.$eval("#wikidata-bulk-0", (s) => s.options[s.selectedIndex]?.textContent ?? "");
+  check("a sure hit is proposed, in DİA's spelling with long vowels", proposal.startsWith("Hasan et-Turâbî (1932-2016)"), proposal);
+  await tab.click("#wikidata-bulk-add");
+  await tab.waitForFunction(() => !(document.getElementById("inventory-list")?.textContent ?? "").includes("Katalogda yok"), null, { timeout: 5000 }).catch(() => {});
+  check("the added people are found in the document", (await tab.textContent("#inventory-list")).includes("Hasan et-Turâbî") && !(await tab.textContent("#inventory-list")).includes("Katalogda yok") && (await tab.isHidden("#wikidata-bulk")), await tab.textContent("#inventory-list"));
+  await tab.close();
   // With paragraph events, a changed paragraph is read again by itself.
   tab = await open("?view=dokum", "Gazzâlî der.\rFahreddin er-Râzî der.", "", { api: ["WordApi 1.6"] });
   await tab.waitForFunction(() => document.querySelectorAll("#inventory-list li").length === 2);

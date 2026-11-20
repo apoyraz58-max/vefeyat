@@ -11,6 +11,7 @@ import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth,
 import { setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
+import { addFound, searchUnknown } from "./pane/wikidata-bulk.js";
 import { copyReport, mailReport, renderReport, watchErrors } from "./pane/report.js";
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
 import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
@@ -236,6 +237,13 @@ export function initialise(): void {
     void run(prepareBulk, "Öneriler hazırlanıyor");
   });
   $("inventory-refresh").addEventListener("click", () => void run(prepareInventory, "Şahıs dökümü hazırlanıyor"));
+  $("wikidata-bulk-search").addEventListener("click", () => void run(searchUnknown, "Wikidata'da aranıyor"));
+  $("wikidata-bulk-add").addEventListener("click", () =>
+    void run(async () => {
+      await addFound();
+      await prepareInventory();
+    }, "Kişiler ekleniyor"),
+  );
   $("inventory-act").addEventListener("click", () => void actOnRow());
   $("inventory-xlsx").addEventListener("click", exportInventory);
   $("inventory-copy").addEventListener("click", () => void copyInventory());

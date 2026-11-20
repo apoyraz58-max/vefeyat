@@ -8,6 +8,7 @@ import { readSpellings, readExclusions, readAuditBookmark, writeAuditBookmark, r
 
 import { $, PAGE_SIZE, loadSettings, noteCounts, placeOfRow, run, setMessage, showView, state, versions, progress, ensureIndex } from "./core.js";
 import { refresh } from "./selected.js";
+import { renderBulkOffer } from "./wikidata-bulk.js";
 
 export async function prepareInventory(): Promise<void> {
   if (!state.catalog) {
@@ -28,6 +29,7 @@ export async function prepareInventory(): Promise<void> {
     (sum.dateIssues ? ` · ${sum.dateIssues} tarih uyarısı` : "") +
     (read.footnotes ? ` · okunan: ${noteCounts(read.segments)}` : " · Bu Word sürümünde dipnot ve sonnotlar okunamıyor");
   renderInventory();
+  renderBulkOffer();
 }
 
 /** The rows the Şahıs dökümü süzgeci and the name search leave. */

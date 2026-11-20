@@ -281,6 +281,12 @@ kişileri tarihleriyle listeler. Doğru kişide **Ekle ve seç** deyin: kişi ke
 seçilir. Wikidata'ya yalnız seçili ad gönderilir; belge metni gönderilmez. İnternet
 bağlantısı gerekir.
 
+**Wikidata'da toplu ara:** Şahıs dökümünde hiçbir katalogda olmayan adlar varsa altta
+**Katalogda yok** bölümü çıkar. **Wikidata'da toplu ara** en sık geçen 40 adı sırayla
+arar; her ad için ölüm tarihi bilinen kişiler (DİA yazımıyla) bir listede önerilir. Adın
+bütün kelimelerini taşıyan öneri kendiliğinden seçili gelir, öbürleri "Eklenmesin" ile
+bekler; doğru kişileri seçip **Seçilenleri kendi şahıslarıma ekle** deyin, döküm yenilenir.
+
 **Tercihleri dışa aktar / al:** ayarlar, yazım tercihleri, istisnalar, kimlik
 onayları ve kendi şahıslarınız bir dosyada; başka bir tezde aynen kullanılabilir.
 

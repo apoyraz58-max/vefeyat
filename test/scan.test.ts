@@ -140,3 +140,13 @@ describe("citation islands", () => {
     expect(citationSpans(text, [[0, 7, "Gazzâlî"]])).toEqual([]);
   });
 });
+
+describe("a title at the start of a sentence", () => {
+  it("is not part of the name", async () => {
+    const { Catalog: C, NameIndex: N, findMatches: f } = await import("../src/core/index.js");
+    const index = await N.build(C.fromCsv("Kısa Ad;Tam Ad;Orijinal Ad;Vefat Tarihi;Tanıtım;Kaynak Link\r\nGazzâlî;---;---;(ö. 505/1111);;https://islamansiklopedisi.org.tr/gazzali").people);
+    for (const text of ["Düşünür Gazzâlî der.", "Filozof Gazzâlî der.", "Tarihçi Gazzâlî der.", "Bunu düşünür Gazzâlî der."]) {
+      expect(f(text, index, true).map((m) => m.text)).toEqual(["Gazzâlî"]);
+    }
+  });
+});

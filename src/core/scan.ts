@@ -402,6 +402,12 @@ export function findMatches(text: string, index: NameIndex, strict = false, cita
   let i = 0;
   while (i < tokens.length) {
     const firstToken = tokens[i] as Token;
+    // A title capitalised at the start of a sentence ("Düşünür Hasan et-Türâbî", "Filozof Gazzâlî")
+    // is not part of the name: the name run starts after it.
+    if (strict && ROLES.has(firstToken.key) && i + 1 < tokens.length && initialUpper(text.slice((tokens[i + 1] as Token).start, (tokens[i + 1] as Token).start + 1))) {
+      i++;
+      continue;
+    }
     const first = firstToken.start;
     let key = "";
     let plainKey = ""; // the same without "el-/er-…": "Ebû Bekir er-Râzî" ~ "Ebû Bekir Râzî"
