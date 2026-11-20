@@ -225,9 +225,9 @@ DİA'nın yanında altı alan kataloğu da **ilk açılıştan itibaren kendili�
 
 | Katalog | Kişi |
 |---|---|
-| Sosyoloji ve felsefe | 6.556 |
+| Sosyoloji ve felsefe | 6.566 |
 | Osmanlı-Türk tarihi | 6.839 |
-| Edebiyat | 4.636 |
+| Edebiyat | 4.643 |
 | İktisat ve siyaset | 5.876 |
 | Çağdaş İslâm dünyası | 7.837 |
 | Bilim ve tıp | 5.083 |
