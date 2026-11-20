@@ -229,7 +229,7 @@ DİA'nın yanında altı alan kataloğu da **ilk açılıştan itibaren kendili�
 | Osmanlı-Türk tarihi | 6.839 |
 | Edebiyat | 4.636 |
 | İktisat ve siyaset | 5.425 |
-| Çağdaş İslâm dünyası | 7.838 |
+| Çağdaş İslâm dünyası | 7.837 |
 | Bilim ve tıp | 5.083 |
 
 Seçiminiz bu bilgisayarda hatırlanır. Bir kişi DİA'da da varsa **DİA kaydı
