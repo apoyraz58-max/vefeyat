@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { Catalog, arabicSkeleton, buildSpellingStandard, onlyAdds, parseCatalogCsv, spellingKey, standardName, standardPerson, wantsStandard } from "../src/core/index.js";
+import { Catalog, arabicSkeleton, buildSpellingStandard, longVowels, pairWords, wantsLongVowels, onlyAdds, parseCatalogCsv, spellingKey, standardName, standardPerson, wantsStandard } from "../src/core/index.js";
 
 const dia = (short: string, full = "---") => ({ shortName: short, fullName: full, originalName: "", deathDate: "(ö. 1900)", description: "", source: `https://islamansiklopedisi.org.tr/${spellingKey(short)}` });
 const small = buildSpellingStandard([
@@ -89,5 +89,40 @@ describe("standart yazım (DİA esas)", () => {
     expect(standardName("Hamid Abbas", table, 0.5, "حامد عباس")).toBe("Hâmid Abbas");
     // Without the Arabic word, the two names are not guessed between.
     expect(standardName("Hamid Abbas", table)).toBe("Hamid Abbas");
+  });
+
+  it("reads long vowels from the Arabic spelling of a word DİA does not have", () => {
+    expect(longVowels("Turabi", "الترابي")).toBe("Turâbî");
+    expect(longVowels("Kardavi", "القرضاوي")).toBe("Kardâvî");
+    expect(longVowels("Suveydan", "السويدان")).toBe("Suveydân");
+    expect(longVowels("Turabi", "محمد")).toBeNull(); // not the same word
+    const real = buildSpellingStandard(parseCatalogCsv(readFileSync(new URL("../data/catalog.csv", import.meta.url), "utf8")));
+    expect(standardName("Hasan el-Turabi", real, 0.5, "حسن الترابي", true)).toBe("Hasan et-Turâbî");
+    expect(standardName("Hasan el-Turabi", real, 0.5, "حسن الترابي")).toBe("Hasan et-Turabi"); // only where asked
+    expect(wantsLongVowels(["Q1049"])).toBe(true);
+    expect(wantsLongVowels(["Q227"])).toBe(false); // Azerbaijan: Turkic names
+  });
+
+  it("writes rare Arabic words of DİA's own names as DİA does (at least 90%)", () => {
+    const people = parseCatalogCsv(readFileSync(new URL("../data/catalog.csv", import.meta.url), "utf8"));
+    const freq = new Map<string, number>();
+    for (const p of people) for (const w of `${p.shortName} ${p.fullName}`.split(/\s+/)) freq.set(spellingKey(w.replace(/^[a-zşü]{2}-/, "")), (freq.get(spellingKey(w.replace(/^[a-zşü]{2}-/, ""))) ?? 0) + 1);
+    let decided = 0;
+    let right = 0;
+    for (const p of people) {
+      if (p.shortName.includes(",")) continue;
+      for (const [latin, arabic] of pairWords(p.shortName, p.originalName) ?? []) {
+        const word = latin.replace(/^[a-zşü]{2}-/, "");
+        if (!/^\p{Lu}/u.test(word) || (freq.get(spellingKey(word)) ?? 0) > 2) continue;
+        const dia = word.normalize("NFC").replace(/ā/g, "â").replace(/ī/g, "î").replace(/ū/g, "û").replace(/[‘’ʿʾ]/g, "");
+        const plain = dia.normalize("NFD").replace(/\u0302/g, "").normalize("NFC");
+        const got = longVowels(plain, arabic);
+        if (got === null) continue;
+        decided++;
+        if (got === dia) right++;
+      }
+    }
+    expect(decided).toBeGreaterThan(500);
+    expect(right / decided).toBeGreaterThan(0.9);
   });
 });

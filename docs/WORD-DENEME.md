@@ -248,6 +248,11 @@ el-Turabi" → "Hasan et-Turabi". Kelime yazımları DİA kataloğunun kendisind
 DİA bir kelimeyi açıkça bir biçimde yazıyorsa o biçim alınır ("Yusuf" → "Yûsuf"); iki
 türlü yazdığı ("Ali" / "Alî") ya da hiç geçmeyen kelimeler olduğu gibi kalır. Harf-i tarif
 DİA'daki gibi okunuşa uyar (et-, er-, eş-, en-…), adlar arasındaki "bin/ibn" "b." olur.
+DİA'nın hiç kullanmadığı kelimelerde, Arap ülkeleri, İran, Afganistan ve Pakistan
+şahısları için uzun ünlüler kişinin Arapça adından okunur: elif üstündeki "a" "â", yâ
+üstündeki "i" "î", vâv üstündeki "u" "û" olur ("Turabi", الترابي → "Turâbî"). Bu
+yöntem DİA'nın kendi kayıtlarında denendi; nadir Arapça kelimelerin %95'ini DİA gibi
+yazıyor. Türk-Moğol adlarında kısa ünlüler de harfle yazıldığı için orada kullanılmaz.
 Yalnız işaret eklenir (â, î, û, ü, ‘); bir harf silinmez ya da değişmez. Wikidata'daki
 yazım da kişinin adlarından biri olarak kalır; metinde o biçimde yazılmışsa da bulunur.
 Batılılar, Cumhuriyet dönemi Türkler ve öteki ülkelerin şahısları bilinen yazımlarıyla

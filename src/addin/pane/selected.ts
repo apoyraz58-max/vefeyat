@@ -3,7 +3,7 @@ import { isLocal } from "../persons.js";
 import { applyLocalPersons, fillLocalForm, renderLocals } from "./catalog.js";
 import { type WikidataHit, searchWikidata } from "../wikidata-live.js";
 import { upsertLocal, validateLocal } from "../persons.js";
-import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, normalize, diaStandard, standardName, wantsStandard, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
+import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, normalize, diaStandard, standardName, wantsLongVowels, wantsStandard, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { sourceLabel, addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
 import { type InventoryRow, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
@@ -265,7 +265,7 @@ function showWikidataHits(results: HTMLElement, alias: string, hits: WikidataHit
 function standardLabel(hit: WikidataHit): string {
   const base = state.baseCatalog;
   if (!base || !wantsStandard(hit.countries, hit.deathYear)) return hit.label;
-  return standardName(hit.label, diaStandard(base.people), 0.5, hit.arabic);
+  return standardName(hit.label, diaStandard(base.people), 0.5, hit.arabic, wantsLongVowels(hit.countries));
 }
 
 async function addWikidataHit(alias: string, hit: WikidataHit): Promise<void> {

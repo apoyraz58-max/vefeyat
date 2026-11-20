@@ -156,13 +156,92 @@ export function onlyAdds(written: string, form: string): boolean {
   return a.every((ch, k) => ch === b[k] || (ADDS[ch] ?? "").includes(b[k] ?? ""));
 }
 
-function standardWord(word: string, standard: SpellingStandard, arabic = ""): string {
+function standardWord(word: string, standard: SpellingStandard, arabic = "", long = false): string {
   if (!/^\p{Lu}/u.test(word) || NOT_ARABIC.has(spellingKey(word))) return word;
   const key = spellingKey(word);
   const paired = arabic ? standard.arabic.get(`${key}|${arabicSkeleton(arabic)}`) : undefined;
   // Without the Arabic word, a key DİA uses for two different names is not guessed.
   const form = paired ?? (standard.split.has(key) ? "" : standard.forms.get(key));
-  return form && onlyAdds(word, form) ? form : word;
+  if (form && onlyAdds(word, form)) return form;
+  // A word DİA does not have: its long vowels read from the Arabic spelling ("Turabi", الترابي → "Turâbî").
+  if (long && arabic && form === undefined) {
+    const lengthened = longVowels(word, arabic);
+    if (lengthened && onlyAdds(word, lengthened)) return lengthened;
+  }
+  return word;
+}
+
+/** Latin consonants and the Arabic letters each may stand for. */
+const CONSONANTS: Record<string, string> = {
+  b: "ب", p: "پب", t: "تطة", s: "سصث", c: "ج", ç: "چج", h: "هحخ", d: "دض", z: "زذظض", r: "ر", ş: "ش", g: "غقگ", ğ: "غ",
+  f: "ف", k: "كقخ", l: "ل", m: "م", n: "ن", v: "و", y: "ي", j: "ژج",
+};
+const VOWELS = "aeiıoöuü";
+/** Hamza seats and the ayn: written in Arabic, silent in the Latin word. */
+const SILENT = "عءئؤ";
+
+/**
+ * The long vowels of a Latin word read from its Arabic spelling: an "a" over
+ * an alif is "â", an "i" over a yâ "î", a "u" over a vâv "û" ("Turabi" +
+ * الترابي → "Turâbî"). Null when the two do not line up letter by letter.
+ * Measured on DİA's own short names, it writes 95% of the rare Arabic words as
+ * DİA does; Turkic names (whose short vowels Arabic letters also show) are
+ * left to the callers, who use it only for the Arab world, Iran, Afghanistan
+ * and Pakistan.
+ */
+export function longVowels(word: string, arabicWord: string): string | null {
+  let a = arabicWord
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[أإٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/[ىی]/g, "ي")
+    .replace(/ک/g, "ك");
+  if (a.length > 3 && a.startsWith("ال")) a = a.slice(2);
+  const letters = [...word.normalize("NFC")];
+  const lower = letters.map((ch) => ch.toLocaleLowerCase("tr"));
+  const out: string[] = [];
+  let j = 0;
+  for (let i = 0; i < letters.length; i++) {
+    const ch = lower[i] as string;
+    const written = letters[i] as string;
+    const next = a[j] ?? "";
+    if (VOWELS.includes(ch)) {
+      const upper = written !== ch;
+      if (next === "آ" && (ch === "a" || ch === "e")) {
+        out.push(upper ? "Â" : "â");
+        j++;
+      } else if (i === 0 && (next === "ا" || next === "ع")) {
+        out.push(written);
+        j++;
+      } else if (next === "ا" && (ch === "a" || ch === "e")) {
+        out.push(upper ? "Â" : "â");
+        j++;
+      } else if (next === "ي" && (ch === "i" || ch === "ı") && lower[i + 1] !== "y") {
+        out.push(upper ? "Î" : "î");
+        j++;
+      } else if (next === "و" && "uüoö".includes(ch) && lower[i + 1] !== "v") {
+        out.push(upper ? "Û" : "û");
+        j++;
+      } else {
+        if (SILENT.slice(1).includes(next)) j++;
+        out.push(written);
+      }
+      continue;
+    }
+    const options = CONSONANTS[ch];
+    if (!options) return null;
+    while (j < a.length && SILENT.includes(a[j] as string) && !options.includes(a[j] as string)) j++;
+    if (j >= a.length || !options.includes(a[j] as string)) return null;
+    j++;
+    out.push(written);
+    // A doubled consonant is one Arabic letter (with shadda).
+    if (lower[i + 1] === ch) {
+      out.push(letters[i + 1] as string);
+      i++;
+    }
+  }
+  while (j < a.length && (SILENT + "ه").includes(a[j] as string)) j++;
+  return j === a.length ? out.join("") : null;
 }
 
 /** Words that look like DİA's but name someone else: the Greek "Mihail" is not the Arabic "Mîhâîl". */
@@ -172,7 +251,7 @@ const NOT_ARABIC = new Set(["mihail"]);
  * The name in DİA's spelling. Only a name at least `share` of whose words DİA
  * has (an article or "bin" counts) is rewritten: "Mihail Attaleiates" stays.
  */
-export function standardName(name: string, standard: SpellingStandard, share = 0.5, arabicName = ""): string {
+export function standardName(name: string, standard: SpellingStandard, share = 0.5, arabicName = "", long = false): string {
   const words = name.split(" ");
   const names = words.filter((w) => /^\p{Lu}/u.test(w) || ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w));
   const known = names.filter((w) => ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w) || (standard.forms.has(spellingKey(w)) && !NOT_ARABIC.has(spellingKey(w))));
@@ -193,13 +272,13 @@ export function standardName(name: string, standard: SpellingStandard, share = 0
     const lower = word.toLocaleLowerCase("tr");
     const withArticle = ARTICLE.exec(word);
     if (withArticle && withArticle[1]) {
-      const core = standardWord(withArticle[1].charAt(0).toLocaleUpperCase("tr") + withArticle[1].slice(1), standard, arabicOf.get(index));
+      const core = standardWord(withArticle[1].charAt(0).toLocaleUpperCase("tr") + withArticle[1].slice(1), standard, arabicOf.get(index), long);
       // DİA does not begin a short name with the article: "Ad-Dardir" is "Dardir".
       out.push(index === 0 ? core : article(core) + core);
     } else if (index > 0 && index < words.length - 1 && (lower === "bin" || lower === "ibn" || lower === "ibni")) {
       out.push("b.");
     } else {
-      out.push(standardWord(word, standard, arabicOf.get(index)));
+      out.push(standardWord(word, standard, arabicOf.get(index), long));
     }
   });
   return out.join(" ");
@@ -220,6 +299,20 @@ export const STANDARD_COUNTRIES: ReadonlySet<string> = new Set([
 ]);
 export const OTTOMAN = "Q12560";
 const OTTOMAN_UNTIL = 1928;
+
+/**
+ * Where long vowels may be read from the Arabic spelling of a word DİA does not
+ * have: the Arab world, Iran, Afghanistan, Pakistan. (Turkic names write their
+ * short vowels with letters too, so not there.)
+ */
+export const LONG_VOWEL_COUNTRIES: ReadonlySet<string> = new Set([
+  "Q262", "Q398", "Q970", "Q977", "Q79", "Q796", "Q810", "Q817", "Q822", "Q1016", "Q1025", "Q1028", "Q842", "Q219060",
+  "Q846", "Q851", "Q1045", "Q1049", "Q858", "Q948", "Q878", "Q805", "Q193714", "Q794", "Q889", "Q843",
+]);
+
+export function wantsLongVowels(countries: readonly string[]): boolean {
+  return countries.some((c) => LONG_VOWEL_COUNTRIES.has(c));
+}
 
 export function wantsStandard(countries: readonly string[], deathYear: number | null): boolean {
   if (countries.some((c) => STANDARD_COUNTRIES.has(c))) return true;

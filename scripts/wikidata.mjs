@@ -250,7 +250,7 @@ async function turkishFacts(ids) {
     };
     let rows = [];
     try {
-      rows = await run(query);
+      rows = await cached(query);
     } catch (error) {
       console.log(`  Türkçe tanıtım bilgisi alınamadı (${k}-${k + batch.length}): ${error.message}`);
       continue;
@@ -307,7 +307,7 @@ async function spellingStandard() {
   const core = await import(outfile.href);
   const dia = core.parseCatalogCsv(await readFile(new URL("../data/catalog.csv", import.meta.url), "utf8"));
   const table = core.buildSpellingStandard(dia);
-  standardTools = { wants: (countries, death) => core.wantsStandard(countries, death ?? null), name: (n, arabic) => core.standardName(n, table, 0.5, arabic ?? "") };
+  standardTools = { wants: (countries, death) => core.wantsStandard(countries, death ?? null), name: (n, arabic, countries = []) => core.standardName(n, table, 0.5, arabic ?? "", core.wantsLongVowels(countries)) };
   return standardTools;
 }
 
@@ -365,7 +365,7 @@ async function buildField(name, field, dia) {
   for (const p of list) {
     const written = p.tr ?? p.en;
     // Names of the Muslim world and of Ottoman subjects in DİA's spelling; Wikidata's is kept among the names.
-    const short = p.standard || standard.wants([...p.countries], p.death) ? standard.name(written, arabic.get(p.id)) : written;
+    const short = p.standard || standard.wants([...p.countries], p.death) ? standard.name(written, arabic.get(p.id), [...p.countries]) : written;
     if (p.dia || [written, short, p.en].some((n) => n && dia.has(`${fold(n)}|${p.death}`))) {
       skippedDia++;
       continue;
