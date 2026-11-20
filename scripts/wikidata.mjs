@@ -246,7 +246,7 @@ async function buildField(name, field, dia) {
     // Other Turkish spellings, separated by " | ": the add-in takes each as a name of its own.
     const full = alts.length ? alts.join(" | ") : "---";
     const description = p.trDesc ?? (turkishDescription(facts.get(p.id)) || p.enDesc || "");
-    out.push([short, full, original, lifespan(p.birth ?? null, p.death, p.dprec ?? 0), description, `https://www.wikidata.org/wiki/${p.id}`].map(cell).join(";"));
+    out.push([short, full, original, lifespan(p.birth ?? null, p.death, p.dprec ?? 0), description, `https://www.wikidata.org/wiki/${p.id}#${p.links}`].map(cell).join(";"));
   }
   await mkdir(new URL("../data/wikidata/", import.meta.url), { recursive: true });
   await writeFile(new URL(`../data/wikidata/${name}.csv`, import.meta.url), "﻿" + out.join("\r\n") + "\r\n");
@@ -265,8 +265,30 @@ async function buildField(name, field, dia) {
   await writeFile(indexUrl, JSON.stringify(index, null, 2) + "\n");
 }
 
-// node scripts/wikidata.mjs --index: rewrite data/wikidata/index.json from the CSV files present.
-if (process.argv[2] === "--index") {
+// node scripts/wikidata.mjs --links: add the notability (#sitelinks) to the links of existing files.
+if (process.argv[2] === "--links") {
+  for (const name of Object.keys(FIELDS)) {
+    const url = new URL(`../data/wikidata/${name}.csv`, import.meta.url);
+    let text;
+    try {
+      text = await readFile(url, "utf8");
+    } catch {
+      continue;
+    }
+    const lines = text.replace(/^\ufeff/, "").split(/\r?\n/).filter((l) => l.trim());
+    const ids = lines.slice(1).map((l) => /wiki\/(Q\d+)(?:#\d+)?\s*$/.exec(l)?.[1]).filter(Boolean);
+    const links = new Map();
+    for (let k = 0; k < ids.length; k += 400) {
+      const batch = ids.slice(k, k + 400);
+      const rows = await run({ raw: `SELECT ?p ?n WHERE { VALUES ?p { ${batch.map((id) => `wd:${id}`).join(" ")} } ?p wikibase:sitelinks ?n . }` });
+      for (const r of rows) links.set(r.p.value.split("/").pop(), r.n.value);
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    const out = [lines[0], ...lines.slice(1).map((l) => l.replace(/wiki\/(Q\d+)(?:#\d+)?\s*$/, (m, id) => `wiki/${id}${links.has(id) ? `#${links.get(id)}` : ""}`))];
+    await writeFile(url, "\ufeff" + out.join("\r\n") + "\r\n");
+    console.log(`${name}: ${links.size} / ${ids.length} kişiye tanınırlık eklendi`);
+  }
+} else if (process.argv[2] === "--index") {
   const index = [];
   for (const [name, field] of Object.entries(FIELDS)) {
     let text;

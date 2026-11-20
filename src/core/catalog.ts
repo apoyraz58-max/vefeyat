@@ -309,9 +309,37 @@ export function singleSafe(candidates: readonly Person[], query: string): boolea
 
 /** The candidate singleSafe accepts (the only one, or the only exact one). */
 export function safeCandidate(candidates: readonly Person[], query: string): Person | null {
-  if (!singleSafe(candidates, query)) return null;
-  if (candidates.length === 1) return candidates[0] as Person;
-  return candidates.find((c) => strength(c, query) >= 4) ?? null;
+  if (singleSafe(candidates, query)) {
+    if (candidates.length === 1) return candidates[0] as Person;
+    const exact = candidates.find((c) => strength(c, query) >= 4);
+    if (exact) return exact;
+  }
+  return notableCandidate(candidates, query);
+}
+
+/**
+ * Wikidata entries carry their notability (number of Wikipedia articles) in the
+ * link: "https://www.wikidata.org/wiki/Q9312#200". Among bearers of the same
+ * name ("Kant": Immanuel, Edgar …) one far better known than every other is
+ * meant. Only when every exact candidate is a Wikidata entry: DİA's are never
+ * outranked this way.
+ */
+export function notability(person: Person): number | null {
+  const match = /^https:\/\/www\.wikidata\.org\/wiki\/Q\d+#(\d+)$/.exec(person.source);
+  return match ? Number(match[1]) : null;
+}
+
+function notableCandidate(candidates: readonly Person[], query: string): Person | null {
+  const exact = candidates.filter((c) => strength(c, query) >= 3);
+  if (exact.length < 2) return null;
+  const known = exact.map((c) => ({ c, n: notability(c) }));
+  // DİA (or another catalog) beside Wikidata namesakes: the single non-Wikidata bearer is meant.
+  const others = known.filter((k) => k.n === null);
+  if (others.length === 1 && !(others[0] as { c: Person }).c.source.startsWith("https://www.wikidata.org/")) return (others[0] as { c: Person }).c;
+  if (others.length > 0) return null;
+  known.sort((a, b) => (b.n as number) - (a.n as number));
+  const [top, next] = known as [{ c: Person; n: number }, { c: Person; n: number }];
+  return top.n >= 40 && top.n >= 4 * next.n ? top.c : null;
 }
 
 function uniqueByKey(people: Iterable<Person>): Person[] {

@@ -144,3 +144,15 @@ describe("Wikidata entries: initials and other spellings", () => {
     expect(who("Durkheim de katılır.")).toEqual([["Durkheim", "Émile Durkheim"]]);
   });
 });
+
+describe("notability among Wikidata namesakes", () => {
+  const w = (shortName: string, id: string, links: number): Person => ({ shortName, fullName: "---", originalName: "---", deathDate: "(1724-1804)", description: "", source: `https://www.wikidata.org/wiki/${id}#${links}` });
+  it("one far better known bearer is chosen; close ones stay a choice; DİA is never outranked", () => {
+    const cat = new Catalog([w("Immanuel Kant", "Q9312", 200), w("Edgar Kant", "Q123", 9)]);
+    expect(lookup(cat, "Kant").automatic?.shortName).toBe("Immanuel Kant");
+    const close = new Catalog([w("Max Weber", "Q9387", 120), w("Alfred Weber", "Q61", 45)]);
+    expect(lookup(close, "Weber").automatic).toBeNull();
+    const withDia = new Catalog([w("Immanuel Kant", "Q9312", 200), { ...w("Kant", "Q1", 0), source: "https://islamansiklopedisi.org.tr/kant" }]);
+    expect(lookup(withDia, "Kant").automatic?.source).toBe("https://islamansiklopedisi.org.tr/kant");
+  });
+});
