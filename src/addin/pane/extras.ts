@@ -5,7 +5,7 @@
  * authoritative: an entry with the same name and death year as a DİA entry is
  * left out. The choice is kept in this browser.
  */
-import { Catalog, type Person, normalize } from "../../core/index.js";
+import { Catalog, normalize } from "../../core/index.js";
 import { $, setMessage, state } from "./core.js";
 
 export interface ExtraCatalog {
@@ -17,7 +17,7 @@ export interface ExtraCatalog {
 
 const CHOICE_KEY = "vefeyat.extraCatalogs";
 let available: ExtraCatalog[] | null = null;
-const loaded = new Map<string, readonly Person[]>();
+const loaded = new Map<string, Catalog>();
 
 /**
  * The chosen extra catalogs. Until the user changes the choice every catalog is
@@ -54,33 +54,38 @@ export async function availableExtras(): Promise<ExtraCatalog[]> {
   return available;
 }
 
-async function people(extra: ExtraCatalog): Promise<readonly Person[]> {
+async function load(extra: ExtraCatalog): Promise<Catalog> {
   const known = loaded.get(extra.id);
   if (known) return known;
   const response = await fetch(extra.file, { cache: "no-cache" });
   if (!response.ok) throw new Error(`${extra.title} indirilemedi (${response.status}).`);
-  const list = Catalog.fromCsv(await response.text()).people;
-  loaded.set(extra.id, list);
-  return list;
+  const catalog = Catalog.fromCsv(await response.text());
+  loaded.set(extra.id, catalog);
+  // One catalog at a time: the window gets a moment between them.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return catalog;
 }
 
 const lastYear = (date: string): string => (date.match(/\d{1,4}/g) ?? []).pop() ?? "";
 const key = (name: string, date: string): string => `${normalize(name.includes(",") ? `${name.split(",")[1]} ${name.split(",")[0]}` : name).replace(/ /g, "")}|${lastYear(date)}`;
 
-/** The chosen extra catalogs' people, without those the base catalog (DİA) already has. */
-export async function extraPeople(base: Catalog): Promise<Person[]> {
+/** The chosen extra catalogs, without the people the base catalog (DİA) or an earlier extra already has. */
+export async function extraCatalogs(base: Catalog): Promise<Catalog[]> {
   const ids = new Set(await chosenExtras());
   const list = (await availableExtras()).filter((e) => ids.has(e.id));
   if (list.length === 0) return [];
   const taken = new Set(base.people.map((p) => key(p.shortName, p.deathDate)));
-  const out: Person[] = [];
+  const out: Catalog[] = [];
   for (const extra of list) {
-    for (const person of await people(extra)) {
-      const k = key(person.shortName, person.deathDate);
-      if (taken.has(k)) continue;
-      taken.add(k);
-      out.push(person);
-    }
+    const catalog = await load(extra);
+    out.push(
+      catalog.without((person) => {
+        const k = key(person.shortName, person.deathDate);
+        if (taken.has(k)) return true;
+        taken.add(k);
+        return false;
+      }),
+    );
   }
   return out;
 }

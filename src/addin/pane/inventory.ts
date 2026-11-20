@@ -6,7 +6,7 @@ import { type InventoryFilter, type InventoryRow, FILTER_LABELS, buildInventoryA
 import { parseBookmark, resumeIndex, rowKey } from "../bulk.js";
 import { readSpellings, readExclusions, readAuditBookmark, writeAuditBookmark, readConfirmations, readDocument, documentVersion, selectMention, documentName } from "../word.js";
 
-import { $, PAGE_SIZE, loadSettings, noteCounts, placeOfRow, run, setMessage, showView, state, versions, progress } from "./core.js";
+import { $, PAGE_SIZE, loadSettings, noteCounts, placeOfRow, run, setMessage, showView, state, versions, progress, ensureIndex } from "./core.js";
 import { refresh } from "./selected.js";
 
 export async function prepareInventory(): Promise<void> {
@@ -16,9 +16,9 @@ export async function prepareInventory(): Promise<void> {
   }
   $("inventory-summary").textContent = "Döküm hazırlanıyor…";
   const read = await readDocument();
-  state.index ??= new NameIndex(state.catalog.people);
+  await ensureIndex();
   state.segments = read.segments;
-  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index ?? undefined, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.page = 0;
   state.selectedRow = null;
@@ -125,9 +125,9 @@ export async function startAudit(): Promise<void> {
   }
   setMessage("Belge taranıyor…", "info");
   const read = await readDocument();
-  state.index ??= new NameIndex(state.catalog.people);
+  await ensureIndex();
   state.segments = read.segments;
-  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index ?? undefined, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.audit = auditRows(state.rows, state.settings);
   state.auditAt = 0;
@@ -154,9 +154,9 @@ export async function resumeAudit(): Promise<void> {
     return;
   }
   const read = await readDocument();
-  state.index ??= new NameIndex(state.catalog.people);
+  await ensureIndex();
   state.segments = read.segments;
-  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index ?? undefined, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   state.audit = auditRows(state.rows, state.settings);
   const at = resumeIndex(state.audit, state.segments, bookmark);

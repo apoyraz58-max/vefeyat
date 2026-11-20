@@ -4,7 +4,7 @@ import { SETTING_CHOICES, dateTag } from "../logic.js";
 import { DATE_TAG_PREFIX, HEALTH_LABEL, type HealthRow, TagIndex, checkControls, repairText, repairable } from "../health.js";
 import { readDateSpacing, fixDateSpacing, type SpacingIssue, removeEmptyDateControls, removeEmptyDateControlsIn, countLegacyDates, convertLegacyDates, readDateControls, selectDateControl, selectedDateControl, writeDateControl, readSettings, refreshSettings } from "../word.js";
 
-import { $, logHistory, markSelected, progress, run, setMessage, state } from "./core.js";
+import { $, logHistory, markSelected, progress, run, setMessage, state, ensureIndex } from "./core.js";
 
 // ---- Belge sağlığı ve Tarihin kaynağı ----
 
@@ -122,8 +122,9 @@ export async function convertLegacy(): Promise<void> {
     setMessage("Katalog yüklenmedi.", "warning");
     return;
   }
-  state.index ??= new NameIndex(state.catalog.people);
-  const result = await convertLegacyDates(state.index, (person) => (person ? dateTag(person) : `${DATE_TAG_PREFIX}00000000`), progress("VBA tarihleri dönüştürülüyor"));
+  const index = await ensureIndex();
+  if (!index) return;
+  const result = await convertLegacyDates(index, (person) => (person ? dateTag(person) : `${DATE_TAG_PREFIX}00000000`), progress("VBA tarihleri dönüştürülüyor"));
   logHistory("repair", `${result.converted} VBA tarihi dönüştürüldü`);
   await checkHealth();
   setMessage(

@@ -7,7 +7,7 @@ import { exportPrefs, mergePrefs, parsePrefs } from "../prefs.js";
 import { writeSetting, readSpellings, writeSpellings, toggleDateFrames, readCoverage, readExclusions, writeExclusions, selectDateControl, replaceDateAfterSelection, canSkipProofing, skipProofing, insertDate, readConfirmations, readDocument, documentVersion, replaceSelection, selectMention, writeConfirmations, readLocalPersons, writeLocalPersons, removeDateAfter, hasPendingChanges, documentRead, watchDocument } from "../word.js";
 
 import { applyLocalPersons } from "./catalog.js";
-import { $, documentRows, history, loadSettings, logHistory, markSelected, placeOfRow, progress, run, setMessage, state, versions } from "./core.js";
+import { $, documentRows, history, loadSettings, logHistory, markSelected, placeOfRow, progress, run, setMessage, state, versions, ensureIndex } from "./core.js";
 
 export function renderHistory(): void {
   $("history-summary").textContent = history.length
@@ -50,9 +50,9 @@ export async function prepareBulk(): Promise<void> {
   }
   $("bulk-summary").textContent = "Öneriler hazırlanıyor…";
   const read = await readDocument();
-  state.index ??= new NameIndex(state.catalog.people);
+  await ensureIndex();
   state.segments = read.segments;
-  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index ?? undefined, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   versions.rowsBuiltFor = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   suggestions = bulkSuggestions(state.rows, state.settings, readSpellings());
   bulkChosen.clear();

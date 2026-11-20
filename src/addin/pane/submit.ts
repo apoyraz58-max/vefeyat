@@ -4,7 +4,7 @@ import { buildInventoryAsync } from "../inventory.js";
 import { consistencyReport, indexRows, personReportDocx, toBase64 } from "../submit.js";
 import { buildPageIndex, canReadPages, StepError, readSpellings, readExclusions, buildIndex, removeIndexMarks, canIndex, documentName, finalizeDocument, removeIndex, openNewDocument, readConfirmations, readDocument } from "../word.js";
 
-import { $, logHistory, progress, run, setMessage, state } from "./core.js";
+import { $, logHistory, progress, run, setMessage, state, ensureIndex } from "./core.js";
 
 // ---- Teslim ve dizin ----
 
@@ -38,8 +38,8 @@ export async function createPersonReport(): Promise<void> {
     return;
   }
   const read = await readDocument();
-  state.index ??= new NameIndex(state.catalog.people);
-  const rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
+  await ensureIndex();
+  const rows = await buildInventoryAsync(read.segments, state.catalog, state.index ?? undefined, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"));
   await openNewDocument(toBase64(personReportDocx(documentName(), rows)));
   setMessage("Şahıs raporu yeni bir Word belgesi olarak açıldı.", "success");
 }
@@ -56,9 +56,9 @@ export async function createIndex(): Promise<void> {
   const read = await readDocument(progress("Belge okunuyor (dipnotlar)")).catch((error: unknown) => {
     throw new StepError("Belge okunamadı", error);
   });
-  state.index ??= new NameIndex(state.catalog.people);
+  await ensureIndex();
   const withNotes = $<HTMLInputElement>("index-notes").checked;
-  const rows = indexRows(await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"))).filter(
+  const rows = indexRows(await buildInventoryAsync(read.segments, state.catalog, state.index ?? undefined, readConfirmations(), readExclusions(), readSpellings(), progress("Şahıslar taranıyor"))).filter(
     (r) => withNotes || r.part === "main",
   );
   if (rows.length === 0) {

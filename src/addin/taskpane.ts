@@ -6,7 +6,7 @@ import { GO_FUNCTIONS, goQuery, register, registerSettingCommands } from "./acti
 import { onParagraphsEdited, watchDocument, canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
 
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals, loadExtras, showExtras } from "./pane/catalog.js";
-import { $, PAGE_SIZE, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
+import { $, PAGE_SIZE, ensureIndex, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
@@ -283,6 +283,9 @@ export function initialise(): void {
     .then(() => refresh())
     .catch(() => undefined);
   void ready.then(() => launch(request)).then(() => tidyEmptyDates());
+  // The name index is built in the background as soon as the catalog is ready: the first
+  // Ölüm tarihi ekle or Şahıs dökümü then does not wait for it.
+  void ready.then(() => ensureIndex()).catch(() => undefined);
   watchEmptyDates();
   registerRibbonFunctions();
 }

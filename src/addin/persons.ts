@@ -85,5 +85,5 @@ export function upsertLocal(list: readonly LocalPerson[], person: LocalPerson): 
 
 /** The catalog with the document's own people added. */
 export function withLocal(base: Catalog, locals: readonly LocalPerson[]): Catalog {
-  return locals.length === 0 ? base : new Catalog([...base.people, ...locals.map(toPerson)]);
+  return locals.length === 0 ? base : Catalog.combine([base], locals.map(toPerson));
 }

@@ -14,8 +14,8 @@ export interface State {
   catalog: Catalog | null;
   /** The catalog from the CSV alone; `catalog` adds Kendi şahıslarım to it. */
   baseCatalog: Catalog | null;
-  /** People of the chosen Ek kataloglar (Wikidata fields), DİA's left out. */
-  extraPeople: Person[];
+  /** The chosen Ek kataloglar (Wikidata fields), DİA's people left out. */
+  extraCatalogs: Catalog[];
   catalogSource: "user" | "embedded" | null;
   alias: string | null;
   found: Lookup | null;
@@ -39,7 +39,7 @@ export interface State {
 export const state: State = {
   catalog: null,
   baseCatalog: null,
-  extraPeople: [],
+  extraCatalogs: [],
   catalogSource: null,
   alias: null,
   found: null,
@@ -180,15 +180,30 @@ export async function run(task: () => Promise<void>, label = ""): Promise<void> 
 /** Reading the inventory was built from, and identity-settings changes since. */
 export const versions = { rowsBuiltFor: "", identity: 0 };
 
+/**
+ * The name index of the current catalog, built step by step (the window stays
+ * responsive); the one being built is shared, and a catalog change starts anew.
+ */
+let indexing: { catalog: Catalog; promise: Promise<NameIndex> } | null = null;
+export async function ensureIndex(): Promise<NameIndex | null> {
+  const catalog = state.catalog;
+  if (!catalog) return null;
+  if (state.index && state.index.people === catalog.people) return state.index;
+  if (!indexing || indexing.catalog !== catalog) indexing = { catalog, promise: NameIndex.build(catalog.people) };
+  const index = await indexing.promise;
+  if (state.catalog === catalog) state.index = index;
+  return index;
+}
+
 export async function documentRows(): Promise<InventoryRow[]> {
   if (!state.catalog) return [];
   const read = await readDocument();
   // Confirmations, exclusions and preferred spellings change identities too.
   const stamp = `${documentVersion()}|${versions.identity}|${JSON.stringify([readConfirmations(), readExclusions(), readSpellings()])}`;
   if (state.rows.length > 0 && stamp === versions.rowsBuiltFor) return state.rows;
-  state.index ??= new NameIndex(state.catalog.people);
+  await ensureIndex();
   state.segments = read.segments;
-  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index, readConfirmations(), readExclusions(), readSpellings());
+  state.rows = await buildInventoryAsync(read.segments, state.catalog, state.index ?? undefined, readConfirmations(), readExclusions(), readSpellings());
   versions.rowsBuiltFor = stamp;
   return state.rows;
 }

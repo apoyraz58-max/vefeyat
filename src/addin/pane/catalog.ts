@@ -8,7 +8,7 @@ import { type StoredCatalog, clearCatalog, fetchEmbeddedCatalog, loadCatalog, sa
 import { $, run, setMessage, showView, state, versions } from "./core.js";
 import { resetTags } from "./health.js";
 import { refresh } from "./selected.js";
-import { extraPeople, renderExtras } from "./extras.js";
+import { extraCatalogs, renderExtras } from "./extras.js";
 
 export function runSearch(): void {
   const query = $<HTMLInputElement>("search-query").value;
@@ -122,15 +122,16 @@ export async function resetCatalog(): Promise<void> {
 export async function loadExtras(): Promise<void> {
   if (!state.baseCatalog) return;
   try {
-    state.extraPeople = await extraPeople(state.baseCatalog);
+    state.extraCatalogs = await extraCatalogs(state.baseCatalog);
   } catch (error) {
-    state.extraPeople = [];
+    state.extraCatalogs = [];
     setMessage(`Ek katalog yüklenemedi: ${error instanceof Error ? error.message : String(error)}`, "warning");
   }
   applyLocalPersons();
   const status = $("catalog-status");
   const base = status.textContent?.replace(/ · \+ .*$/, "") ?? "";
-  status.textContent = state.extraPeople.length ? `${base} · + ${state.extraPeople.length.toLocaleString("tr-TR")} kişi ek kataloglardan` : base;
+  const extra = state.extraCatalogs.reduce((n, c) => n + c.people.length, 0);
+  status.textContent = extra ? `${base} · + ${extra.toLocaleString("tr-TR")} kişi ek kataloglardan` : base;
 }
 
 export async function showExtras(): Promise<void> {
@@ -146,7 +147,7 @@ export async function showExtras(): Promise<void> {
 /** Rebuilds the working catalog: the CSV plus the document's own people. */
 export function applyLocalPersons(): void {
   if (!state.baseCatalog) return;
-  const base = state.extraPeople.length ? new Catalog([...state.baseCatalog.people, ...state.extraPeople]) : state.baseCatalog;
+  const base = state.extraCatalogs.length ? Catalog.combine([state.baseCatalog, ...state.extraCatalogs]) : state.baseCatalog;
   state.catalog = withLocal(base, readLocalPersons());
   versions.identity++;
   resetTags();

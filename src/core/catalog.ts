@@ -231,9 +231,14 @@ interface IndexedPerson {
 export class Catalog {
   private readonly index: readonly IndexedPerson[];
 
-  constructor(readonly people: readonly Person[]) {
-    this.index = people.map((person) => {
-      const text = names(person).map((value) => normalize(value)) as [string, string, string];
+  constructor(
+    readonly people: readonly Person[],
+    rows?: readonly IndexedPerson[],
+  ) {
+    // Rows already computed (Catalog.combine) are reused: a merged catalog costs nothing to build.
+    this.index = rows ?? people.map((person) => {
+      // find() compares the first three names; the short forms are tried separately.
+      const text = names(person).slice(0, 3).map((value) => normalize(value)) as [string, string, string];
       const keys = text.map((value) => value.split(" ").join("")) as [string, string, string];
       const folded = keys.map((value) => collapseLetters(value)) as [string, string, string];
       const combined = [person.shortName, person.fullName, person.originalName, person.deathDate, person.description].join(" ");
@@ -243,6 +248,25 @@ export class Catalog {
 
   static fromCsv(content: string): Catalog {
     return new Catalog(parseCatalogCsv(content));
+  }
+
+  /** Several catalogs as one, in order, reusing their computed rows (DİA first, then the field catalogs). */
+  static combine(parts: readonly Catalog[], extra: readonly Person[] = []): Catalog {
+    const own = extra.length ? new Catalog(extra) : null;
+    const all = own ? [...parts, own] : parts;
+    return new Catalog(
+      all.flatMap((c) => c.people),
+      all.flatMap((c) => c.index),
+    );
+  }
+
+  /** The same catalog without some people (rows reused). */
+  without(drop: (person: Person) => boolean): Catalog {
+    const keep = this.index.filter((row) => !drop(row.person));
+    return new Catalog(
+      keep.map((row) => row.person),
+      keep,
+    );
   }
 
   /**

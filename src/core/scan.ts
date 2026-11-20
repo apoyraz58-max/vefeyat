@@ -167,8 +167,28 @@ export class NameIndex {
   readonly shapes = new Map<string, Set<number>>();
   readonly cache = new Map<string, string>();
 
-  constructor(readonly people: readonly Person[]) {
-    people.forEach((person, i) => this.indexRow(person, i));
+  constructor(
+    readonly people: readonly Person[],
+    lazy = false,
+  ) {
+    if (!lazy) people.forEach((person, i) => this.indexRow(person, i));
+  }
+
+  /**
+   * The same index built a little at a time, handing the browser back every
+   * few milliseconds: a large catalog does not freeze the window.
+   */
+  static async build(people: readonly Person[], slice = 25): Promise<NameIndex> {
+    const index = new NameIndex(people, true);
+    let pause = Date.now();
+    for (let i = 0; i < people.length; i++) {
+      index.indexRow(people[i] as Person, i);
+      if (Date.now() - pause > slice) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        pause = Date.now();
+      }
+    }
+    return index;
   }
 
   private add(value: string, index: number, epithet = false): void {
