@@ -17,8 +17,32 @@ const Q = {
   monarch: "Q116", writer: "Q36180", poet: "Q49757", novelist: "Q6625963", journalist: "Q1930187",
   economist: "Q188094", politicalScientist: "Q1238570", jurist: "Q185351", statesman: "Q372436",
   playwright: "Q214917", essayist: "Q11774202", literaryCritic: "Q4263842",
+  theologian: "Q1234713", islamicJurist: "Q1999841", imam: "Q125482", mufti: "Q185992", ayatollah: "Q184402", marja: "Q19641",
+  cleric: "Q2259532", religiousLeader: "Q15995642", lawyer: "Q40348", activist: "Q15253558", politicalActivist: "Q11499147",
+  revolutionary: "Q3242115", physician: "Q39631", physicist: "Q169470", chemist: "Q593644", mathematician: "Q170790",
+  biologist: "Q864503", astronomer: "Q11063", computerScientist: "Q82594", engineer: "Q81096", geographer: "Q901402",
+  linguist: "Q14467526", orientalist: "Q1731155", educator: "Q974144", scientist: "Q901",
   ottoman: "Q12560", turkey: "Q43",
 };
+
+/**
+ * The Muslim world outside Turkey (which has fields of its own): the member
+ * states of the Organisation of Islamic Cooperation and a few states before
+ * them (Mandatory Palestine, British Raj), plus India for its Muslim scholars.
+ */
+const MUSLIM_COUNTRIES = [
+  "Q889", "Q222", "Q262", "Q227", "Q398", "Q902", "Q225", "Q921", "Q965", "Q657", "Q970", "Q977", "Q79", "Q1005", "Q1006",
+  "Q252", "Q794", "Q796", "Q810", "Q232", "Q1246", "Q817", "Q813", "Q822", "Q1016", "Q833", "Q826", "Q912", "Q1025", "Q1028",
+  "Q1032", "Q1033", "Q842", "Q843", "Q219060", "Q846", "Q851", "Q1041", "Q1044", "Q1045", "Q1049", "Q858", "Q863", "Q948",
+  "Q874", "Q878", "Q265", "Q805", "Q193714", "Q23681", "Q129286", "Q668",
+];
+
+/** Thinkers, scholars and men of religion of a country of the Muslim world. */
+const MUSLIM_LEARNED = [Q.theologian, Q.islamicJurist, Q.imam, Q.mufti, Q.ayatollah, Q.marja, Q.cleric, Q.religiousLeader,
+  Q.writer, Q.poet, Q.journalist, Q.historian, Q.philosopher, Q.sociologist, Q.economist, Q.jurist, Q.universityTeacher,
+  Q.linguist, Q.educator, Q.physician, Q.scientist];
+/** Its men of state and of public life. */
+const MUSLIM_PUBLIC = [Q.politician, Q.militaryOfficer, Q.diplomat, Q.revolutionary, Q.activist, Q.politicalActivist, Q.lawyer, Q.monarch];
 
 /**
  * Countries and states whose politicians a social-science text names most:
@@ -66,9 +90,44 @@ export const FIELDS = {
       ...POLITICAL_COUNTRIES.map((country) => citizen(country, 30, [Q.politician])),
       // Holders of the great offices, whatever their occupation is recorded as: US presidents, vice presidents and
       // secretaries of state, German chancellors, French presidents, UN secretaries-general, popes.
-      office(["Q11696", "Q11699", "Q14213", "Q4970706", "Q191954", "Q81066", "Q19546"], 0)],
+      office(["Q11696", "Q11699", "Q14213", "Q4970706", "Q191954", "Q81066", "Q19546"], 0),
+      // Every other sovereign state, with a higher bar: a politician known in many languages is not left out.
+      { worldPoliticians: 40 }],
+  },
+  "islam-dunyasi": {
+    title: "Çağdaş İslâm dünyası",
+    // Country by country: scholars and thinkers from five Wikipedia articles, public figures from eight.
+    queries: [
+      ...MUSLIM_COUNTRIES.map((country) => citizen(country, 5, MUSLIM_LEARNED)),
+      ...MUSLIM_COUNTRIES.filter((c) => c !== "Q668" && c !== "Q129286").map((country) => citizen(country, 8, MUSLIM_PUBLIC)),
+      // Scholars whose citizenship Wikidata does not record.
+      occupation(Q.islamicJurist, 3), occupation(Q.mufti, 3), occupation(Q.ayatollah, 2), occupation(Q.marja, 2)],
+  },
+  bilim: {
+    title: "Bilim ve tıp",
+    queries: [occupation(Q.physicist, 25), occupation(Q.chemist, 25), occupation(Q.mathematician, 25), occupation(Q.biologist, 25),
+      occupation(Q.astronomer, 20), occupation(Q.physician, 35), occupation(Q.computerScientist, 20), occupation(Q.engineer, 40),
+      occupation(Q.geographer, 15), occupation(Q.linguist, 15), occupation(Q.orientalist, 6),
+      citizen(Q.turkey, 2, [Q.physician, Q.physicist, Q.chemist, Q.mathematician, Q.biologist, Q.engineer, Q.scientist, Q.linguist])],
   },
 };
+
+/** Sovereign states not yet asked about one by one (the political countries, Turkey and the USA are). */
+async function worldCountries() {
+  const rows = await run({ raw: "SELECT DISTINCT ?c WHERE { ?c wdt:P31 wd:Q3624078 . }" });
+  const asked = new Set([...POLITICAL_COUNTRIES, Q.turkey, "Q30"]);
+  return rows.map((r) => r.c.value.split("/").pop()).filter((c) => !asked.has(c));
+}
+
+/** The queries of a field, with placeholders (every other country's politicians) spelled out. */
+async function fieldQueries(field) {
+  const out = [];
+  for (const query of field.queries) {
+    if (query.worldPoliticians) out.push(...(await worldCountries()).map((c) => citizen(c, query.worldPoliticians, [Q.politician])));
+    else out.push(query);
+  }
+  return out;
+}
 
 function sparql({ where, min }) {
   return `SELECT ?p ?links ?death ?dprec ?birth ?bprec ?dia ?trLabel ?enLabel ?trDesc ?enDesc ?alt WHERE {
@@ -198,7 +257,7 @@ function turkishDescription(fact) {
 async function buildField(name, field, dia) {
   const people = new Map();
   const skipped = [];
-  for (const query of field.queries) {
+  for (const query of await fieldQueries(field)) {
     const started = Date.now();
     let rows;
     try {

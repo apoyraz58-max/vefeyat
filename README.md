@@ -69,8 +69,8 @@ sürümünün yanına kurulabilir).
 ## Ek kataloglar (Wikidata)
 
 `data/wikidata/` altındaki alan katalogları (sosyoloji-felsefe, Osmanlı-Türk tarihi,
-edebiyat, iktisat-siyaset) Wikidata'dan (CC0) `scripts/wikidata.mjs` ile üretilir ve
-eklentiyle `catalogs/` altında yayımlanır; kullanıcı Katalog penceresinde seçer. DİA'da
+edebiyat, iktisat-siyaset, çağdaş İslâm dünyası, bilim ve tıp) Wikidata'dan (CC0) `scripts/wikidata.mjs` ile üretilir ve
+eklentiyle `catalogs/` altında yayımlanır; ilk açılıştan itibaren hepsi kullanılır, kullanıcı Katalog penceresinden kapatabilir. DİA'da
 olan kişiler (Wikidata P7314 ya da aynı ad ve ölüm yılı) alınmaz; çakışmada DİA esas alınır.
 Yeniden üretmek (vekil sunucu arkasında `NODE_USE_ENV_PROXY=1` gerekir):
 `node scripts/wikidata.mjs` ya da tek alan için `node scripts/wikidata.mjs edebiyat`.
