@@ -408,8 +408,8 @@ async function buildField(name, field, dia) {
   let mended = 0;
   let standardized = 0;
   for (const p of list) {
-    const facts = western.get(p.id);
-    const fixed = facts && p.tr ? standard.western(p.tr, facts.labels, facts.countries) : null;
+    const labels = western.get(p.id);
+    const fixed = labels && p.tr ? standard.western(p.tr, labels.labels, labels.countries) : null;
     if (fixed) {
       mended++;
       p.alts.add(p.tr);
