@@ -766,6 +766,8 @@ try {
   await tab.evaluate(() => history.replaceState(null, "", "?view=istisna"));
   await tab.reload();
   await tab.waitForSelector("#view-istisna:not([hidden])");
+  // The list is filled after the document settings are read: wait for it, not only for the view.
+  await tab.waitForFunction(() => (document.querySelector("#exclusion-list")?.textContent ?? "").includes("gazzali"), null, { timeout: 5000 }).catch(() => {});
   check("Şahıs değil is stored as a document exclusion", ((await tab.textContent("#exclusion-list")) ?? "").includes("gazzali"), await tab.textContent("#exclusion-list"));
   await tab.evaluate(() => history.replaceState(null, "", "?view=kapsam"));
   await tab.reload();
