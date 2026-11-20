@@ -31,7 +31,7 @@ const server = createServer(async (req, res) => {
     }
     if (req.url.startsWith("/catalogs/deneme.csv")) {
       res.writeHead(200, { "content-type": "text/csv; charset=utf-8" });
-      return res.end(["Kısa Ad;Tam Ad;Orijinal Ad;Vefat Tarihi;Tanıtım;Kaynak Link", "Émile Durkheim;---;---;(1858-1917);Fransız sosyolog;https://www.wikidata.org/wiki/Q15948", "Gazzâlî;---;---;(ö. 505/1111);Wikidata kopyası;https://www.wikidata.org/wiki/Q9546"].join("\r\n"));
+      return res.end(["Kısa Ad;Tam Ad;Orijinal Ad;Vefat Tarihi;Tanıtım;Kaynak Link", "Émile Durkheim;---;---;(1858-1917);Fransız sosyolog;https://www.wikidata.org/wiki/Q15948", "Gazzâlî;---;---;(ö. 505/1111);Wikidata kopyası;https://www.wikidata.org/wiki/Q9546", "Ahmed Kemal;---;---;(1840-1900);Türk şair;https://www.wikidata.org/wiki/Q900", "Ahmed Kemal;---;---;(1847-1905);Türk tarihçi;https://www.wikidata.org/wiki/Q901", "Ahmed Kemal;---;---;(1854-1910);Türk iktisatçı;https://www.wikidata.org/wiki/Q902", "Ahmed Kemal;---;---;(1861-1915);Türk hukukçu;https://www.wikidata.org/wiki/Q903", "Ahmed Kemal;---;---;(1868-1920);Türk ressam;https://www.wikidata.org/wiki/Q904", "Ahmed Kemal;---;---;(1875-1925);Türk besteci;https://www.wikidata.org/wiki/Q905", "Ahmed Kemal;---;---;(1882-1930);Türk gazeteci;https://www.wikidata.org/wiki/Q906", "Ahmed Kemal;---;---;(1889-1935);Türk subay;https://www.wikidata.org/wiki/Q907", "Ahmed Kemal;---;---;(1896-1940);Türk hekim;https://www.wikidata.org/wiki/Q908"].join("\r\n"));
     }
     if (req.url.startsWith("/catalog.csv")) {
       if (!serveCatalog) return res.writeHead(404).end();
@@ -238,6 +238,17 @@ try {
   const lakap = (await lakapTab.textContent("#view-secili")).replace(/\s+/g, " ");
   check("joined lakap + nisba is found and the right bearer chosen", lakap.includes("Ebü’l-Usr") && lakap.includes("482/1089") && !(await lakapTab.isDisabled("#insert")), lakap.slice(0, 300));
   await lakapTab.close();
+  // Many bearers of one name: five shown, the rest behind a link, with a search box.
+  const manyTab = await open("", "Ahmed Kemal bu yazıyı yazdı.", "Ahmed Kemal");
+  const firstFive = (await manyTab.$$("#candidates .candidate")).length;
+  check("long candidate list shortened to five", firstFive === 5 && (await manyTab.textContent("#candidates .more-candidates")).includes("Daha fazla göster (4)"), String(firstFive));
+  await manyTab.click("#candidates .more-candidates");
+  await manyTab.fill("#candidate-filter", "hekim");
+  const visible = await manyTab.$$eval("#candidates .candidate", (n) => n.filter((x) => !x.hidden).map((x) => x.textContent));
+  check("candidate search narrows the open list", visible.length === 1 && visible[0].includes("hekim"), visible.join(" | "));
+  await manyTab.fill("#candidate-filter", "yokböyle");
+  check("candidate search says when nothing fits", await manyTab.isVisible("#candidates .filter-empty"));
+  await manyTab.close();
   // İsim yazımı with a double-click selection (the name and the space after it).
   const spellTab = await open("", "Bu konuda Gazali'nin eseri önemlidir.", "Gazali'nin ");
   await spellTab.check("#candidate-0");
@@ -480,13 +491,13 @@ try {
   // Ek kataloglar: Durkheim comes from the field catalog; Gazzâlî stays DİA's.
   tab = await open("?view=katalog", "Durkheim ve Gazzâlî der.", "");
   await tab.waitForSelector("#extras:not([hidden])", { timeout: 3000 }).catch(() => {});
-  check("extra catalogs are on from the first run", (await tab.isChecked("#extras-list input")) && (await tab.textContent("#catalog-status")).includes("+ 1 kişi ek kataloglardan"), await tab.textContent("#catalog-status"));
+  check("extra catalogs are on from the first run", (await tab.isChecked("#extras-list input")) && (await tab.textContent("#catalog-status")).includes("+ 10 kişi ek kataloglardan"), await tab.textContent("#catalog-status"));
   await tab.uncheck("#extras-list input");
   await tab.waitForTimeout(600);
   const off = (await tab.textContent("#message")).includes("kataloğu çıkarıldı") && !(await tab.textContent("#catalog-status")).includes("ek kataloglardan");
   await tab.check("#extras-list input");
   await tab.waitForTimeout(600);
-  check("an extra catalog can be turned off and on again", off && (await tab.textContent("#message")).includes("Deneme alanı kataloğu eklendi") && (await tab.textContent("#catalog-status")).includes("+ 1 kişi ek kataloglardan"), `${await tab.textContent("#message")} | ${await tab.textContent("#catalog-status")}`);
+  check("an extra catalog can be turned off and on again", off && (await tab.textContent("#message")).includes("Deneme alanı kataloğu eklendi") && (await tab.textContent("#catalog-status")).includes("+ 10 kişi ek kataloglardan"), `${await tab.textContent("#message")} | ${await tab.textContent("#catalog-status")}`);
   await select(tab, "Durkheim");
   const durkheim = (await tab.textContent("#view-secili")).replace(/\s+/g, " ");
   check("a Wikidata person is found, with its source and link", durkheim.includes("Émile Durkheim") && durkheim.includes("Wikidata") && (await tab.textContent("#detail-link")) === "Wikidata kaydını aç", durkheim.slice(0, 200));

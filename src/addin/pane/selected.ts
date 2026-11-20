@@ -1,7 +1,7 @@
 /** Vefeyât pane — the selected-name window: candidates, dates, spellings, earlier mentions, Şahıs değil. */
 import { isLocal } from "../persons.js";
 import { fillLocalForm, renderLocals } from "./catalog.js";
-import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
+import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, normalize, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { sourceLabel, addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
 import { type InventoryRow, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
@@ -62,6 +62,7 @@ export function renderCandidates(): void {
   // the rest opens on request. Ölüm tarihi ekle then stays close below.
   if (expandedFor !== state.alias) {
     expandedFor = state.alias;
+    filterText = "";
     expanded = false;
   }
   const chosenKey = state.chosen ? personKey(state.chosen) : null;
@@ -69,6 +70,24 @@ export function renderCandidates(): void {
     .map((person, index) => ({ person, index }))
     .filter(({ person, index }) => expanded || (chosenKey ? personKey(person) === chosenKey : index < CANDIDATE_PREVIEW));
   const hidden = found.candidates.length - shownIndexes.length;
+  // A long open list gets a search box: a few letters of the name, place or field narrow it.
+  const rows: HTMLElement[] = [];
+  let filter: HTMLInputElement | null = null;
+  if (expanded && shownIndexes.length > CANDIDATE_FILTER_FROM) {
+    filter = document.createElement("input");
+    filter.type = "search";
+    filter.id = "candidate-filter";
+    filter.className = "wide candidate-filter";
+    filter.placeholder = "Adaylarda ara (ad, yüzyıl, alan…)";
+    filter.setAttribute("aria-label", "Adaylarda ara");
+    filter.value = filterText;
+    const input = filter;
+    input.addEventListener("input", () => {
+      filterText = input.value;
+      applyFilter(rows, filterText);
+    });
+    list.append(filter);
+  }
   shownIndexes.forEach(({ person, index }) => {
     const id = `candidate-${index}`;
     const row = document.createElement("label");
@@ -117,8 +136,19 @@ export function renderCandidates(): void {
       text.append(document.createElement("br"), description);
     }
     row.append(radio, text);
+    row.dataset.search = normalize(`${candidateLabel(person)} ${person.fullName} ${person.deathDate} ${person.description ?? ""}`);
+    rows.push(row);
     list.append(row);
   });
+  if (filter) {
+    const empty = document.createElement("p");
+    empty.className = "muted filter-empty";
+    empty.textContent = "Aramaya uyan aday yok.";
+    empty.hidden = true;
+    list.append(empty);
+    rows.push(empty);
+    applyFilter(rows, filterText);
+  }
   if (hidden > 0 || (expanded && (chosenKey !== null || found.candidates.length > CANDIDATE_PREVIEW))) {
     const more = document.createElement("button");
     more.type = "button";
@@ -126,12 +156,31 @@ export function renderCandidates(): void {
     more.textContent = expanded ? "Adayları kısalt" : chosenKey ? `Diğer adayları göster (${hidden})` : `Daha fazla göster (${hidden})`;
     more.addEventListener("click", () => {
       expanded = !expanded;
+      filterText = "";
       renderCandidates();
+      if (expanded) document.getElementById("candidate-filter")?.focus();
     });
     list.append(more);
   }
 }
 
+/** Shows the candidate rows holding every word of the query; the last row is the "nothing found" note. */
+function applyFilter(rows: HTMLElement[], query: string): void {
+  const words = normalize(query).split(" ").filter(Boolean);
+  let shown = 0;
+  for (const row of rows) {
+    if (row.classList.contains("filter-empty")) {
+      row.hidden = shown > 0;
+      continue;
+    }
+    const match = words.every((w) => (row.dataset.search ?? "").includes(w));
+    row.hidden = !match;
+    if (match) shown += 1;
+  }
+}
+
+const CANDIDATE_FILTER_FROM = 8;
+let filterText = "";
 const CANDIDATE_PREVIEW = 5;
 let expanded = false;
 let expandedFor: string | null = null;

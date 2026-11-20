@@ -169,3 +169,13 @@ a.button { display: inline-flex; align-items: center; font: inherit; color: var(
 .checks label.check { display: flex; gap: 6px; align-items: baseline; margin: 4px 0; }
 /* Aday listesi: Diğer adayları göster */
 .more-candidates { display: block; margin: 6px 0 2px; }
+.candidate-filter { margin: 2px 0 6px; }
+/* Ölüm tarihi ekle stays in sight while the person's details are scrolled. */
+#details > .actions:first-of-type {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--surface);
+  padding: 6px 0;
+  margin-top: 4px;
+}
