@@ -331,9 +331,12 @@ export function renderDetails(): void {
   $("detail-original").textContent = person.originalName || "—";
   $("detail-date").textContent = person.deathDate || "Katalogda tarih yok";
   const link = $<HTMLAnchorElement>("detail-link");
-  const origin = sourceLabel(person.source);
+  // A record of one's own added from Wikidata keeps its item in the description: "… · Wikidata Q469299".
+  const ownItem = isLocal(person) ? /Wikidata (Q\d+)/.exec(person.description)?.[1] : undefined;
+  const source = ownItem ? `https://www.wikidata.org/wiki/${ownItem}` : person.source;
+  const origin = ownItem ? "Wikidata" : sourceLabel(person.source);
   link.hidden = origin === "";
-  link.href = link.hidden ? "#" : person.source;
+  link.href = link.hidden ? "#" : source;
   link.textContent = origin === "Wikidata" ? "Wikidata kaydını aç" : "DİA maddesini aç";
   $("details-heading").textContent = `Seçili şahıs: ${textName(person.shortName)}`;
   // The current spelling heads the list and is what is selected: nothing changes until another one is picked.

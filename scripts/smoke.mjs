@@ -268,6 +268,7 @@ try {
   check("the added Wikidata person is chosen for the selection", (await wdTab.textContent("#candidates")).includes("Hasan et-Turabi") && (await wdTab.textContent("#candidates")).includes("kendi kaydınız") && !(await wdTab.isDisabled("#insert")), await wdTab.textContent("#candidates"));
   await wdTab.click("#insert");
   await wdTab.waitForTimeout(200);
+  check("the added person links to its Wikidata item", (await wdTab.getAttribute("#detail-link", "href")) === "https://www.wikidata.org/wiki/Q469299" && (await wdTab.isVisible("#detail-link")));
   check("its date goes into the text", (await docText(wdTab)).includes("Hasan et-Türâbî (1932-2016)"), await docText(wdTab));
   await wdTab.close();
   const keyTab = await open("", "Ahmed Kemal bu yazıyı yazdı.", "Ahmed Kemal");
