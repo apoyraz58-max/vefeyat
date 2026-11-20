@@ -125,4 +125,12 @@ describe("standart yazım (DİA esas)", () => {
     expect(decided).toBeGreaterThan(500);
     expect(right / decided).toBeGreaterThan(0.9);
   });
+
+  it("joins Abdul as DİA does and lets the Arabic overrule a look-alike", () => {
+    const real = buildSpellingStandard(parseCatalogCsv(readFileSync(new URL("../data/catalog.csv", import.meta.url), "utf8")));
+    expect(standardName("Abdul Aziz al-Hakim", real, 0.5, "عبد العزيز الحكيم", true)).toBe("Abdülazîz el-Hakîm");
+    expect(standardName("Abd al-Rahman Salih", real)).toMatch(/^Abdurrahm[âa]n /);
+    expect(standardName("Hassan Nasrallah", real, 0.5, "حسن نصر الله", true)).not.toContain("Hassân");
+    expect(standardName("Selim Hassan", real, 0.5, "سليم حسن", true)).toBe("Selîm Hassan");
+  });
 });

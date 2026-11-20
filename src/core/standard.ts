@@ -40,10 +40,27 @@ export function arabicSkeleton(word: string): string {
 const isArabicLink = (w: string): boolean => w === "بن" || w === "ابن" || w === "بنت";
 const isLatinLink = (w: string): boolean => /^(b\.|bin|ibn|ibni|bint)$/i.test(w);
 
+/** "عبد العزيز" and "نصر الله" are one name each, as DİA's "Abdülazîz" is one word. */
+function joinArabicAbd(words: string[]): string[] {
+  const out: string[] = [];
+  for (let k = 0; k < words.length; k++) {
+    const w = words[k] as string;
+    if (w === "عبد" && k + 1 < words.length) {
+      out.push(w + (words[k + 1] as string));
+      k++;
+    } else if (words[k + 1] === "الله") {
+      // "نصر الله" is Nasrallah, one word.
+      out.push(w + "الله");
+      k++;
+    } else out.push(w);
+  }
+  return out;
+}
+
 /** The Latin words of a name paired with its Arabic words, when both have as many (links left out). */
 export function pairWords(latin: string, arabic: string): Array<[string, string]> | null {
   const l = latin.split(/\s+/).filter((w) => w && !isLatinLink(w));
-  const a = arabic.split(/\s+/).filter((w) => w && !isArabicLink(w));
+  const a = joinArabicAbd(arabic.split(/\s+/).filter((w) => w && !isArabicLink(w)));
   if (l.length === 0 || l.length !== a.length || !/[\u0600-\u06FF]/.test(arabic)) return null;
   return l.map((w, k) => [w, a[k] ?? ""]);
 }
@@ -162,13 +179,23 @@ function standardWord(word: string, standard: SpellingStandard, arabic = "", lon
   const paired = arabic ? standard.arabic.get(`${key}|${arabicSkeleton(arabic)}`) : undefined;
   // Without the Arabic word, a key DİA uses for two different names is not guessed.
   const form = paired ?? (standard.split.has(key) ? "" : standard.forms.get(key));
-  if (form && onlyAdds(word, form)) return form;
-  // A word DİA does not have: its long vowels read from the Arabic spelling ("Turabi", الترابي → "Turâbî").
-  if (long && arabic && form === undefined) {
+  if (form && onlyAdds(word, form)) {
+    // DİA's form for the key, but the person's Arabic says otherwise: "Hassan" حسن is Hasan, not Hassân حسّان.
+    const read = !paired && arabic ? longVowels(word, arabic) : null;
+    if (read !== null && lengthMarks(read) !== lengthMarks(form)) return long && onlyAdds(word, read) ? read : word;
+    return form;
+  }
+  // A word DİA does not have, or writes two ways: its long vowels read from the Arabic ("Turabi", الترابي → "Turâbî").
+  if (long && arabic && !form) {
     const lengthened = longVowels(word, arabic);
     if (lengthened && onlyAdds(word, lengthened)) return lengthened;
   }
   return word;
+}
+
+/** Where a word has long vowels: "Hassân" → "....L.". */
+function lengthMarks(word: string): string {
+  return [...word.normalize("NFC").replace(/[‘’ʿʾ]/g, "")].map((ch) => ("âîûāīūÂÎÛĀĪŪ".includes(ch) ? "L" : ".")).join("");
 }
 
 /** Latin consonants and the Arabic letters each may stand for. */
@@ -251,14 +278,39 @@ const NOT_ARABIC = new Set(["mihail"]);
  * The name in DİA's spelling. Only a name at least `share` of whose words DİA
  * has (an article or "bin" counts) is rewritten: "Mihail Attaleiates" stays.
  */
+/**
+ * "Abdul Aziz", "Abd al-Rahman", "Abdel Kader": one name in DİA ("Abdülazîz",
+ * "Abdurrahmân"). Joined only when DİA has the joined word.
+ */
+function joinAbd(words: string[], standard: SpellingStandard): string[] {
+  const out: string[] = [];
+  for (let k = 0; k < words.length; k++) {
+    const w = words[k] as string;
+    const next = words[k + 1];
+    if (next && /^(abd|abdul|abdül|abdel|abdal|abdur|abdür|abdus|abdüs)$/i.test(w)) {
+      const rest = next.replace(ARTICLE, "$1");
+      const first = spellingKey(rest).charAt(0);
+      const link = SUN.has(first) ? `u${first}` : "ul";
+      const form = standard.forms.get(`abd${link}${spellingKey(rest)}`) || standard.forms.get(`abdul${spellingKey(rest)}`);
+      if (form) {
+        out.push(form);
+        k++;
+        continue;
+      }
+    }
+    out.push(w);
+  }
+  return out;
+}
+
 export function standardName(name: string, standard: SpellingStandard, share = 0.5, arabicName = "", long = false): string {
-  const words = name.split(" ");
+  const words = joinAbd(name.split(" "), standard);
   const names = words.filter((w) => /^\p{Lu}/u.test(w) || ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w));
   const known = names.filter((w) => ARTICLE.test(w) || /^(bin|ibn|ibni)$/i.test(w) || (standard.forms.has(spellingKey(w)) && !NOT_ARABIC.has(spellingKey(w))));
   if (names.length === 0 || known.length < names.length * share) return name;
   // The Arabic word of each Latin word, when the two names pair up.
   const arabicOf = new Map<number, string>();
-  const pairs = arabicName ? pairWords(name, arabicName) : null;
+  const pairs = arabicName ? pairWords(words.join(" "), arabicName) : null;
   if (pairs) {
     let k = 0;
     words.forEach((word, index) => {
