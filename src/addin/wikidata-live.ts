@@ -12,6 +12,9 @@ export interface WikidataHit {
   readonly deathDate: string;
   readonly description: string;
   readonly links: number;
+  /** Citizenships (P27), and the death year: whose name takes DİA's spelling. */
+  readonly countries: string[];
+  readonly deathYear: number | null;
 }
 
 type Fetch = (url: string, init?: RequestInit) => Promise<Pick<Response, "ok" | "json">>;
@@ -117,7 +120,7 @@ export async function searchWikidata(name: string, fetcher: Fetch = fetch): Prom
   const ids = [...order.keys()].sort((x, y) => (order.get(x) ?? 0) - (order.get(y) ?? 0)).slice(0, 40);
   if (ids.length === 0) return [];
   const rows = await sparql(
-    `SELECT ?p ?links ?death ?dprec ?birth ?bprec ?tr ?en ?trDesc ?enDesc WHERE {
+    `SELECT ?p ?links ?death ?dprec ?birth ?bprec ?tr ?en ?trDesc ?enDesc ?c WHERE {
   VALUES ?p { ${ids.map((id) => `wd:${id}`).join(" ")} }
   ?p wdt:P31 wd:Q5 ; wikibase:sitelinks ?links .
   ?p p:P570/psv:P570 [ wikibase:timeValue ?death ; wikibase:timePrecision ?dprec ] .
@@ -126,13 +129,20 @@ export async function searchWikidata(name: string, fetcher: Fetch = fetch): Prom
   OPTIONAL { ?p rdfs:label ?en FILTER(LANG(?en) = "en") }
   OPTIONAL { ?p schema:description ?trDesc FILTER(LANG(?trDesc) = "tr") }
   OPTIONAL { ?p schema:description ?enDesc FILTER(LANG(?enDesc) = "en") }
+  OPTIONAL { ?p wdt:P27 ?c }
 }`,
     fetcher,
   );
   const hits = new Map<string, WikidataHit>();
   for (const r of rows) {
     const id = (r.p?.value ?? "").split("/").pop() ?? "";
-    if (!id || hits.has(id)) continue;
+    const country = (r.c?.value ?? "").split("/").pop() ?? "";
+    const known = hits.get(id);
+    if (known) {
+      if (country && !known.countries.includes(country)) known.countries.push(country);
+      continue;
+    }
+    if (!id) continue;
     const label = r.tr?.value ?? r.en?.value ?? "";
     const birth = Number(r.bprec?.value ?? 0) >= 9 ? year(r.birth?.value) : null;
     const deathDate = lifespan(birth, year(r.death?.value), Number(r.dprec?.value ?? 0));
@@ -144,6 +154,8 @@ export async function searchWikidata(name: string, fetcher: Fetch = fetch): Prom
       deathDate,
       description: r.trDesc?.value ?? r.enDesc?.value ?? "",
       links: Number(r.links?.value ?? 0),
+      countries: country ? [country] : [],
+      deathYear: year(r.death?.value),
     });
   }
   // The order of the search, then the best known: the one the user means is usually among the first.

@@ -62,6 +62,7 @@ const office = (items, min) => ({ where: `?p wdt:P39 ?office . VALUES ?office { 
 /** One query: people with the occupation (or citizenship) and at least `min` sitelinks. */
 const occupation = (item, min) => ({ where: `?p wdt:P106 wd:${item} .`, min });
 const citizen = (country, min, occupations = []) => ({
+  country,
   where: `?p wdt:P27 wd:${country} .` + (occupations.length ? ` ?p wdt:P106 ?occ . VALUES ?occ { ${occupations.map((o) => `wd:${o}`).join(" ")} }` : ""),
   min,
 });
@@ -101,7 +102,7 @@ export const FIELDS = {
       ...MUSLIM_COUNTRIES.map((country) => citizen(country, 5, MUSLIM_LEARNED)),
       ...MUSLIM_COUNTRIES.filter((c) => c !== "Q668" && c !== "Q129286").map((country) => citizen(country, 8, MUSLIM_PUBLIC)),
       // Scholars whose citizenship Wikidata does not record.
-      occupation(Q.islamicJurist, 3), occupation(Q.mufti, 3), occupation(Q.ayatollah, 2), occupation(Q.marja, 2)],
+      ...[occupation(Q.islamicJurist, 3), occupation(Q.mufti, 3), occupation(Q.ayatollah, 2), occupation(Q.marja, 2)].map((q) => ({ ...q, standard: true }))],
   },
   bilim: {
     title: "Bilim ve tıp",
@@ -274,6 +275,23 @@ async function cached(query) {
   return rows;
 }
 
+/**
+ * DİA's spelling (src/core/standard.ts, the add-in's own code, bundled for Node):
+ * `wants` says whose name takes it, `name` writes a name that way.
+ */
+let standardTools = null;
+async function spellingStandard() {
+  if (standardTools) return standardTools;
+  const { build } = await import("esbuild");
+  const outfile = new URL("../node_modules/.cache/vefeyat-standard.mjs", import.meta.url);
+  await build({ entryPoints: [new URL("../src/core/index.ts", import.meta.url).pathname], bundle: true, format: "esm", platform: "node", outfile: outfile.pathname, logLevel: "error" });
+  const core = await import(outfile.href);
+  const dia = core.parseCatalogCsv(await readFile(new URL("../data/catalog.csv", import.meta.url), "utf8"));
+  const table = core.buildSpellingStandard(dia);
+  standardTools = { wants: (countries, death) => core.wantsStandard(countries, death ?? null), name: (n) => core.standardName(n, table) };
+  return standardTools;
+}
+
 async function buildField(name, field, dia) {
   const people = new Map();
   const skipped = [];
@@ -291,7 +309,9 @@ async function buildField(name, field, dia) {
     console.log(`  ${query.where.slice(0, 70)} (en az ${query.min} madde): ${rows.length} satır, ${Math.round((Date.now() - started) / 1000)} sn`);
     for (const r of rows) {
       const id = r.p.value.split("/").pop();
-      const person = people.get(id) ?? { id, links: 0, alts: new Set(), dprec: -1 };
+      const person = people.get(id) ?? { id, links: 0, alts: new Set(), dprec: -1, countries: new Set(), standard: false };
+      if (query.country) person.countries.add(query.country);
+      person.standard ||= Boolean(query.standard);
       person.links = Math.max(person.links, Number(r.links?.value ?? 0));
       person.dia ||= Boolean(r.dia);
       person.tr ??= r.trLabel?.value;
@@ -319,11 +339,19 @@ async function buildField(name, field, dia) {
   const facts = missing.length ? await turkishFacts(missing) : new Map();
   const list = [...people.values()].filter((p) => (p.tr || p.en) && p.death !== undefined && lifespan(p.birth ?? null, p.death, p.dprec) && !/^Q\d+$/.test(p.tr ?? p.en));
   list.sort((a, b) => b.links - a.links);
+  const standard = await spellingStandard();
+  let standardized = 0;
   for (const p of list) {
-    const short = p.tr ?? p.en;
-    if (p.dia || dia.has(`${fold(short)}|${p.death}`) || (p.en && dia.has(`${fold(p.en)}|${p.death}`))) {
+    const written = p.tr ?? p.en;
+    // Names of the Muslim world and of Ottoman subjects in DİA's spelling; Wikidata's is kept among the names.
+    const short = p.standard || standard.wants([...p.countries], p.death) ? standard.name(written) : written;
+    if (p.dia || [written, short, p.en].some((n) => n && dia.has(`${fold(n)}|${p.death}`))) {
       skippedDia++;
       continue;
+    }
+    if (short !== written) {
+      standardized++;
+      p.alts = new Set([written, ...p.alts]);
     }
     const original = p.en && p.en !== short ? p.en : "---";
     // Turkish aliases ("Aristoteles" for "Aristo") go into the full-name column, which the add-in also searches.
@@ -335,7 +363,7 @@ async function buildField(name, field, dia) {
   }
   await mkdir(new URL("../data/wikidata/", import.meta.url), { recursive: true });
   await writeFile(new URL(`../data/wikidata/${name}.csv`, import.meta.url), "﻿" + out.join("\r\n") + "\r\n");
-  console.log(`${name}: ${out.length - 1} kişi (${skippedDia} kişi DİA'da olduğu için alınmadı)${skipped.length ? `; atlanan sorgu: ${skipped.length}` : ""}`);
+  console.log(`${name}: ${out.length - 1} kişi (${skippedDia} kişi DİA'da olduğu için alınmadı; ${standardized} ad DİA yazımına çevrildi)${skipped.length ? `; atlanan sorgu: ${skipped.length}` : ""}`);
   // data/wikidata/index.json: the fields the add-in offers (title, file, count).
   const indexUrl = new URL("../data/wikidata/index.json", import.meta.url);
   let index = [];

@@ -3,7 +3,7 @@ import { isLocal } from "../persons.js";
 import { applyLocalPersons, fillLocalForm, renderLocals } from "./catalog.js";
 import { type WikidataHit, searchWikidata } from "../wikidata-live.js";
 import { upsertLocal, validateLocal } from "../persons.js";
-import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, normalize, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
+import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, normalize, diaStandard, standardName, wantsStandard, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { sourceLabel, addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
 import { type InventoryRow, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
@@ -236,9 +236,11 @@ function showWikidataHits(results: HTMLElement, alias: string, hits: WikidataHit
     row.className = "wikidata-hit";
     const text = document.createElement("span");
     const title = document.createElement("strong");
-    title.textContent = `${hit.label} ${hit.deathDate}`;
+    const standard = standardLabel(hit);
+    title.textContent = `${standard} ${hit.deathDate}`;
     text.append(title);
-    if (hit.english) text.append(` · ${hit.english}`);
+    const others = [standard !== hit.label ? `Wikidata: ${hit.label}` : "", hit.english].filter(Boolean);
+    if (others.length) text.append(` · ${others.join(" · ")}`);
     if (hit.description) {
       const description = document.createElement("small");
       description.textContent = hit.description.length > 140 ? `${hit.description.slice(0, 140)}…` : hit.description;
@@ -259,12 +261,20 @@ function showWikidataHits(results: HTMLElement, alias: string, hits: WikidataHit
   }
 }
 
+/** The hit's name in DİA's spelling when it is of the Muslim world or an Ottoman subject. */
+function standardLabel(hit: WikidataHit): string {
+  const base = state.baseCatalog;
+  if (!base || !wantsStandard(hit.countries, hit.deathYear)) return hit.label;
+  return standardName(hit.label, diaStandard(base.people));
+}
+
 async function addWikidataHit(alias: string, hit: WikidataHit): Promise<void> {
   // The name as written in the text is kept as a spelling of its own, so this mention finds the record.
   const written = nameQuery(alias);
-  const spellings = [hit.english, written].filter((v, i, all) => v && v !== hit.label && all.indexOf(v) === i);
+  const label = standardLabel(hit);
+  const spellings = [hit.label, hit.english, written].filter((v, i, all) => v && v !== label && all.indexOf(v) === i);
   const checked = validateLocal({
-    shortName: hit.label,
+    shortName: label,
     fullName: spellings.join(" | "),
     deathDate: hit.deathDate,
     description: [hit.description, `Wikidata ${hit.id}`].filter(Boolean).join(" · "),
@@ -277,7 +287,7 @@ async function addWikidataHit(alias: string, hit: WikidataHit): Promise<void> {
   applyLocalPersons();
   state.alias = null;
   await refresh(true);
-  setMessage(`${hit.label} ${hit.deathDate} kendi şahıslarınıza eklendi.`, "success");
+  setMessage(`${label} ${hit.deathDate} kendi şahıslarınıza eklendi.`, "success");
 }
 
 /** Shows the candidate rows holding every word of the query; the last row is the "nothing found" note. */

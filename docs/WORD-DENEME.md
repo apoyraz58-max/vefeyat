@@ -239,6 +239,18 @@ Baş harfli yazım da tanınır ("É. Durkheim", "J. M. Keynes"). Tanıtımları
 Wikidata'da Türkçe tanıtımı olmayanlara meslek ve ülkenin Türkçe adından üretilir. Tarihler "(1858-1917)" gibi yaşam
 aralığıyla gelir; yalnız yüzyılı bilinenler "(ö. 4. yy)" olarak yazılır.
 
+**Standart yazım (DİA esas):** DİA dışından gelen İslâm dünyası şahısları (İİT ülkeleri,
+Manda Filistini) ile 1928'den önce ölmüş Osmanlı tebaası, adları DİA'nın yazdığı gibi
+gelir: "Malik bin Nebi" → "Mâlik b. Nebî", "Ali Şeriati" → "Ali Şerîatî", "Hasan
+el-Turabi" → "Hasan et-Turabi". Kelime yazımları DİA kataloğunun kendisinden çıkarılır:
+DİA bir kelimeyi açıkça bir biçimde yazıyorsa o biçim alınır ("Yusuf" → "Yûsuf"); iki
+türlü yazdığı ("Ali" / "Alî") ya da hiç geçmeyen kelimeler olduğu gibi kalır. Harf-i tarif
+DİA'daki gibi okunuşa uyar (et-, er-, eş-, en-…), adlar arasındaki "bin/ibn" "b." olur.
+Yalnız işaret eklenir (â, î, û, ü, ‘); bir harf silinmez ya da değişmez. Wikidata'daki
+yazım da kişinin adlarından biri olarak kalır; metinde o biçimde yazılmışsa da bulunur.
+Batılılar, Cumhuriyet dönemi Türkler ve öteki ülkelerin şahısları bilinen yazımlarıyla
+kalır. **Wikidata'da ara** ile eklenen kişilere de aynı kural uygulanır.
+
 **Tarih biçimi** (Tercihler): *Kaynaktaki gibi* (DİA "(ö. 505/1111)", Wikidata
 "(1858-1917)"), *Yalnız milâdî* ("(ö. 1111)"; yaşam aralıkları kalır) ya da *Yalnız ölüm
 yılı* (her kayıt "(ö. 1917)"). Kısaltma ayarı (ö./öl./v./d.) bununla birlikte uygulanır;

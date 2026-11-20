@@ -71,6 +71,6 @@ sürümünün yanına kurulabilir).
 `data/wikidata/` altındaki alan katalogları (sosyoloji-felsefe, Osmanlı-Türk tarihi,
 edebiyat, iktisat-siyaset, çağdaş İslâm dünyası, bilim ve tıp) Wikidata'dan (CC0) `scripts/wikidata.mjs` ile üretilir ve
 eklentiyle `catalogs/` altında yayımlanır; ilk açılıştan itibaren hepsi kullanılır, kullanıcı Katalog penceresinden kapatabilir. DİA'da
-olan kişiler (Wikidata P7314 ya da aynı ad ve ölüm yılı) alınmaz; çakışmada DİA esas alınır.
+olan kişiler (Wikidata P7314 ya da aynı ad ve ölüm yılı) alınmaz; çakışmada DİA esas alınır. İslâm dünyası ve 1928 öncesi Osmanlı şahıslarının adları `src/core/standard.ts` ile DİA yazımına çevrilir (kelime yazımları DİA kataloğundan; Wikidata yazımı ad olarak kalır).
 Yeniden üretmek (vekil sunucu arkasında `NODE_USE_ENV_PROXY=1` gerekir):
 `node scripts/wikidata.mjs` ya da tek alan için `node scripts/wikidata.mjs edebiyat`.
