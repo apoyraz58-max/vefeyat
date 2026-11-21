@@ -277,7 +277,7 @@ export function longVowels(word: string, arabicWord: string): string | null {
   return j === a.length ? out.join("") : null;
 }
 
-const FOREIGN_SURNAME = /(yan|yân|ian|ov|ev|ova|eva|opoulos|poulos|idis|akis|escu|ović|evič|evich|ski|sky|ska)$/i;
+const FOREIGN_SURNAME = /(yan|yân|ian|ov|ev|opoulos|poulos|idis|akis|escu|ović|evič|evich|ski|sky|ska)$/i;
 
 /** Words that look like DİA's but name someone else: the Greek "Mihail" is not the Arabic "Mîhâîl". */
 const NOT_ARABIC = new Set(["mihail"]);

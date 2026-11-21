@@ -171,5 +171,6 @@ describe("standart yazım (DİA esas)", () => {
     expect(standardName("Kuzman Şapkarev", real)).toBe("Kuzman Şapkarev");
     expect(standardName("Tahir Salahov", real)).toBe("Tahir Salahov");
     expect(standardName("Yusuf Ziya Paşa", real)).toBe("Yûsuf Ziya Paşa"); // others as before
+    expect(standardName("Tahir Efendi Jakova", real)).toBe("Tâhir Efendi Jakova"); // an Albanian place, not a Slavic surname
   });
 });
