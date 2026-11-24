@@ -100,14 +100,17 @@ for (const [file, source] of [["manifest.xml", "manifest.template.xml"], ["manif
 }
 await cp(new URL("manifest/shortcuts.json", root), new URL("shortcuts.json", out));
 
-// Windows installers: double-click to register the add-in with Word (HKCU WEF\Developer,
-// no administrator rights), and to remove it. Windows line endings for cmd.exe.
+// Windows installers: double-click to register the add-in with Word, and to remove it. The
+// add-in goes into a Paylaşılan Klasör catalog (HKCU WEF\TrustedCatalogs, \\localhost\C$ path,
+// no administrator rights): Word keeps it across documents and sessions, which an add-in
+// under WEF\Developer no longer is since September 2026 (OfficeDev/office-js#6973).
+// Windows line endings for cmd.exe.
 const addinId = channel === "beta" ? BETA.id : /<Id>([^<]+)<\/Id>/.exec(await readFile(new URL("manifest/manifest.template.xml", root), "utf8"))[1];
 const addinName = channel === "beta" ? BETA.name : "Vefeyât";
 const installers = {};
 for (const file of ["Vefeyat-Kur.cmd", "Vefeyat-Kaldir.cmd"]) {
   const text = (await readFile(new URL(`installer/${file}`, root), "utf8"))
-    .replaceAll("{{BASE_URL}}", baseUrl).replaceAll("{{ID}}", addinId).replaceAll("{{NAME}}", addinName)
+    .replaceAll("{{BASE_URL}}", baseUrl).replaceAll("{{ID}}", addinId).replaceAll("{{NAME}}", addinName).replaceAll("{{CHANNEL}}", channel === "beta" ? "beta" : "surum")
     .replace(/\r?\n/g, "\r\n");
   if (/\{\{/.test(text)) throw new Error(`${file}: placeholder left`);
   await writeFile(new URL(file, out), text);
@@ -122,8 +125,11 @@ installers["OKUBENI.txt"] = strToU8(
     "2. Word'u kapatin.",
     "3. Vefeyat-Kur.cmd dosyasina cift tiklayin. Windows 'bilgisayarinizi korudu' derse: Ek bilgi -> Yine de calistir.",
     "4. Pencerede 'Tamam' yazinca Word'u acin.",
-    "5. Seritte sekme gorunmezse (yalniz ilk seferde): Giris -> Eklentiler (ya da Ekle -> Eklentilerim) -> Diger Eklentiler",
-    `   -> 'Gelistirici Eklentileri' bolumunde '${addinName}' -> Ekle.`,
+    "5. YALNIZ BIR KEZ: Giris -> Eklentiler (ya da Ekle -> Eklentilerim) -> Diger Eklentiler",
+    `   -> 'PAYLASILAN KLASOR' sekmesi -> '${addinName}' -> Ekle.`,
+    `   Bundan sonra '${addinName}' sekmesi her belgede ve Word her acildiginda seritte kalir.`,
+    "   (Pencere 'kalici yol acik degil' derse, eklentiyi 'Gelistirici Eklentileri'nden ekleyin;",
+    "   Microsoft'un bir hatasi yuzunden bunu Word her acildiginda yinelemeniz gerekebilir.)",
     "",
     "Kaldirmak icin: Vefeyat-Kaldir.cmd",
     "Sorun ve oneriler: apoyraz@cumhuriyet.edu.tr",

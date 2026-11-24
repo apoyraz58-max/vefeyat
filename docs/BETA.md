@@ -22,15 +22,27 @@ kapalı beta denemecileri içindir.
      Dosya imzasız olduğu için bu uyarı çıkar; dosya yalnız aşağıdakileri yapar.
 3. Siyah bir pencere açılır. Pencere Word sürümünüze uygun manifesti indirir, eklentiyi
    Word'e kaydeder ve "Tamam" yazar. Herhangi bir tuşa basıp pencereyi kapatın.
-4. Word'ü açın. Şeritte **Vefeyât (beta)** sekmesi görünmezse (yalnız ilk seferde):
-   **Giriş → Eklentiler** (bazı sürümlerde **Ekle → Eklentilerim**) → gerekirse
-   **Diğer Eklentiler** → açılan pencerede **Geliştirici Eklentileri** bölümünde
-   **Vefeyât (beta)** → **Ekle**. Sonraki açılışlarda Word eklentiyi kendisi yükler.
+4. Word'ü açın ve **yalnız bir kez** şunu yapın: **Giriş → Eklentiler** (bazı sürümlerde
+   **Ekle → Eklentilerim**) → **Diğer Eklentiler** → açılan pencerede **PAYLAŞILAN KLASÖR**
+   sekmesi → **Vefeyât (beta)** → **Ekle**. Bundan sonra Vefeyât sekmesi her belgede ve Word
+   her açıldığında şeritte kalır.
+
+**Neden "Paylaşılan Klasör"?** Word, Eylül 2026 güncellemesinden beri "Geliştirici
+Eklentileri"nden eklenen eklentiyi kapanınca unutuyor; her yeni belgede ya da her açılışta
+yeniden eklemek gerekiyordu. Bu Microsoft'un açık bir hatası
+([OfficeDev/office-js#6973](https://github.com/OfficeDev/office-js/issues/6973)), henüz
+düzeltilmedi. "Paylaşılan Klasör" kataloğundan eklenen eklenti ise kalıcı. Kurulum bunun için
+paylaşım açmaz: Windows'un kendi `\\localhost\C$` yolunu kullanır.
+
+Pencere **"kalıcı yol bu bilgisayarda açık değil"** derse (standart kullanıcı hesabı ya da
+yönetici paylaşımları kapatılmış bilgisayar) eklenti eski yolla, **Geliştirici Eklentileri**
+bölümüne kaydedilir; orada Word her açıldığında yeniden eklemek gerekebilir.
 
 Dosya yönetici izni istemez; yalnız sizin kullanıcı hesabınıza kayıt yapar
-(`HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\WEF\Developer`) ve manifesti
-`%LOCALAPPDATA%\Vefeyat` klasörüne koyar. Kaldırmak için aynı ZIP'teki
-**Vefeyat-Kaldir.cmd**.
+(`HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\WEF\TrustedCatalogs`) ve manifesti
+`%LOCALAPPDATA%\Vefeyat\beta\katalog` klasörüne koyar. Daha önce eski kurulumla
+kurduysanız yeniden çalıştırmanız yeterli; eski kayıt kendiliğinden kaldırılır. Kaldırmak
+için aynı ZIP'teki **Vefeyat-Kaldir.cmd**.
 
 Kurulum olmazsa pencerenin ekran görüntüsünü apoyraz@cumhuriyet.edu.tr adresine gönderin
 ya da aşağıdaki elle kurulumu deneyin.
@@ -44,7 +56,9 @@ sonra Word'ü tamamen kapatıp (Cmd+Q) yeniden açın:
 mkdir -p ~/Library/Containers/com.microsoft.Word/Data/Documents/wef && curl -fsSL https://apoyraz58-max.github.io/vefeyat/beta/manifest.xml -o ~/Library/Containers/com.microsoft.Word/Data/Documents/wef/vefeyat-beta.xml && echo Tamam
 ```
 
-Word'de **Ekle → Eklentilerim** → **Vefeyât (beta)**'yı ekleyin. Mac Word 16.88'den
+Word'de **Ekle → Eklentilerim** → **Vefeyât (beta)**'yı ekleyin. Mac'te Microsoft'un
+hatası için henüz bir çözüm yok: Word her kapanıp açıldığında eklentiyi bu menüden yeniden
+seçmeniz gerekebilir. Mac Word 16.88'den
 eskiyse satırdaki `manifest.xml` yerine `manifest-uyumlu.xml` yazın. Mac'te kısayollar
 Alt+Shift yerine **Cmd+Option** ile çalışır (ör. Cmd+Option+V).
 
@@ -103,7 +117,7 @@ Paneldeki mesajın ekran görüntüsü de çok işe yarar.
 
 ## 7. Kaldırmak
 
-Windows'ta **Vefeyat-Kaldir.cmd**'yi çalıştırın. Elle kurduysanız **Ekle → Eklentilerim** →
+Windows'ta **Vefeyat-Kaldir.cmd**'yi çalıştırın (iki kurulum yolunu da temizler). Elle kurduysanız **Ekle → Eklentilerim** →
 Vefeyât (beta) üzerinde **…** → **Kaldır**, ardından Güven Merkezi'ndeki katalog yolunu
 silin. Mac'te `wef` klasöründeki `vefeyat-beta.xml` dosyasını silin. Vefeyât'ın eklediği tarihler belgede kalır;
 teslimden önce **Teslim öncesi temizle** ile gizli Vefeyât işaretlerini kaldırabilirsiniz.

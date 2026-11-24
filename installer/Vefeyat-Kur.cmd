@@ -8,12 +8,19 @@ echo.
 pause
 exit /b
 #POWERSHELL
+# Word, Eylul 2026 guncellemesinden beri 'Gelistirici Eklentileri'nden eklenen eklentiyi
+# kapaninca unutuyor (OfficeDev/office-js#6973). 'Paylasilan Klasor' katalogundan eklenen
+# eklenti ise kalici: bu betik eklentiyi oraya koyar. Katalog bir ag yolu olmak zorunda;
+# Windows'un kendi \\localhost\C$ yolu kullanilir, paylasim acilmaz, yonetici izni istenmez.
 $ErrorActionPreference = 'Stop'
 $Base = '{{BASE_URL}}'
 $Id = '{{ID}}'
 $Name = '{{NAME}}'
-$Folder = Join-Path $env:LOCALAPPDATA 'Vefeyat'
-$Key = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
+$Channel = '{{CHANNEL}}'
+$Folder = Join-Path $env:LOCALAPPDATA "Vefeyat\$Channel"
+$Catalog = Join-Path $Folder 'katalog'
+$Developer = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
+$CatalogKey = "HKCU:\Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{$Id}"
 Write-Host ''
 Write-Host "  $Name kurulumu" -ForegroundColor Cyan
 Write-Host '  ------------------------'
@@ -42,23 +49,53 @@ try {
         Write-Host '  Word''un yeri bulunamadi; guncel surum kurulacak.' -ForegroundColor Yellow
     }
 
-    New-Item -ItemType Directory -Force -Path $Folder | Out-Null
-    $manifest = Join-Path $Folder 'manifest.xml'
+    # The catalog folder holds this one manifest only: Word lists every manifest it finds there.
+    New-Item -ItemType Directory -Force -Path $Catalog | Out-Null
+    Get-ChildItem -Path $Catalog -Filter '*.xml' | Remove-Item -Force
+    $manifest = Join-Path $Catalog 'vefeyat.xml'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Write-Host "  Indiriliyor: $Base$file"
     Invoke-WebRequest -UseBasicParsing -Uri ($Base + $file) -OutFile $manifest
     $xml = [IO.File]::ReadAllText($manifest)
     if ($xml -notmatch [Regex]::Escape("<Id>$Id</Id>")) { throw 'Indirilen dosya beklenen eklenti degil.' }
 
-    if (-not (Test-Path $Key)) { New-Item -Path $Key -Force | Out-Null }
-    New-ItemProperty -Path $Key -Name $Id -Value $manifest -PropertyType String -Force | Out-Null
+    # The same folder as a network path: \\localhost\C$\Users\...\AppData\Local\Vefeyat\...
+    $share = '\\localhost\' + $Catalog.Substring(0, 1) + '$' + $Catalog.Substring(2)
+    $reachable = $false
+    try { $reachable = Test-Path -LiteralPath (Join-Path $share 'vefeyat.xml') } catch { $reachable = $false }
 
-    Write-Host ''
-    Write-Host "  Tamam, eklenti Word'e kaydedildi." -ForegroundColor Green
-    Write-Host ''
-    Write-Host "  Simdi Word'u acin. Seritte '$Name' sekmesi gorunmezse (yalniz ilk seferde):" -ForegroundColor Yellow
-    Write-Host '    Giris -> Eklentiler (ya da Ekle -> Eklentilerim) -> Diger Eklentiler'
-    Write-Host "    -> 'Gelistirici Eklentileri' bolumunde '$Name' -> Ekle"
+    if ($reachable) {
+        if (-not (Test-Path $CatalogKey)) { New-Item -Path $CatalogKey -Force | Out-Null }
+        New-ItemProperty -Path $CatalogKey -Name 'Id' -Value "{$Id}" -PropertyType String -Force | Out-Null
+        New-ItemProperty -Path $CatalogKey -Name 'Url' -Value $share -PropertyType String -Force | Out-Null
+        New-ItemProperty -Path $CatalogKey -Name 'Flags' -Value 1 -PropertyType DWord -Force | Out-Null
+        # The earlier way of installing (Gelistirici Eklentileri) is removed: one entry, the lasting one.
+        if (Get-ItemProperty -Path $Developer -Name $Id -ErrorAction SilentlyContinue) { Remove-ItemProperty -Path $Developer -Name $Id }
+
+        Write-Host ''
+        Write-Host "  Tamam, eklenti Word'e kaydedildi." -ForegroundColor Green
+        Write-Host ''
+        Write-Host '  Simdi Word''u acin ve YALNIZ BIR KEZ sunu yapin:' -ForegroundColor Yellow
+        Write-Host '    Giris -> Eklentiler (ya da Ekle -> Eklentilerim) -> Diger Eklentiler'
+        Write-Host "    -> 'PAYLASILAN KLASOR' sekmesi -> '$Name' -> Ekle"
+        Write-Host ''
+        Write-Host "  Bundan sonra '$Name' sekmesi her belgede ve Word her acildiginda seritte kalir."
+        Write-Host "  (Daha once 'Gelistirici Eklentileri'nden eklediyseniz oradaki kayit kaldirildi.)"
+    } else {
+        # \\localhost\C$ can be closed (a standard account, or administrative shares turned off).
+        if (-not (Test-Path $Developer)) { New-Item -Path $Developer -Force | Out-Null }
+        New-ItemProperty -Path $Developer -Name $Id -Value $manifest -PropertyType String -Force | Out-Null
+        if (Test-Path $CatalogKey) { Remove-Item -Path $CatalogKey -Recurse -Force }
+
+        Write-Host ''
+        Write-Host "  Eklenti Word'e kaydedildi, ama kalici yol bu bilgisayarda acik degil." -ForegroundColor Yellow
+        Write-Host '  (Windows''un \\localhost\C$ yolu kapali: standart hesap ya da yonetici paylasimlari kapatilmis.)'
+        Write-Host ''
+        Write-Host '  Word''u acin ve sunu yapin:'
+        Write-Host '    Giris -> Eklentiler (ya da Ekle -> Eklentilerim) -> Diger Eklentiler'
+        Write-Host "    -> 'Gelistirici Eklentileri' bolumunde '$Name' -> Ekle"
+        Write-Host '  Microsoft''un bir hatasi yuzunden bunu Word her acildiginda yinelemeniz gerekebilir.'
+    }
     Write-Host ''
     Write-Host '  Guncelleme gerektiginde bu dosyayi yeniden calistirmaniz yeterli.'
     Write-Host '  Kaldirmak icin: Vefeyat-Kaldir.cmd'

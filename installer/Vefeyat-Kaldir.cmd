@@ -10,7 +10,10 @@ exit /b
 $ErrorActionPreference = 'Stop'
 $Id = '{{ID}}'
 $Name = '{{NAME}}'
-$Key = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
+$Channel = '{{CHANNEL}}'
+$Folder = Join-Path $env:LOCALAPPDATA "Vefeyat\$Channel"
+$Developer = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
+$CatalogKey = "HKCU:\Software\Microsoft\Office\16.0\WEF\TrustedCatalogs\{$Id}"
 Write-Host ''
 Write-Host "  $Name kaldiriliyor" -ForegroundColor Cyan
 try {
@@ -18,13 +21,17 @@ try {
         Write-Host '  Word acik. Calismanizi kaydedip Word''un butun pencerelerini kapatin,' -ForegroundColor Yellow
         Read-Host '  sonra Enter''a basin' | Out-Null
     }
-    if (Get-ItemProperty -Path $Key -Name $Id -ErrorAction SilentlyContinue) {
-        Remove-ItemProperty -Path $Key -Name $Id
-        Write-Host "  Tamam. $Name Word'den kaldirildi." -ForegroundColor Green
+    $found = $false
+    # The lasting install (Paylasilan Klasor catalog) and the earlier one (Gelistirici Eklentileri).
+    if (Test-Path $CatalogKey) { Remove-Item -Path $CatalogKey -Recurse -Force; $found = $true }
+    if (Get-ItemProperty -Path $Developer -Name $Id -ErrorAction SilentlyContinue) { Remove-ItemProperty -Path $Developer -Name $Id; $found = $true }
+    if (Test-Path (Join-Path $Developer $Id)) { Remove-Item (Join-Path $Developer $Id) -Recurse -Force }
+    if (Test-Path $Folder) { Remove-Item -Path $Folder -Recurse -Force }
+    if ($found) {
+        Write-Host "  Tamam. $Name Word'den kaldirildi; sekme Word bir sonraki acilista gorunmez." -ForegroundColor Green
     } else {
         Write-Host "  $Name bu bilgisayarda kayitli degil."
     }
-    if (Test-Path (Join-Path $Key $Id)) { Remove-Item (Join-Path $Key $Id) -Recurse -Force }
     Write-Host '  Belgelerinizdeki tarihler yerinde kalir.'
 } catch {
     Write-Host ('  Kaldirilamadi: ' + $_.Exception.Message) -ForegroundColor Red
