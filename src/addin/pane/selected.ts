@@ -5,7 +5,7 @@ import { type WikidataHit, searchWikidata } from "../wikidata-live.js";
 import { addLocals, localFromHit, standardLabel } from "./wikidata.js";
 import { type NameIndex, type Person, alreadyHasDate, findMatches, formatDate, isValidDate, nameKey, nameOptions, nameQuery, normalize, personKey, selectionAlias, textName, withEnding } from "../../core/index.js";
 import { sourceLabel, addConfirmation, confirmedPerson, exclusionKey, mentionKey, candidateLabel, dateTag, earlierSpellings, leadingDate, lookup, matchHint, orderByNameForm, planDate, quickInsertBlocker, sameDate, scopeRule } from "../logic.js";
-import { type InventoryRow, placeOf } from "../inventory.js";
+import { type InventoryRow, isFirstUse, placeOf } from "../inventory.js";
 import { rowKey } from "../bulk.js";
 import { preferenceOf, preferredSpelling, withPreferred } from "../prefs.js";
 import { readSpellings, writeSpellings, readExclusions, writeExclusions, firstMentionBefore, findEarlier, insertDate, readConfirmations, readSelection, replaceSelection, replaceNameInSelection, writeConfirmations, selectionInNote, updateDateAfterSelection, removeDateAfter, selectMention, replaceMentions } from "../word.js";
@@ -464,8 +464,43 @@ export function hideEarlier(): void {
   $("respell-confirm").hidden = true;
   $("existing").hidden = true;
   $("dated").hidden = true;
+  $("extra-date").hidden = true;
   existingDate = null;
   datedRow = null;
+}
+
+/**
+ * The selected mention carries a date though it is not the person's first
+ * mention ("İlk kullanım"): one date too many. Offers to take it away.
+ */
+export function showExtraDate(): void {
+  $("extra-date").hidden = true;
+  const scope = state.settings.scope;
+  if (!state.mention || (scope !== "first" && scope !== "chapter")) return;
+  const row = state.rows.find((r) => rowKey(r, state.segments) === state.mention);
+  if (!row || !row.person || !row.date || isFirstUse(row, scope)) return;
+  const first = state.rows.find((r) => r.person && personKey(r.person) === personKey(row.person as Person) && r.part === row.part && isFirstUse(r, scope) && (scope !== "chapter" || r.chapter === row.chapter));
+  $("extra-date-text").textContent =
+    `${textName(row.person.shortName)} için buradaki tarih ${row.date.trim()} fazla: ` +
+    (first ? (first.date ? `ilk geçişinde (${placeOf(state.segments[first.segment])}) tarih zaten var.` : `tarih ilk geçişinde (${placeOf(state.segments[first.segment])}) olmalı.`) : "ilk geçişi başka yerde.");
+  $("extra-date").hidden = false;
+}
+
+/** Buradaki tarihi kaldır: the date after the selected mention goes. */
+export async function dropExtraDate(): Promise<boolean> {
+  const rows = await documentRows();
+  const row = rows.find((r) => rowKey(r, state.segments) === state.mention);
+  const segment = row ? state.segments[row.segment] : undefined;
+  if (!row || !segment || !row.date) return false;
+  if (!(await removeDateAfter(segment, row.start, row.text, row.date.trim()))) {
+    setMessage("Tarih metinde bulunamadı; hiçbir şey değişmedi. Belge değişmiş olabilir.", "warning");
+    return false;
+  }
+  logHistory("date", `${row.text} ${row.date.trim()} kaldırıldı (fazla tarih)`);
+  $("extra-date").hidden = true;
+  setMessage(`Fazla tarih kaldırıldı: ${row.date.trim()}`, "success");
+  state.alias = null;
+  return true;
 }
 
 /** Another mention of the same person that already carries a date (İlk kullanım: no second date). */
@@ -628,6 +663,7 @@ export async function refresh(force = false): Promise<void> {
     renderCandidates();
     renderDetails();
     renderExclusionToggle();
+    showExtraDate();
   } catch (error) {
     console.error(error);
   }

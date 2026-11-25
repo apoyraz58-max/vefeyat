@@ -166,7 +166,10 @@ atıf ve kaynakçaya dokunulmaz.
   geçişe geçer. Katalogda olmayan bir ad yalnız ilk geçişinde durdurur; **Şahıs değil**
   denince o ifadenin kalan geçişleri denetimden çıkar ve denetim ilerler. Denetim her
   adımda belgenin o anki hâline göre yeniden hesaplanır: **Önceki geçişe git** ile başka
-  bir yere gidip döndüğünüzde de Sonraki kaldığı yerden sürer.
+  bir yere gidip döndüğünüzde de Sonraki kaldığı yerden sürer. *Yalnız ilk kullanım*
+  ayarında tarihi olan bir tekrar geçişte de durur ("fazla tarih"): panelde **Buradaki
+  tarihi kaldır** çıkar. İlk geçiş tarihsizse tarihin oraya taşınması için **Toplu
+  düzeltme önizlemesi**'ni kullanabilirsiniz.
 - **Öz, Özet, Abstract ve başlıklar:** "ÖZ", "Abstract", "Genişletilmiş Özet" başlığından
   anahtar kelimeler satırına (ya da sonraki başlığa) kadar olan özetlerdeki adlar taranmaz;
   başlık satırlarındaki adlar ("Gazzâlî'de Bilgi") ilk geçiş sayılmaz. İlk geçiş, metnin

@@ -478,6 +478,9 @@ export function statusLabel(row: InventoryRow, scope = "first"): string {
   if (row.confirmed) text += " · onaylı kimlik";
   if (row.dateCheck === "different" && row.person) text += ` · Uyarı: metindeki tarih katalogdan farklı (katalog: ${row.person.deathDate})`;
   if (row.dateCheck === "inconsistent") text += ` · Uyarı: yazılan hicrî ve milâdî yıl birbirini tutmuyor${row.person ? ` (katalog: ${row.person.deathDate})` : ""}`;
+  if (row.person && row.date && (scope === "first" || scope === "chapter") && !isFirstUse(row, scope)) {
+    text += scope === "chapter" ? " · Uyarı: fazla tarih (bölümdeki ilk geçiş başka yerde)" : " · Uyarı: fazla tarih (ilk geçiş başka yerde)";
+  }
   if (row.resolved === "date") text += " · kimlik yazılı tarihten";
   if (row.resolved === "context") text += " · kimlik belgedeki diğer geçişlerden";
   if (row.resolved === "topic") text += ` · kimlik konudan (${row.topic}); doğrulayın`;

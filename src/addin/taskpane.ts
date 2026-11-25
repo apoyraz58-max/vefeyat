@@ -10,7 +10,7 @@ import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, rende
 import { $, PAGE_SIZE, ensureIndex, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { advanceAudit, dropFromAudit, stepAudit, setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
-import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderCandidates, renderDetails, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
+import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, dropExtraDate, renderCandidates, renderDetails, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { addFound, searchUnknown } from "./pane/wikidata-bulk.js";
 import { copyReport, mailReport, renderReport, watchErrors } from "./pane/report.js";
@@ -215,6 +215,7 @@ export function initialise(): void {
   $("goto-dated").addEventListener("click", () => void run(gotoDated));
   $("apply-all").addEventListener("click", () => void run(applyToAll, "Geçişler onaylanıyor"));
   $("move-date").addEventListener("click", () => void run(() => withAudit(moveDateHere())));
+  $("drop-date").addEventListener("click", () => void run(() => withAudit(dropExtraDate())));
   $("prefix-convert").addEventListener("click", () => void run(convertPrefix, "Tarihler çevriliyor"));
   $("prefix-keep").addEventListener("click", declinePrefix);
   $("go-earlier").addEventListener("click", () =>

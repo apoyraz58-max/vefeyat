@@ -73,7 +73,8 @@ describe("buildInventory", () => {
     expect(catalogLabel(rows[2]!)).toBe("2 aday; seçim gerekli");
   });
   it("status hints", () => {
-    expect(statusLabel(rows[1]!)).toBe("Kaynak yazımıyla uyumlu");
+    // A date at a repeat mention (the first one is elsewhere) is flagged.
+    expect(statusLabel(rows[1]!)).toBe("Kaynak yazımıyla uyumlu · Uyarı: fazla tarih (ilk geçiş başka yerde)");
     expect(statusLabel(rows[3]!)).toBe("Kaynak yazımıyla uyumlu · Kaynakta tarih yok");
   });
   it("summary", () => {

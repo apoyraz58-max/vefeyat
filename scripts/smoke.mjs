@@ -858,14 +858,14 @@ try {
   await tab.close();
   tab = await open("?view=denetim", book);
   await tab.waitForTimeout(400);
-  check("audit visits mentions in order", (await tab.isVisible("#audit-bar")) && (await tab.textContent("#audit-position")).startsWith("Denetim: 1 / 2") && (await tab.textContent("#selected-name")) === "Gazali" && (await tab.textContent("#audit-position")).includes("kimlik belgedeki diğer geçişlerden"), await tab.textContent("#audit-position"));
+  check("audit visits mentions in order", (await tab.isVisible("#audit-bar")) && (await tab.textContent("#audit-position")).startsWith("Denetim: 1 / 3") && (await tab.textContent("#selected-name")) === "Gazali" && (await tab.textContent("#audit-position")).includes("kimlik belgedeki diğer geçişlerden"), await tab.textContent("#audit-position"));
   await tab.click("#audit-next");
   await tab.waitForTimeout(400);
-  // The dated Gazzâlî is a repeat of the person already met as "Gazali": skipped under "Yalnız ilk kullanım".
-  check("audit moves to the next mention", (await tab.textContent("#selected-name")) === "Râzî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 2 / 2"));
+  // The dated Gazzâlî is a repeat of the person met first as "Gazali": its date is out of place, so the audit stops.
+  check("audit stops at a date given at a repeat mention", (await tab.textContent("#selected-name")) === "Gazzâlî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 2 / 3") && (await tab.textContent("#audit-position")).includes("fazla tarih"), await tab.textContent("#audit-position"));
   await tab.click("#audit-next");
   await tab.waitForTimeout(400);
-  check("first-use audit skips the verified repeat", (await tab.textContent("#selected-name")) === "Râzî" && (await tab.textContent("#audit-next")) === "Bitir");
+  check("audit moves to the next mention", (await tab.textContent("#selected-name")) === "Râzî" && (await tab.textContent("#audit-next")) === "Bitir");
   await tab.close();
   // Önceki geçişe git during an audit: the date goes to the earlier mention, and the audit goes on.
   tab = await open("?view=denetim", "Fahreddin er-Râzî der.\rEbû Bekir er-Râzî de.\rRâzî de katılır.\rGazzâlî yazar.");
@@ -902,6 +902,16 @@ try {
   await tab.click("#audit-next");
   await tab.waitForTimeout(500);
   check("after Önceki geçişe git, Sonraki goes on from the audit's place", (await tab.textContent("#selected-name")) === "Gazzâlî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 4 / 4"), `${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")}`);
+  await tab.close();
+  // A second date for the same person (İlk kullanım): the audit stops there and offers to take it away.
+  tab = await open("?view=denetim", "Fahreddin er-Râzî (ö. 606/1210) der.\rSonra Fahreddin er-Râzî (ö. 606/1210) yine der.\rGazzâlî yazar.");
+  await tab.waitForTimeout(500);
+  await tab.click("#audit-next");
+  await tab.waitForTimeout(500);
+  check("the audit stops at a repeat mention with a second date", (await tab.textContent("#audit-position")).includes("fazla tarih") && (await tab.isVisible("#extra-date")) && (await tab.textContent("#extra-date-text")).includes("ilk geçişinde"), `${await tab.textContent("#audit-position")}`);
+  await tab.click("#drop-date");
+  await tab.waitForFunction(() => document.getElementById("selected-name")?.textContent === "Gazzâlî", null, { timeout: 4000 }).catch(() => {});
+  check("Buradaki tarihi kaldır takes the second date away and the audit goes on", (await docText(tab)) === "Fahreddin er-Râzî (ö. 606/1210) der.\rSonra Fahreddin er-Râzî yine der.\rGazzâlî yazar." && (await tab.textContent("#selected-name")) === "Gazzâlî", `${JSON.stringify(await docText(tab))} | ${await tab.textContent("#selected-name")}`);
   await tab.close();
   // Öz / Abstract: their names are not first mentions; the audit stops in the text itself.
   tab = await open("?view=denetim", "ÖZ\rBu çalışmada Gazzâlî ele alınmaktadır.\rAnahtar Kelimeler: Gazzâlî, bilgi.\rAbstract\rThis study is on Gazzâlî.\rKeywords: Ghazali.\rGİRİŞ\rGazzâlî bu konuyu işler.");

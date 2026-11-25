@@ -346,6 +346,11 @@ export function auditRows<T extends { person: unknown; first: boolean; firstInCh
   return rows.filter((row) => {
     // A wrong written date is always worth a stop, repeat or not.
     if (row.dateCheck === "different" || row.dateCheck === "inconsistent") return true;
+    // A date on a repeat mention ("İlk kullanım": one date, at the first mention) is one too many.
+    if (row.person !== null && row.date && (settings.scope === "first" || settings.scope === "chapter")) {
+      const firstUse = settings.scope === "chapter" ? (row.firstInChapter ?? row.first) : row.first;
+      if (!firstUse) return true;
+    }
     if (row.status === "unknown" && row.text !== undefined) {
       const key = normalize(nameQuery(row.text));
       if (unknownSeen.has(key)) return false;
