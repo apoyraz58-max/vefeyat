@@ -1,7 +1,7 @@
 /** Vefeyât pane — Şahıs dökümü and Tüm belgeyi denetle / Denetime devam et. */
 import { buildXlsx, inventoryTable, toTsv } from "../submit.js";
 import { NameIndex } from "../../core/index.js";
-import { auditRows } from "../logic.js";
+import { auditRows, exclusionKey } from "../logic.js";
 import { type InventoryFilter, type InventoryRow, FILTER_LABELS, buildInventoryAsync, filterRows, inFilter, catalogLabel, hasDateIssue, statusLabel, summarize } from "../inventory.js";
 import { parseBookmark, resumeIndex, rowKey } from "../bulk.js";
 import { readSpellings, readExclusions, readAuditBookmark, writeAuditBookmark, readConfirmations, readDocument, documentVersion, selectMention, documentName } from "../word.js";
@@ -184,6 +184,29 @@ export async function gotoAudit(at: number): Promise<void> {
   renderAudit();
   state.alias = null;
   await refresh(true); // runs inside a busy task
+}
+
+/**
+ * The audit goes on to the next stop (after a date was added, or a phrase was
+ * marked Şahıs değil); at the last one it finishes.
+ */
+export async function advanceAudit(): Promise<void> {
+  if (!state.audit) return;
+  if (state.auditAt + 1 < state.audit.length) {
+    await gotoAudit(state.auditAt + 1);
+    return;
+  }
+  state.audit = null;
+  void writeAuditBookmark(null);
+  renderAudit();
+  setMessage("Denetim tamamlandı.", "success");
+}
+
+/** Şahıs değil during an audit: the phrase's later stops go too. */
+export function dropFromAudit(key: string): void {
+  if (!state.audit) return;
+  const at = state.auditAt;
+  state.audit = state.audit.filter((row, k) => k <= at || exclusionKey(row.text) !== key);
 }
 
 export function renderAudit(): void {

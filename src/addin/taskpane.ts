@@ -8,11 +8,21 @@ import { onParagraphsEdited, watchDocument, canReadPages, selectionPage, writeAu
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals, loadExtras, showExtras } from "./pane/catalog.js";
 import { $, PAGE_SIZE, ensureIndex, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
-import { setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
+import { advanceAudit, dropFromAudit, setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { addFound, searchUnknown } from "./pane/wikidata-bulk.js";
 import { copyReport, mailReport, renderReport, watchErrors } from "./pane/report.js";
+
+/** A date added or changed during an audit: the audit goes on to the next stop by itself. */
+async function withAudit(done: Promise<boolean | void>): Promise<void> {
+  const ok = await done;
+  if (ok === true && state.audit) {
+    // A moment for the inserted date to be seen before the selection moves.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await advanceAudit();
+  }
+}
 import { cleanup, createIndex, createPersonReport, deleteIndex, deleteIndexMarks, showConsistency } from "./pane/submit.js";
 import { applyBulk, applyPrefs, clearSpellings, copyPrefs, downloadPrefs, noProofing, prepareBulk, renderExclusions, renderHistory, renderIdentities, renderSpellings, showCoverage, toggleFrames, checkFirstUse } from "./pane/tools.js";
 
@@ -63,7 +73,7 @@ export async function launch(request: Launch): Promise<void> {
   if (request.action === "insert") {
     const blocker = quickInsertBlocker(state.catalog !== null, state.alias, state.found);
     if (blocker) setMessage(blocker, "info");
-    else await run(() => addDate(false));
+    else await run(() => withAudit(addDate(false)));
   } else if (request.action === "spelling") {
     if (state.chosen && !$<HTMLButtonElement>("respell").disabled) $<HTMLSelectElement>("spelling").focus();
     else setMessage(quickInsertBlocker(state.catalog !== null, state.alias, state.found) ?? "Bu ad için farklı bir yazım önerisi yok.", "info");
@@ -137,7 +147,16 @@ export function initialise(): void {
       void run(applyPrefs);
     });
   });
-  $("not-person").addEventListener("click", () => void run(toggleExclusion));
+  $("not-person").addEventListener("click", () =>
+    void run(async () => {
+      const marked = await toggleExclusion();
+      // In an audit: the phrase's other stops go, and the audit moves on.
+      if (marked && state.audit) {
+        dropFromAudit(marked);
+        await advanceAudit();
+      }
+    }),
+  );
   $("identity-clear").addEventListener("click", () =>
     void run(async () => {
       await writeConfirmations({});
@@ -189,12 +208,12 @@ export function initialise(): void {
     state.alias = null;
     void refresh();
   });
-  $("insert").addEventListener("click", () => void run(() => addDate(false)));
-  $("insert-anyway").addEventListener("click", () => void run(() => addDate(true)));
-  $("update-date").addEventListener("click", () => void run(updateDate));
+  $("insert").addEventListener("click", () => void run(() => withAudit(addDate(false))));
+  $("insert-anyway").addEventListener("click", () => void run(() => withAudit(addDate(true))));
+  $("update-date").addEventListener("click", () => void run(() => withAudit(updateDate())));
   $("goto-dated").addEventListener("click", () => void run(gotoDated));
   $("apply-all").addEventListener("click", () => void run(applyToAll, "Geçişler onaylanıyor"));
-  $("move-date").addEventListener("click", () => void run(moveDateHere));
+  $("move-date").addEventListener("click", () => void run(() => withAudit(moveDateHere())));
   $("prefix-convert").addEventListener("click", () => void run(convertPrefix, "Tarihler çevriliyor"));
   $("prefix-keep").addEventListener("click", declinePrefix);
   $("go-earlier").addEventListener("click", () =>

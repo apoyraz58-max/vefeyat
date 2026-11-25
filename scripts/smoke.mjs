@@ -867,6 +867,21 @@ try {
   await tab.waitForTimeout(400);
   check("first-use audit skips the verified repeat", (await tab.textContent("#selected-name")) === "Râzî" && (await tab.textContent("#audit-next")) === "Bitir");
   await tab.close();
+  // An unknown name stops the audit once; Şahıs değil and Ölüm tarihi ekle move it on by themselves.
+  tab = await open("?view=denetim", "Düşünür Hasan Mehmetoğlu der.\rSonra düşünür Hasan Mehmetoğlu yine der.\rGazzâlî de katılır.\rŞair Kara Kitap okur.\rŞair Kara Kitap yine okur.\rFahreddin er-Râzî yazar.");
+  await tab.waitForTimeout(500);
+  const stops = await tab.textContent("#audit-position");
+  check("an unknown name stops the audit once, not at every mention", stops.startsWith("Denetim: 1 / 4") && (await tab.textContent("#selected-name")) === "Hasan Mehmetoğlu", stops);
+  await tab.click("#audit-next");
+  await tab.waitForTimeout(400);
+  check("skipping an unknown name goes on to the next one", (await tab.textContent("#selected-name")) === "Gazzâlî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 2 / 4"), await tab.textContent("#selected-name"));
+  await tab.click("#insert");
+  await tab.waitForFunction(() => document.getElementById("selected-name")?.textContent !== "Gazzâlî", null, { timeout: 4000 }).catch(() => {});
+  check("Ölüm tarihi ekle moves the audit on by itself", (await docText(tab)).includes("Gazzâlî (ö. 505/1111) de") && (await tab.textContent("#selected-name")).startsWith("Kara") && (await tab.textContent("#audit-position")).startsWith("Denetim: 3 / 4"), `${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")}`);
+  await tab.click("#not-person");
+  await tab.waitForTimeout(500);
+  check("Şahıs değil moves the audit on by itself", (await tab.textContent("#selected-name")) === "Fahreddin er-Râzî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 4 / 4"), `${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")}`);
+  await tab.close();
 
   tab = await open("?view=yardim");
   check("Kılavuz opens the guide", await tab.isVisible("#view-yardim"));

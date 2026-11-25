@@ -511,23 +511,23 @@ export async function gotoDated(): Promise<void> {
 }
 
 /** "Tarihi buraya taşı": the later date goes, the selected (earlier) mention gets it. */
-export async function moveDateHere(): Promise<void> {
+export async function moveDateHere(): Promise<boolean> {
   const person = state.chosen;
   const row = datedRow;
   const segment = row ? state.segments[row.segment] : undefined;
-  if (!person || !row || !segment) return;
+  if (!person || !row || !segment) return false;
   await loadSettings();
   const current = await currentSelection();
-  if (!current) return;
+  if (!current) return false;
   const plan = planDate(person, state.settings.prefix, current.following, state.settings.dateForm);
   if (!plan.ok) {
     setMessage(plan.reason, "warning");
-    return;
+    return false;
   }
   if (!(await removeDateAfter(segment, row.start, row.text, row.date.trim()))) {
     hideEarlier();
     setMessage("Öteki tarih metinde bulunamadı; hiçbir şey değişmedi. Belge değişmiş olabilir.", "warning");
-    return;
+    return false;
   }
   await rememberChoice();
   const control = await insertDate(plan.text, dateTag(person), `Vefeyât: ${textName(person.shortName)}`);
@@ -535,6 +535,7 @@ export async function moveDateHere(): Promise<void> {
   hideEarlier();
   setMessage(`Tarih buraya taşındı: ${plan.text}`, "success");
   state.alias = null;
+  return true;
 }
 
 /** The date found after the name when Ölüm tarihi ekle was refused, for "Güncelle". */
@@ -561,17 +562,17 @@ function offerUpdate(person: Person, following: string): boolean {
 }
 
 /** "Güncelle": the date after the name is replaced with the catalog's, as a Vefeyât date. */
-export async function updateDate(): Promise<void> {
+export async function updateDate(): Promise<boolean> {
   const person = state.chosen;
   const old = existingDate;
-  if (!person || !old) return;
+  if (!person || !old) return false;
   await loadSettings();
   const current = await currentSelection();
-  if (!current) return;
+  if (!current) return false;
   if (leadingDate(current.following) !== old) {
     hideEarlier();
     setMessage("Adın arkasındaki tarih değişti. Yeniden Ölüm tarihi ekle'ye basın.", "warning");
-    return;
+    return false;
   }
   const value = formatDate(person.deathDate, state.settings.prefix, state.settings.dateForm);
   await rememberChoice();
@@ -579,11 +580,12 @@ export async function updateDate(): Promise<void> {
   hideEarlier();
   if (control === null) {
     setMessage("Tarih adın hemen arkasında bulunamadı; değiştirilmedi.", "warning");
-    return;
+    return false;
   }
   logHistory("date", `${current.alias} ${old} → ${value}`, control);
   setMessage(`Tarih güncellendi: ${old} → ${value}`, "success");
   state.alias = null;
+  return true;
 }
 
 export async function refresh(force = false): Promise<void> {
@@ -643,22 +645,22 @@ export async function currentSelection(): Promise<{ alias: string; following: st
   return { alias, following: selection.following };
 }
 
-export async function addDate(force: boolean): Promise<void> {
+export async function addDate(force: boolean): Promise<boolean> {
   const person = state.chosen;
-  if (!person) return;
+  if (!person) return false;
   await loadSettings();
   const rule = scopeRule(state.settings.scope);
   if (!rule.allowed) {
     setMessage(rule.reason ?? "", "warning");
-    return;
+    return false;
   }
   const current = await currentSelection();
-  if (!current) return;
+  if (!current) return false;
   const plan = planDate(person, state.settings.prefix, current.following, state.settings.dateForm);
   if (!plan.ok) {
-    if (offerUpdate(person, current.following)) return;
+    if (offerUpdate(person, current.following)) return false;
     setMessage(plan.reason, "warning");
-    return;
+    return false;
   }
   // One date per person: a mention that already carries one blocks a second (also after "Yine de ekle").
   if (rule.checkEarlier) {
@@ -666,13 +668,13 @@ export async function addDate(force: boolean): Promise<void> {
     if (dated) {
       $("earlier").hidden = true;
       showDated(dated);
-      return;
+      return false;
     }
   }
   if (!force && rule.checkEarlier && (await earlierMention(person))) {
     $("earlier").hidden = false;
     setMessage("", "info");
-    return;
+    return false;
   }
   await rememberChoice();
   const control = await insertDate(plan.text, dateTag(person), `Vefeyât: ${textName(person.shortName)}`);
@@ -680,6 +682,7 @@ export async function addDate(force: boolean): Promise<void> {
   hideEarlier();
   setMessage(`Tarih eklendi: ${plan.text}`, "success");
   state.alias = null; // the caret moved; read the next selection afresh
+  return true;
 }
 
 export let earlierRow: InventoryRow | null = null;
@@ -763,15 +766,17 @@ export function renderExclusionToggle(): void {
   button.textContent = excluded ? "İşareti kaldır (şahıs adı)" : "Şahıs değil olarak işaretle";
 }
 
-export async function toggleExclusion(): Promise<void> {
+/** Şahıs değil / Şahıs say. Returns the key when the phrase was just marked as not a person. */
+export async function toggleExclusion(): Promise<string | null> {
   versions.identity++; // identities may change
-  if (!state.alias) return;
+  if (!state.alias) return null;
   const key = exclusionKey(state.alias);
   const list = readExclusions();
   const excluded = list.includes(key);
   await writeExclusions(excluded ? list.filter((k) => k !== key) : [...list, key]);
   setMessage(excluded ? `"${state.alias}" yeniden şahıs adı olarak taranacak.` : `"${state.alias}" bu belgede şahıs adı sayılmayacak.`, "success");
   renderExclusionToggle();
+  return excluded ? null : key;
 }
 
 // ---- Tercihler ----

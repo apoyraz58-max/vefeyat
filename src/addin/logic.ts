@@ -336,10 +336,21 @@ export function orderByNameForm<T extends { label: string }>(options: readonly T
  * "Yalnız ilk kullanım", verified repeats are skipped; with "Tarihi
  * olmayanlar", mentions that already carry a date are skipped.
  */
-export function auditRows<T extends { person: unknown; first: boolean; firstInChapter?: boolean; date: string; dateCheck?: string | null }>(rows: readonly T[], settings: Settings): T[] {
+export function auditRows<T extends { person: unknown; first: boolean; firstInChapter?: boolean; date: string; dateCheck?: string | null; status?: string; text?: string }>(
+  rows: readonly T[],
+  settings: Settings,
+): T[] {
+  // A name no catalog has stops the audit once, not at every mention: one look decides them all
+  // (Kendi şahıslarıma ekle, Şahıs değil, or nothing).
+  const unknownSeen = new Set<string>();
   return rows.filter((row) => {
     // A wrong written date is always worth a stop, repeat or not.
     if (row.dateCheck === "different" || row.dateCheck === "inconsistent") return true;
+    if (row.status === "unknown" && row.text !== undefined) {
+      const key = normalize(nameQuery(row.text));
+      if (unknownSeen.has(key)) return false;
+      unknownSeen.add(key);
+    }
     if (settings.scope === "first" && row.person !== null && !row.first) return false;
     if (settings.scope === "chapter" && row.person !== null && !(row.firstInChapter ?? row.first)) return false;
     if (settings.auditMode === "undated" && row.date) return false;

@@ -161,7 +161,10 @@ atıf ve kaynakçaya dokunulmaz.
   süzgeçli); **Panoya kopyala** Excel'e ya da bir Word tablosuna yapıştırılır.
 - **Tüm belgeyi denetle:** geçişleri tek tek gezer; **Denetimi bitir** duraklatır,
   **Denetime devam et** kaldığı yerden sürdürür. *Yalnız ilk kullanım* ayarında
-  tekrarlar atlanır; yanlış yazılmış tarih olan geçişte her zaman durur.
+  tekrarlar atlanır; yanlış yazılmış tarih olan geçişte her zaman durur. **Ölüm tarihi
+  ekle** (ya da Güncelle, Tarihi buraya taşı) sonrasında denetim kendiliğinden sonraki
+  geçişe geçer. Katalogda olmayan bir ad yalnız ilk geçişinde durdurur; **Şahıs değil**
+  denince o ifadenin kalan geçişleri denetimden çıkar ve denetim ilerler.
 - **Toplu düzeltme önizlemesi:** eksik ilk geçiş tarihleri, katalogdan farklı
   yazımlar ve katalogla çelişen tarihler tek listede. Yalnız işaretliler uygulanır;
   tarih düzeltmeleri işaretsiz gelir.
