@@ -87,3 +87,53 @@ export function isChapterHeading(text: string, style = ""): boolean {
   if (new RegExp(`^((\\d+|[ivxlc]+)\\s+)?(${ORDINALS}|\\d+)\\s+bolum(\\s|$)`).test(key)) return true;
   return /^((\d+|[ivxlc]+)\s+)?(giris|sonuc|sonuc ve degerlendirme)$/.test(key);
 }
+
+/**
+ * Öz, Özet, Abstract: a summary repeats the work's names before the text does,
+ * and a summary takes no death dates. Its people do not count: their first
+ * mention is the one in the text itself. A heading ("ÖZ", "Abstract",
+ * "Genişletilmiş Özet" …) opens the summary; the keywords line ("Anahtar
+ * Kelimeler: …", "Keywords: …") closes it, or else the next heading. A
+ * paragraph that starts with one ("Öz: Bu çalışma …") is a summary by itself.
+ */
+const SUMMARY = new Set([
+  "oz", "ozet", "abstract", "summary", "resume", "zusammenfassung", "genisletilmis ozet", "extended abstract", "ozet abstract",
+  "mulahhas", "ملخص", "الملخص",
+]);
+const KEYWORDS = /^(anahtar (kelime|sozcuk)ler|keywords|key words|schlusselworter|mots cles)\b/;
+
+function summaryHeading(text: string): boolean {
+  return SUMMARY.has(headingKey(text));
+}
+
+/** A short line set apart as a heading: no closing period, few words. */
+export function headingLike(text: string, style: string): boolean {
+  if (/^(heading|başlık)/i.test(style.trim())) return true;
+  const value = text.trim();
+  return value.length > 0 && value.length <= 80 && !/[.:;,]$/.test(value) && value.split(/\s+/).length <= 10;
+}
+
+/** For each main-text paragraph in reading order: whether it belongs to an Öz / Abstract. */
+export function summaryFlags(paragraphs: readonly string[], styles: readonly string[] = []): boolean[] {
+  let inside = false;
+  return paragraphs.map((text, k) => {
+    const key = normalize(text.trim().slice(0, 40));
+    if (summaryHeading(text)) {
+      inside = true;
+      return true;
+    }
+    // "Öz: Bu çalışma …", "Abstract: This study …" on its own.
+    const inline = /^(oz|ozet|abstract|summary)\s/.test(key) && /^[^\s:]+\s*:/.test(text.trim());
+    if (inline) return true;
+    if (KEYWORDS.test(key)) {
+      const was = inside;
+      inside = false;
+      return was || /:/.test(text.slice(0, 30));
+    }
+    if (inside && (isChapterHeading(text, styles[k] ?? "") || headingLike(text, styles[k] ?? ""))) {
+      inside = false;
+      return false;
+    }
+    return inside;
+  });
+}

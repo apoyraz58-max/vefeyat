@@ -12,6 +12,8 @@ import {
   type Person,
   alreadyHasDate,
   bibliographyFlags,
+  summaryFlags,
+  headingLike,
   isChapterHeading,
   fieldsOf,
   sentenceAround,
@@ -86,6 +88,8 @@ export interface InventoryRow {
   readonly status: Status;
   /** First certain mention of this person in its part (main text, or footnotes and endnotes), in reading order. */
   readonly first: boolean;
+  /** In a title or heading line, or left out as a summary: never a first mention. */
+  readonly heading?: boolean;
   /** Chapter number (0 before the first chapter heading). */
   readonly chapter: number;
   /** First certain mention of this person in its part within its chapter ("Her bölümde ilk kullanım"). */
@@ -180,6 +184,8 @@ interface Draft {
   fields: Set<string>;
   topic?: string;
   chapter: number;
+  /** In a title or heading line: not a first mention (a heading takes no date). */
+  heading: boolean;
 }
 
 /**
@@ -277,6 +283,11 @@ function* inventorySteps(
   const mains = ordered.filter((o) => o.segment.part === "main");
   const flags = bibliographyFlags(mains.map((o) => o.segment.text));
   const bibliography = new Set(mains.filter((_, k) => flags[k]).map((o) => o.segment.anchor));
+  // Öz / Abstract: its names are not first mentions; the text's own are.
+  const summary = summaryFlags(mains.map((o) => o.segment.text), mains.map((o) => o.segment.style ?? ""));
+  mains.forEach((o, k) => {
+    if (summary[k]) bibliography.add(o.segment.anchor);
+  });
   const lowerWords = lowerCaseWords(segments.map((s) => s.text));
   let chapter = 0;
   let done = 0;
@@ -349,6 +360,7 @@ function* inventorySteps(
         segment: i, part: segment.part, start, length: hit.start + hit.length - start, text: literal, candidates, person, resolved, after,
         fields: person || candidates.length < 2 ? new Set() : mentionFields(segment.text, hit.start, hit.length),
         chapter,
+        heading: segment.part === "main" && headingLike(segment.text, segment.style ?? ""),
       });
     }
   }
@@ -402,8 +414,9 @@ function* inventorySteps(
     else status = "choose";
     let first = false;
     let firstInChapter = false;
-    if (person) {
-      // The main text and the notes each have their own first mention.
+    if (person && !draft.heading) {
+      // The main text and the notes each have their own first mention; a title or heading line
+      // ("Gazzâlî'de Bilgi") is not one: the first mention in the text itself takes the date.
       const key = `${draft.part}|${personKey(person)}`;
       first = !seen.has(key);
       seen.add(key);
@@ -423,6 +436,7 @@ function* inventorySteps(
       date,
       status,
       first,
+      heading: draft.heading,
       chapter: draft.chapter,
       firstInChapter,
       confirmed: draft.resolved === "confirmed",

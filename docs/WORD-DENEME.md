@@ -164,7 +164,13 @@ atıf ve kaynakçaya dokunulmaz.
   tekrarlar atlanır; yanlış yazılmış tarih olan geçişte her zaman durur. **Ölüm tarihi
   ekle** (ya da Güncelle, Tarihi buraya taşı) sonrasında denetim kendiliğinden sonraki
   geçişe geçer. Katalogda olmayan bir ad yalnız ilk geçişinde durdurur; **Şahıs değil**
-  denince o ifadenin kalan geçişleri denetimden çıkar ve denetim ilerler.
+  denince o ifadenin kalan geçişleri denetimden çıkar ve denetim ilerler. Denetim her
+  adımda belgenin o anki hâline göre yeniden hesaplanır: **Önceki geçişe git** ile başka
+  bir yere gidip döndüğünüzde de Sonraki kaldığı yerden sürer.
+- **Öz, Özet, Abstract ve başlıklar:** "ÖZ", "Abstract", "Genişletilmiş Özet" başlığından
+  anahtar kelimeler satırına (ya da sonraki başlığa) kadar olan özetlerdeki adlar taranmaz;
+  başlık satırlarındaki adlar ("Gazzâlî'de Bilgi") ilk geçiş sayılmaz. İlk geçiş, metnin
+  kendisindeki geçiştir; tarih oraya konur.
 - **Toplu düzeltme önizlemesi:** eksik ilk geçiş tarihleri, katalogdan farklı
   yazımlar ve katalogla çelişen tarihler tek listede. Yalnız işaretliler uygulanır;
   tarih düzeltmeleri işaretsiz gelir.

@@ -9,7 +9,7 @@ import { onParagraphsEdited, watchDocument, canReadPages, selectionPage, writeAu
 import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, renderLocals, loadExtras, showExtras } from "./pane/catalog.js";
 import { $, PAGE_SIZE, ensureIndex, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
-import { advanceAudit, dropFromAudit, setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
+import { advanceAudit, dropFromAudit, stepAudit, setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
 import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderCandidates, renderDetails, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { addFound, searchUnknown } from "./pane/wikidata-bulk.js";
@@ -293,18 +293,8 @@ export function initialise(): void {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(filterNow, 200);
   });
-  $("audit-prev").addEventListener("click", () => void run(() => gotoAudit(state.auditAt - 1)));
-  $("audit-next").addEventListener("click", () =>
-    void run(async () => {
-      if (state.audit && state.auditAt + 1 < state.audit.length) await gotoAudit(state.auditAt + 1);
-      else {
-        state.audit = null;
-        void writeAuditBookmark(null);
-        renderAudit();
-        setMessage("Denetim tamamlandı.", "success");
-      }
-    }),
-  );
+  $("audit-prev").addEventListener("click", () => void run(() => stepAudit(-1)));
+  $("audit-next").addEventListener("click", () => void run(() => stepAudit(1)));
   $("audit-stop").addEventListener("click", () => {
     state.audit = null;
     renderAudit();

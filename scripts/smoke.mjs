@@ -886,6 +886,29 @@ try {
   await tab.waitForFunction(() => document.getElementById("selected-name")?.textContent === "Gazzâlî", null, { timeout: 4000 }).catch(() => {});
   check("the date goes to the earlier mention and the audit goes on", (await docText(tab)).startsWith("Fahreddin er-Râzî (ö. 606/1210) der.") && (await tab.textContent("#selected-name")) === "Gazzâlî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 4 / 4"), `${await docText(tab)} | ${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")} | ${await tab.textContent("#message")}`);
   await tab.close();
+  // Önceki geçişe git, then Sonraki without adding a date: the audit goes on from where it was.
+  tab = await open("?view=denetim", "Fahreddin er-Râzî der.\rEbû Bekir er-Râzî de.\rRâzî de katılır.\rGazzâlî yazar.");
+  await tab.waitForTimeout(500);
+  for (let k = 0; k < 2; k++) {
+    await tab.click("#audit-next");
+    await tab.waitForTimeout(400);
+  }
+  const fahr2 = await tab.$$eval("#candidates .candidate", (rows) => rows.find((r) => r.textContent.includes("Fahreddin"))?.querySelector("input")?.id ?? "");
+  if (fahr2) await tab.check(`#${fahr2}`);
+  await tab.click("#insert");
+  await tab.waitForTimeout(400);
+  await tab.click("#go-earlier");
+  await tab.waitForTimeout(400);
+  await tab.click("#audit-next");
+  await tab.waitForTimeout(500);
+  check("after Önceki geçişe git, Sonraki goes on from the audit's place", (await tab.textContent("#selected-name")) === "Gazzâlî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 4 / 4"), `${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")}`);
+  await tab.close();
+  // Öz / Abstract: their names are not first mentions; the audit stops in the text itself.
+  tab = await open("?view=denetim", "ÖZ\rBu çalışmada Gazzâlî ele alınmaktadır.\rAnahtar Kelimeler: Gazzâlî, bilgi.\rAbstract\rThis study is on Gazzâlî.\rKeywords: Ghazali.\rGİRİŞ\rGazzâlî bu konuyu işler.");
+  await tab.waitForTimeout(500);
+  const firstStop = await tab.evaluate(() => window.__doc.text.slice(0, window.__doc.sel[0]));
+  check("Öz and Abstract are passed over: the first stop is in the text", firstStop.endsWith("GİRİŞ\r") && (await tab.textContent("#audit-position")).startsWith("Denetim: 1 / 1"), `${JSON.stringify(firstStop.slice(-30))} | ${await tab.textContent("#audit-position")}`);
+  await tab.close();
   // An unknown name stops the audit once; Şahıs değil and Ölüm tarihi ekle move it on by themselves.
   tab = await open("?view=denetim", "Düşünür Hasan Mehmetoğlu der.\rSonra düşünür Hasan Mehmetoğlu yine der.\rGazzâlî de katılır.\rŞair Kara Kitap okur.\rŞair Kara Kitap yine okur.\rFahreddin er-Râzî yazar.");
   await tab.waitForTimeout(500);
@@ -899,7 +922,7 @@ try {
   check("Ölüm tarihi ekle moves the audit on by itself", (await docText(tab)).includes("Gazzâlî (ö. 505/1111) de") && (await tab.textContent("#selected-name")).startsWith("Kara") && (await tab.textContent("#audit-position")).startsWith("Denetim: 3 / 4"), `${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")}`);
   await tab.click("#not-person");
   await tab.waitForTimeout(500);
-  check("Şahıs değil moves the audit on by itself", (await tab.textContent("#selected-name")) === "Fahreddin er-Râzî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 4 / 4"), `${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")}`);
+  check("Şahıs değil moves the audit on by itself (its stops leave the count)", (await tab.textContent("#selected-name")) === "Fahreddin er-Râzî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 3 / 3"), `${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")}`);
   await tab.close();
 
   tab = await open("?view=yardim");

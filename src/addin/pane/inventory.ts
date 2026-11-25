@@ -6,7 +6,7 @@ import { type InventoryFilter, type InventoryRow, FILTER_LABELS, buildInventoryA
 import { parseBookmark, resumeIndex, rowKey } from "../bulk.js";
 import { readSpellings, readExclusions, readAuditBookmark, writeAuditBookmark, readConfirmations, readDocument, documentVersion, selectMention, documentName } from "../word.js";
 
-import { $, PAGE_SIZE, loadSettings, noteCounts, placeOfRow, run, setMessage, showView, state, versions, progress, ensureIndex } from "./core.js";
+import { $, PAGE_SIZE, documentRows, loadSettings, noteCounts, placeOfRow, run, setMessage, showView, state, versions, progress, ensureIndex } from "./core.js";
 import { refresh } from "./selected.js";
 import { renderBulkOffer } from "./wikidata-bulk.js";
 
@@ -187,19 +187,56 @@ export async function gotoAudit(at: number): Promise<void> {
 }
 
 /**
- * The audit goes on to the next stop (after a date was added, or a phrase was
- * marked Şahıs değil); at the last one it finishes.
+ * The audit's stops read again from the document as it is now: a date added,
+ * a phrase marked Şahıs değil or a mention visited out of turn (Önceki geçişe
+ * git) changes them. Returns the place of the current stop among them, or of
+ * the stop just before where it was when it is gone (-1 before the first).
  */
-export async function advanceAudit(): Promise<void> {
+async function freshAudit(): Promise<number> {
+  if (!state.audit) return -1;
+  const current = state.audit[state.auditAt];
+  const key = current ? rowKey(current, state.segments) : "";
+  // Where the stop is in the document: paragraph, note, offset (kept across a new reading).
+  const where = (row: InventoryRow, segments: typeof state.segments): [number, number, number] => {
+    const segment = segments[row.segment];
+    return [segment?.anchor ?? 0, segment?.order ?? 0, row.start];
+  };
+  const at = current ? where(current, state.segments) : [0, 0, 0];
+  const rows = await documentRows();
+  const audit = auditRows(rows, state.settings);
+  state.audit = audit;
+  const same = audit.findIndex((row) => rowKey(row, state.segments) === key);
+  if (same >= 0) return same;
+  // Gone (dated under "Yalnız tarihsizler", or marked Şahıs değil): the last stop before its place.
+  const earlier = (row: InventoryRow): boolean => {
+    const [a1, o1, s1] = where(row, state.segments);
+    return a1 < (at[0] as number) || (a1 === at[0] && (o1 < (at[1] as number) || (o1 === at[1] && s1 < (at[2] as number))));
+  };
+  let before = -1;
+  audit.forEach((row, k) => {
+    if (earlier(row)) before = k;
+  });
+  return before;
+}
+
+/** Sonraki / Önceki in the audit, over the stops as they are now; past the last one it finishes. */
+export async function stepAudit(delta: 1 | -1): Promise<void> {
   if (!state.audit) return;
-  if (state.auditAt + 1 < state.audit.length) {
-    await gotoAudit(state.auditAt + 1);
+  const at = await freshAudit();
+  const target = delta === 1 ? at + 1 : Math.max(at - 1, 0);
+  if (state.audit && target < state.audit.length && state.audit.length > 0) {
+    await gotoAudit(target);
     return;
   }
   state.audit = null;
   void writeAuditBookmark(null);
   renderAudit();
   setMessage("Denetim tamamlandı.", "success");
+}
+
+/** The audit goes on to the next stop (after a date was added, or a phrase was marked Şahıs değil). */
+export async function advanceAudit(): Promise<void> {
+  await stepAudit(1);
 }
 
 /** Şahıs değil during an audit: the phrase's later stops go too. */

@@ -700,7 +700,8 @@ export async function earlierMention(person: Person): Promise<boolean> {
   const target = personKey(person);
   // The main text and the notes are counted apart: only mentions in the same part count.
   const inNote = await selectionInNote().catch(() => false);
-  let same = rows.filter((r) => r.person !== null && personKey(r.person) === target && r.part === (inNote ? "note" : "main"));
+  // A title or heading line is not an earlier mention: the text's first one takes the date.
+  let same = rows.filter((r) => r.person !== null && !r.heading && personKey(r.person) === target && r.part === (inNote ? "note" : "main"));
   if (state.settings.scope === "chapter") {
     // "Her bölümde ilk kullanım": only this chapter's mentions count.
     const current = state.mention ? rows.find((r) => rowKey(r, state.segments) === state.mention) : undefined;
