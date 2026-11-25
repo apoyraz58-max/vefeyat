@@ -1,6 +1,7 @@
 /**
  * Vefeyât pane entry: launch and wiring. The views live in ./pane/.
  */
+import { personKey } from "../core/index.js";
 import { type Launch, earlierSpellings, parseLaunch, quickInsertBlocker, sourceLabel } from "./logic.js";
 import { GO_FUNCTIONS, goQuery, register, registerSettingCommands } from "./actions.js";
 import { onParagraphsEdited, watchDocument, canReadPages, selectionPage, writeAuditBookmark, findEarlier, onSelectionChanged, selectMention, writeConfirmations } from "./word.js";
@@ -9,7 +10,7 @@ import { chooseCatalog, resetCatalog, restoreCatalog, runSearch, addLocal, rende
 import { $, PAGE_SIZE, ensureIndex, clearHistory, history, requestCancel, run, setMessage, showView, state } from "./pane/core.js";
 import { tidyEmptyDates, offerPrefix, convertPrefix, declinePrefix, checkHealth, convertLegacy, fixSpacing, repairHealth, repairSource, showSource } from "./pane/health.js";
 import { advanceAudit, dropFromAudit, setInventoryFilter, visibleRows, actOnRow, gotoAudit, prepareInventory, renderAudit, renderInventory, resumeAudit, startAudit, copyInventory, exportInventory } from "./pane/inventory.js";
-import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
+import { previewRespellAll, respellAll, applyToAll, addDate, updateDate, gotoDated, moveDateHere, earlierRow, hideEarlier, preferSelection, refresh, renderCandidates, renderDetails, renderSpellingChoice, respell, toggleExclusion } from "./pane/selected.js";
 import { renderShortcuts, resetShortcuts, saveShortcuts } from "./pane/shortcuts.js";
 import { addFound, searchUnknown } from "./pane/wikidata-bulk.js";
 import { copyReport, mailReport, renderReport, watchErrors } from "./pane/report.js";
@@ -226,6 +227,16 @@ export function initialise(): void {
         await findEarlier(earlierSpellings(state.chosen, state.alias), true);
       }
       hideEarlier();
+      // The selection moved while this task ran, so its change event was not acted on: read it now,
+      // with the person chosen there kept (the earlier mention is the same person).
+      const chosen = state.chosen;
+      state.alias = null;
+      await refresh(true);
+      if (chosen && state.found?.candidates.some((c) => personKey(c) === personKey(chosen)) && !state.chosen) {
+        state.chosen = chosen;
+        renderCandidates();
+        renderDetails();
+      }
     }),
   );
   $("respell").addEventListener("click", () => void run(respell));

@@ -867,6 +867,25 @@ try {
   await tab.waitForTimeout(400);
   check("first-use audit skips the verified repeat", (await tab.textContent("#selected-name")) === "Râzî" && (await tab.textContent("#audit-next")) === "Bitir");
   await tab.close();
+  // Önceki geçişe git during an audit: the date goes to the earlier mention, and the audit goes on.
+  tab = await open("?view=denetim", "Fahreddin er-Râzî der.\rEbû Bekir er-Râzî de.\rRâzî de katılır.\rGazzâlî yazar.");
+  await tab.waitForTimeout(500);
+  for (let k = 0; k < 2; k++) {
+    await tab.click("#audit-next");
+    await tab.waitForTimeout(400);
+  }
+  const fahr = await tab.$$eval("#candidates .candidate", (rows) => rows.find((r) => r.textContent.includes("Fahreddin"))?.querySelector("input")?.id ?? "");
+  if (fahr) await tab.check(`#${fahr}`);
+  await tab.click("#insert");
+  await tab.waitForTimeout(400);
+  check("audit: a choice with an undated earlier mention offers to go there", await tab.isVisible("#earlier"));
+  await tab.click("#go-earlier");
+  await tab.waitForTimeout(400);
+  check("Önceki geçişe git shows the earlier mention in the window", (await tab.textContent("#selected-name")) === "Fahreddin er-Râzî" && !(await tab.isDisabled("#insert")), await tab.textContent("#selected-name"));
+  await tab.click("#insert");
+  await tab.waitForFunction(() => document.getElementById("selected-name")?.textContent === "Gazzâlî", null, { timeout: 4000 }).catch(() => {});
+  check("the date goes to the earlier mention and the audit goes on", (await docText(tab)).startsWith("Fahreddin er-Râzî (ö. 606/1210) der.") && (await tab.textContent("#selected-name")) === "Gazzâlî" && (await tab.textContent("#audit-position")).startsWith("Denetim: 4 / 4"), `${await docText(tab)} | ${await tab.textContent("#selected-name")} | ${await tab.textContent("#audit-position")} | ${await tab.textContent("#message")}`);
+  await tab.close();
   // An unknown name stops the audit once; Şahıs değil and Ölüm tarihi ekle move it on by themselves.
   tab = await open("?view=denetim", "Düşünür Hasan Mehmetoğlu der.\rSonra düşünür Hasan Mehmetoğlu yine der.\rGazzâlî de katılır.\rŞair Kara Kitap okur.\rŞair Kara Kitap yine okur.\rFahreddin er-Râzî yazar.");
   await tab.waitForTimeout(500);
