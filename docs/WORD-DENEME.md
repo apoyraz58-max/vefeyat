@@ -241,6 +241,15 @@ Baş harfli yazım da tanınır ("É. Durkheim", "J. M. Keynes"). Tanıtımları
 Wikidata'da Türkçe tanıtımı olmayanlara meslek ve ülkenin Türkçe adından üretilir. Tarihler "(1858-1917)" gibi yaşam
 aralığıyla gelir; yalnız yüzyılı bilinenler "(ö. 4. yy)" olarak yazılır.
 
+**İngilizce yazılan adlar:** İngilizce metinlerde ya da kaynaklarda DİA şahısları
+IJMES tarzı transliterasyonla geçer: "Tāj al-Dīn al-Subkī", "Fakhr al-Dīn al-Rāzī",
+"Ibn Khaldūn", "al-Shāfiʿī". Vefeyât bu yazımları DİA kaydının Türkçe yazımından (ünlüler)
+ve Arapça aslından (ق q, خ kh, ث th, ذ dh, غ gh, ش sh, ع ʿ) kendisi üretir; Arapça aslı
+olan DİA kayıtlarının %87'sinde İngilizce yazım vardır. Harf-i tarif "al-" ya da okunduğu
+gibi ("ad-Dīn", "as-Subkī", "ash-Shāfiʿī"), işaretli ya da işaretsiz ("Taj al-Din al-Subki")
+yazılabilir; seçimde de belge taramasında da bulunur. "İbn Teymiyye, Takıyyüddin" gibi
+virgüllü kayıtlarda virgülden önceki kısım da ("Ibn Taymiyya") tanınır.
+
 **Standart yazım (DİA esas):** DİA dışından gelen İslâm dünyası şahısları (İİT ülkeleri,
 Manda Filistini) ile 1928'den önce ölmüş Osmanlı tebaası, adları DİA'nın yazdığı gibi
 gelir: "Malik bin Nebi" → "Mâlik b. Nebî", "Ali Şeriati" → "Ali Şerîatî", "Hasan

@@ -9,6 +9,7 @@ import type { Person } from "./catalog.js";
 import { personKey } from "./catalog.js";
 import { excludeMention, hasSuffix, isSentenceInitial, isWorkUsage, schoolRoot } from "./context.js";
 import { EPITHETS, EPITHET_KEYS } from "./epithets.js";
+import { englishAliases } from "./english.js";
 import { EPONYMS, fuseLinks, headNisbaAliases, spellingVariants, surnameAliases, honorificAliases, nameQuery, nameScore, prominence } from "./names.js";
 import { collapseLetters, isSeparator, nameKey, normalize } from "./normalize.js";
 import { vbLower, vbTrim } from "./text.js";
@@ -95,7 +96,9 @@ const WEAK_PARTS = new Set(
 const OPENERS =
   /^(hoca|talebe|ogrenci|baba|ogul|oglu|kizi|kardes|agabey|dede|anne|esi|hanimi|seyhi|muridi|halife|cagdas|muasir|rakib|rakip|sarih|hami|veziri|sultani|hukumdar|muasiri|ustad|ustat|nitekim|ayrica|ozellikle|hatta|yine|mesela|ornegin|dolayisiyla|boylece|nihayet|ilk|son|gene|bilhasa|bunun|bunlardan|onun|ondan|sonraki|onceki|daha|ancak|fakat|lakin|zira|cunku|hem|ne|ya|ise|keza|kezalik)/;
 
-const NAME_LINKS = new Set("b|ibn|ibni|bin|bint|ebu|ebul|el|er|es|et|ez|en|ed".split("|"));
+const NAME_LINKS = new Set("b|ibn|ibni|bin|bint|ebu|ebul|el|er|es|et|ez|en|ed|al".split("|"));
+/** The article joined to a name: Turkish transliteration ("el-", "eş-") and English ("al-", "ash-", "ad-"). */
+const ARTICLE_PREFIX = /^(el|er|es|et|ez|en|ed|eş|al|ad|adh|ar|as|ash|aṣ|at|ath|aṭ|az|aẓ|aḍ|an)[-‐]/i;
 
 export const isNoise = (key: string): boolean => NOISE.has(key);
 export const isCommonWord = (key: string): boolean => COMMON.has(key);
@@ -117,7 +120,8 @@ export function wordCount(value: string): number {
 
 /** `VfbInitialUpper`: the first cased letter is a capital (uncased scripts count as capital). */
 export function initialUpper(value: string): boolean {
-  if (["el-", "er-", "es-", "et-", "ez-", "en-", "ed-", "eş-"].includes(vbLower(value.slice(0, 3)))) value = value.slice(3);
+  const article = ARTICLE_PREFIX.exec(value);
+  if (article) value = value.slice(article[0].length);
   for (const ch of value) {
     if (upper(ch) !== vbLower(ch)) return ch === upper(ch);
     const code = ch.charCodeAt(0);
@@ -130,7 +134,7 @@ export function initialUpper(value: string): boolean {
 /** `VfbWithoutArticles`: normalized name without Arabic article tokens. */
 export function withoutArticles(value: string): string {
   let result = ` ${normalize(value)} `;
-  for (const article of ["el", "er", "es", "et", "ez", "en", "ed"]) result = result.split(` ${article} `).join(" ");
+  for (const article of ["el", "er", "es", "et", "ez", "en", "ed", "al"]) result = result.split(` ${article} `).join(" ");
   return vbTrim(result);
 }
 
@@ -231,6 +235,13 @@ export class NameIndex {
   }
 
   private indexRow(person: Person, i: number): void {
+    // English transliteration of DİA's names ("Tāj al-Dīn al-Subkī").
+    for (const english of englishAliases(person)) {
+      this.add(english, i);
+      this.add(withoutArticles(english), i);
+      const bare = english.replace(/(^|\s)(al|ad|adh|ar|as|ash|aṣ|at|ath|aṭ|az|aẓ|aḍ|an)[-‐](?=\p{L})/giu, "$1");
+      if (bare !== english) this.add(bare, i);
+    }
     for (const epithet of EPITHETS[person.shortName] ?? []) this.add(epithet, i, true);
     // "Ahund el-Horasânî": a word of the short name with a nisba of the full name.
     for (const alias of headNisbaAliases(person.shortName, person.fullName)) this.add(alias, i);
@@ -246,7 +257,7 @@ export class NameIndex {
       // "Ebû Ca‘fer Nüfeylî": without the article, an ayn inside a word keeps it one word.
       if (/\p{L}[‘’'ʿʾ`]\p{L}/u.test(value)) this.add(withoutArticles(value.replace(/(\p{L})[‘’'ʿʾ`](\p{L})/gu, "$1$2")), i);
       // "Ebü’l-Abbâs Seffâh": only the separate articles go, the künye keeps its own.
-      const bare = value.replace(/(^|\s)(el|er|es|et|ez|en|ed|eş)[-‐](?=\p{L})/giu, "$1");
+      const bare = value.replace(/(^|\s)(el|er|es|et|ez|en|ed|eş|al|ad|adh|ar|as|ash|aṣ|at|ath|aṭ|az|aẓ|aḍ|an)[-‐](?=\p{L})/giu, "$1");
       if (bare !== value) this.add(bare, i);
       if (j === 0) {
         const natural = naturalOrder(value);
@@ -372,7 +383,7 @@ function nameSpanEnd(text: string, tokens: readonly Token[], first: number, inde
     if (i > first && SPAN_STOP.has(collapseLetters(key))) break;
     // A title with an article after the name, inflected or called a work: "Şâfiî er-Risâle'yi",
     // "Gazzâlî el-Mustasfâ'da", "Gazzâlî el-Mustasfâ adlı eserinde". The name stops before it.
-    if (i > first && /^(el|er|es|et|ez|en|ed|eş)[-‐]/i.test(raw) && (hasSuffix(raw) || isWorkUsage(text.slice(token.start + token.length, token.start + token.length + 40)))) break;
+    if (i > first && ARTICLE_PREFIX.test(raw) && (hasSuffix(raw) || isWorkUsage(text.slice(token.start + token.length, token.start + token.length + 40)))) break;
     if (!isNameLink(key)) end = i;
     if (hasSuffix(raw)) break;
   }
@@ -431,7 +442,7 @@ export function findMatches(text: string, index: NameIndex, strict = false, cita
         inflected = true;
       }
       key = collapseLetters(key + tokenKey);
-      const article = /^(el|er|es|et|ez|en|ed|eş)[-‐]/i.exec(raw);
+      const article = ARTICLE_PREFIX.exec(raw);
       plainKey = collapseLetters(plainKey + (article && j > i ? nameKey(nameQuery(raw.slice(article[0].length))) : tokenKey));
       if (key.length >= 3 && !index.heads.has(key.slice(0, 3)) && !index.heads.has(plainKey.slice(0, 3))) break;
       if (index.has(key)) {

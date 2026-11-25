@@ -17,3 +17,4 @@ export * from "./scan.js";
 export * from "./citation.js";
 export * from "./epithets.js";
 export * from "./standard.js";
+export * from "./english.js";

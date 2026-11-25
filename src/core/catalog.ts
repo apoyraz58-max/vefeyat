@@ -5,6 +5,7 @@
  * `VfqIdentity`, `VfdArticleUrl`, `VfaNameCandidates`,
  * `VfaConfirmationCandidates`, `VfqStrength` and `VfqSingleSafe`.
  */
+import { englishAliases } from "./english.js";
 import { collapseLetters, normalize } from "./normalize.js";
 import { EPITHETS } from "./epithets.js";
 import { EPONYMS, containsTokens, dropArticles, fuseLinks, headNisbaAliases, spellingVariants, surnameAliases, honorificAliases, looseNameMatch, lookupTokens, nameMatch, nameQuery, nameScore, prominence } from "./names.js";
@@ -44,6 +45,7 @@ function extraNames(person: Person): readonly string[] {
     ...headNisbaAliases(person.shortName, person.fullName),
     ...surnameAliases(person.shortName, person.source),
     ...spellingVariants(person.fullName),
+    ...englishAliases(person),
   ];
   EXTRA.set(person, list);
   return list;
